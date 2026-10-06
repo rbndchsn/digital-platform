@@ -15,6 +15,8 @@ export interface ClientRow {
   verifiedInventories: number
   verifiedUnits: number
   flags: FeatureView[]
+  /** R2 portfolios (PRD FR-78), read-only in R1. */
+  portfolioManagerName: string | null
 }
 
 export async function clients(): Promise<ClientRow[]> {
@@ -36,6 +38,7 @@ export async function clients(): Promise<ClientRow[]> {
           verifiedInventories: s.where('inventories', (i) => i.org_id === o.id && i.status === 'verified').length,
           verifiedUnits: s.where('decarbRecords', (d) => d.org_id === o.id && d.status === 'verified').reduce((a, d) => a + (d.verified_reduction_units ?? 0) + (d.verified_removal_units ?? 0), 0),
           flags: featuresSync(o.id),
+          portfolioManagerName: o.portfolio_manager_user_id ? (s.find('users', o.portfolio_manager_user_id)?.name ?? null) : null,
         }
       })
   })

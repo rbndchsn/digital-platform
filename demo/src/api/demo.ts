@@ -23,6 +23,8 @@ export const CHAPTERS: Chapter[] = [
   { no: 8, title: 'Opinion: review, approval, issuance', persona: 'usr_marcus', path: '/engagements/svc_nw_decarb_2025/opinion', say: 'Iteration 2 goes through independent review and manager approval, then an animated issuance creates a public statement.' },
   { no: 9, title: 'Timeline and Service Log', persona: 'usr_ingrid', path: '/engagements/svc_nw_decarb_2025/timeline', say: 'Planned versus actual, and the immutable log of everything that just happened.' },
   { no: 10, title: 'The future, in preview', persona: 'usr_ingrid', path: '/integrations', say: 'API, MCP and webhooks are visible but not yet enabled; interest is captured and seen by VERIFASSUR.' },
+  { no: 11, title: 'Administration', persona: 'usr_sam', path: '/admin', say: 'Sam sees the whole platform and the money, manages users and settings, and cannot touch a single engagement.' },
+  { no: 12, title: 'Manager override', persona: 'usr_helena', path: '/engagements/svc_nw_inv_2025/phases', say: 'Helena forces a stuck step with a mandatory reason; the log shows the override and the client’s next action moves.' },
 ]
 
 export function network() {

@@ -1,7 +1,7 @@
 /** decarb_unit record editor (PRD FR-48..FR-52): baseline/project profiles, computed panel with diagnostics, what-if, submit. */
 import { useQuery } from '@tanstack/react-query'
 import { Link, createFileRoute } from '@tanstack/react-router'
-import { AlertTriangle, ArrowRight, Calculator, Pencil, Send } from 'lucide-react'
+import { AlertTriangle, ArrowRight, BadgeCheck, Calculator, Pencil, Send } from 'lucide-react'
 import { useState } from 'react'
 import { records } from '@/api'
 import type { DecarbView, ProfileInputDto, ProfileView } from '@/api/records'
@@ -35,6 +35,7 @@ function RecordEditor() {
   const q = useQuery({ queryKey: ['decarb', recordId], queryFn: () => records.getDecarbRecord(recordId) })
   const [editProfile, setEditProfile] = useState<ProfileKind | null>(null)
   const [submit, setSubmit] = useState(false)
+  const [verify, setVerify] = useState(false)
   const [justification, setJustification] = useState<string | null>(null)
   const submitM = useAppMutation((t: Parameters<typeof records.submitDecarbRecord>[1]) => records.submitDecarbRecord(recordId, t), { successMessage: 'Record submitted for verification.' })
   const saveJust = useAppMutation((j: string) => records.upsertDecarbRecord({ good: q.data!.good, supply_shed_json: q.data!.supply_shed_json, supplier_name: q.data!.supplier_name, intervention_json: q.data!.intervention_json, baseline_method: q.data!.baseline_method, attributed_volume: q.data!.attributed_volume, volume_unit: q.data!.volume_unit, period_start: q.data!.period_start, period_end: q.data!.period_end, justification: j }, recordId), { successMessage: 'Justification saved.' })
@@ -43,6 +44,8 @@ function RecordEditor() {
   const c = d.computed
   const isClient = me.org.type === 'client'
   const canEdit = isClient && me.role !== 'client_viewer' && d.status === 'draft'
+  // Verifier roles and the manager (PRD FR-77) enter verified units; the platform administrator never does.
+  const canVerify = !isClient && !me.isAdmin && (d.status === 'submitted' || d.status === 'under_verification') && Boolean(c)
   const blockers: string[] = []
   if (!d.baseline) blockers.push('Enter the baseline emission profile.')
   if (!d.project) blockers.push('Enter the project emission profile.')
@@ -73,7 +76,20 @@ function RecordEditor() {
             ) : null}
           </>
         }
-        actions={canEdit ? <Button onClick={() => setSubmit(true)}><Send /> Submit for verification</Button> : null}
+        actions={
+          <>
+            {canEdit ? (
+              <Button onClick={() => setSubmit(true)}>
+                <Send /> Submit for verification
+              </Button>
+            ) : null}
+            {canVerify ? (
+              <Button variant="secondary" onClick={() => setVerify(true)}>
+                <BadgeCheck /> Verified values
+              </Button>
+            ) : null}
+          </>
+        }
       />
       <div className="grid gap-5 lg:grid-cols-2">
         <ProfileCard kind="baseline" profile={d.baseline} canEdit={canEdit} onEdit={() => setEditProfile('baseline')} serviceId={d.service_id} />
@@ -132,8 +148,38 @@ function RecordEditor() {
       {d.baseline && d.project ? <WhatIf d={d} /> : null}
 
       {editProfile ? <ProfileDialog kind={editProfile} record={d} existing={editProfile === 'baseline' ? d.baseline : d.project} onClose={() => setEditProfile(null)} /> : null}
+      {verify && c ? <VerifyDecarbDialog d={d} computedReduction={c.reduction_units} computedRemoval={c.removal_units} onClose={() => setVerify(false)} /> : null}
       <SubmitForVerificationDialog open={submit} onOpenChange={setSubmit} serviceType="decarb_units_verification" defaultName={`${d.good} ${d.period_start.slice(0, 4)} — decarb_units verification`} onSubmit={(t) => submitM.mutateAsync(t)} pending={submitM.isPending} blockers={blockers} />
     </>
+  )
+}
+
+/** Verifier records the verified units (PRD FR-43-style entry for decarb records; manager too, FR-77). */
+function VerifyDecarbDialog({ d, computedReduction, computedRemoval, onClose }: { d: DecarbView; computedReduction: number; computedRemoval: number; onClose: () => void }) {
+  const [reduction, setReduction] = useState(String(d.verified_reduction_units ?? computedReduction))
+  const [removal, setRemoval] = useState(String(d.verified_removal_units ?? computedRemoval))
+  const m = useAppMutation(() => records.setVerifiedDecarb(d.id, { reduction: Number(reduction), removal: Number(removal) }), { successMessage: 'Verified values recorded.', onSuccess: onClose })
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent title="Verified decarb_units" description={`Declared ${fmtNumber(d.declared_reduction_units)} reduction and ${fmtNumber(d.declared_removal_units)} removal units. Verified values are written back to the record and shown side by side.`} size="sm">
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Verified reduction units (tCO2e)" required>
+            <Input type="number" step="any" value={reduction} onChange={(e) => setReduction(e.target.value)} />
+          </Field>
+          <Field label="Verified removal units (tCO2e)" required>
+            <Input type="number" step="any" value={removal} onChange={(e) => setRemoval(e.target.value)} />
+          </Field>
+        </div>
+        <DialogFooter>
+          <Button variant="secondary" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button onClick={() => m.mutate()} loading={m.isPending} disabled={reduction === '' || removal === ''}>
+            Record
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   )
 }
 

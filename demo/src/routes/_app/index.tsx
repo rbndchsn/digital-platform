@@ -18,6 +18,7 @@ import { fmtDate, fmtRelative } from '@/lib/format'
 
 export const Route = createFileRoute('/_app/')({
   beforeLoad: ({ context }) => {
+    if (context.me.isAdmin) throw redirect({ to: '/admin' })
     if (context.me.org.type === 'verifier') throw redirect({ to: '/staff' })
   },
   component: ClientHome,

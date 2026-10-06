@@ -1,8 +1,8 @@
 /** Document row with provenance, status and actions (view, download, replace, delete, accept/reject). PRD §7.2. */
-import { Check, Download, Eye, FileText, History, MoreHorizontal, RefreshCw, Trash2, X } from 'lucide-react'
+import { Check, Download, Eye, FileText, History, Lock, MoreHorizontal, RefreshCw, Trash2, X } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
-import { documents } from '@/api'
+import { admin, documents } from '@/api'
 import type { DocumentView, VersionView } from '@/api/documents'
 import { ConfirmTyped } from '@/components/confirm-typed'
 import { Hash, ProvenanceLine } from '@/components/provenance'
@@ -39,19 +39,35 @@ export function DocumentRow({ doc, serviceId, canReplace, canDelete, canCheck, c
   const [reject, setReject] = useState(false)
   const v = doc.current
   const locked = Boolean(doc.locked_at)
+  // PRD FR-70: the platform administrator sees metadata and hashes; content needs break-glass for this service.
+  const contentAllowed = admin.canReadEvidenceContentSync(serviceId ?? doc.service_id)
   const accept = useAppMutation(() => documents.check(serviceId!, v!.id, 'accept'), { successMessage: 'Document accepted.' })
   const remove = useAppMutation(() => documents.removeVersion(v!.id), { successMessage: 'Version deleted.' })
   if (!v) return null
+  function openContent(kind: 'preview' | 'download') {
+    if (!contentAllowed) {
+      toast.message('Evidence content needs break-glass access. Request it from the banner at the top of the engagement.')
+      return
+    }
+    if (serviceId) admin.logBreakGlassRead(serviceId, `${kind === 'preview' ? 'preview' : 'download'} of ${v!.filename}`)
+    if (kind === 'preview') setPreview(true)
+    else setDownload(true)
+  }
   return (
     <div className={cn('bg-surface-muted/60 border-border flex items-center gap-3 rounded-md border px-3 py-2', className)}>
       <FileText className="text-fg-subtle size-5 shrink-0" />
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
-          <button type="button" onClick={() => setPreview(true)} className="text-fg truncate text-sm font-medium hover:underline">
+          <button type="button" onClick={() => openContent('preview')} className="text-fg truncate text-sm font-medium hover:underline">
             {v.filename}
           </button>
           {!compact ? <StatusChip status={v.check_status} size="xs" /> : null}
           {locked ? <Badge tone="outline">Locked</Badge> : null}
+          {!contentAllowed ? (
+            <Badge tone="warning" title="Break-glass access required to open the content">
+              <Lock className="size-3" /> Content closed
+            </Badge>
+          ) : null}
         </div>
         <div className="flex flex-wrap items-center gap-x-2">
           <ProvenanceLine version={v.version_no} at={v.uploaded_at} by={v.uploaderName} source={v.source} />
@@ -75,7 +91,7 @@ export function DocumentRow({ doc, serviceId, canReplace, canDelete, canCheck, c
             </Button>
           </>
         ) : null}
-        <Button size="icon" variant="ghost" aria-label="Download" onClick={() => setDownload(true)}>
+        <Button size="icon" variant="ghost" aria-label="Download" onClick={() => openContent('download')}>
           <Download />
         </Button>
         <DropdownMenu>
@@ -85,7 +101,7 @@ export function DocumentRow({ doc, serviceId, canReplace, canDelete, canCheck, c
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent>
-            <DropdownMenuItem onSelect={() => setPreview(true)}>
+            <DropdownMenuItem onSelect={() => openContent('preview')}>
               <Eye /> View
             </DropdownMenuItem>
             <DropdownMenuItem onSelect={() => setHistory(true)}>

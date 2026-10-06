@@ -6,6 +6,7 @@ import { features, staff } from '@/api'
 import type { FlagState } from '@/domain/enums'
 import { EmptyState } from '@/components/empty-state'
 import { PageHeader } from '@/components/page-header'
+import { ComingBadge } from '@/components/preview-overlay'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { NativeSelect } from '@/components/ui/input'
@@ -24,7 +25,8 @@ function Clients() {
   const q = useQuery({ queryKey: ['staff', 'clients'], queryFn: staff.clients })
   const interest = useQuery({ queryKey: ['staff', 'interest'], queryFn: features.staffInterest })
   const setFlag = useAppMutation(({ orgId, key, state }: { orgId: string; key: string; state: FlagState | null }) => features.setOverride(orgId, key, state), { successMessage: 'Feature state updated for the client.' })
-  const canFlag = me.role === 'verifier_manager'
+  // Managers and the platform administrator (PRD FR-67) set per-client feature states.
+  const canFlag = me.role === 'verifier_manager' || me.isAdmin
   return (
     <>
       <PageHeader title="Clients" description="Every client organisation, what is running for them, and which future capabilities each one can see or use. Interest signals come from the “I'm interested” buttons on preview features." />
@@ -43,6 +45,11 @@ function Clients() {
                   <TH>Verified inventories</TH>
                   <TH>Verified decarb_units</TH>
                   <TH>Previews on</TH>
+                  <TH>
+                    <span className="inline-flex items-center gap-1">
+                      Portfolio manager <ComingBadge flagKey="portfolios" />
+                    </span>
+                  </TH>
                 </tr>
               </THead>
               <TBody>
@@ -63,6 +70,9 @@ function Clients() {
                     <TD className="tabular-nums">{fmtNumber(c.verifiedUnits)} tCO2e</TD>
                     <TD className="text-fg-muted text-xs">
                       {c.flags.filter((f) => f.state === 'enabled').length} enabled · {c.flags.filter((f) => f.state === 'preview').length} preview
+                    </TD>
+                    <TD className="text-fg-muted text-sm" title="Release 2: a senior manager owns a handful of clients; read-only until then.">
+                      {c.portfolioManagerName ?? '—'}
                     </TD>
                   </TR>
                 ))}

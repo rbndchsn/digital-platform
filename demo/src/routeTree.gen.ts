@@ -13,9 +13,15 @@ import { Route as AppRouteImport } from './routes/_app'
 import { Route as SignInRouteImport } from './routes/sign-in'
 import { Route as AppIndexRouteImport } from './routes/_app/index'
 import { Route as AppAccountRouteImport } from './routes/_app/account'
+import { Route as AppAdminRouteImport } from './routes/_app/admin'
 import { Route as AppIntegrationsRouteImport } from './routes/_app/integrations'
 import { Route as AppOrganisationRouteImport } from './routes/_app/organisation'
 import { Route as VerifyCodeRouteImport } from './routes/verify.$code'
+import { Route as AppAdminIndexRouteImport } from './routes/_app/admin/index'
+import { Route as AppAdminAuditRouteImport } from './routes/_app/admin/audit'
+import { Route as AppAdminCoiRouteImport } from './routes/_app/admin/coi'
+import { Route as AppAdminSettingsRouteImport } from './routes/_app/admin/settings'
+import { Route as AppAdminUsersRouteImport } from './routes/_app/admin/users'
 import { Route as AppEngagementsIndexRouteImport } from './routes/_app/engagements/index'
 import { Route as AppEngagementsServiceIdRouteImport } from './routes/_app/engagements/$serviceId'
 import { Route as AppEngagementsNewRouteImport } from './routes/_app/engagements/new'
@@ -61,6 +67,11 @@ const AppAccountRoute = AppAccountRouteImport.update({
   path: '/account',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAdminRoute = AppAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppIntegrationsRoute = AppIntegrationsRouteImport.update({
   id: '/integrations',
   path: '/integrations',
@@ -75,6 +86,31 @@ const VerifyCodeRoute = VerifyCodeRouteImport.update({
   id: '/verify/$code',
   path: '/verify/$code',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AppAdminIndexRoute = AppAdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppAdminRoute,
+} as any)
+const AppAdminAuditRoute = AppAdminAuditRouteImport.update({
+  id: '/audit',
+  path: '/audit',
+  getParentRoute: () => AppAdminRoute,
+} as any)
+const AppAdminCoiRoute = AppAdminCoiRouteImport.update({
+  id: '/coi',
+  path: '/coi',
+  getParentRoute: () => AppAdminRoute,
+} as any)
+const AppAdminSettingsRoute = AppAdminSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AppAdminRoute,
+} as any)
+const AppAdminUsersRoute = AppAdminUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => AppAdminRoute,
 } as any)
 const AppEngagementsIndexRoute = AppEngagementsIndexRouteImport.update({
   id: '/engagements/',
@@ -219,9 +255,14 @@ export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
   '/sign-in': typeof SignInRoute
   '/account': typeof AppAccountRoute
+  '/admin': typeof AppAdminRouteWithChildren
   '/integrations': typeof AppIntegrationsRoute
   '/organisation': typeof AppOrganisationRoute
   '/verify/$code': typeof VerifyCodeRoute
+  '/admin/audit': typeof AppAdminAuditRoute
+  '/admin/coi': typeof AppAdminCoiRoute
+  '/admin/settings': typeof AppAdminSettingsRoute
+  '/admin/users': typeof AppAdminUsersRoute
   '/engagements/$serviceId': typeof AppEngagementsServiceIdRouteWithChildren
   '/engagements/new': typeof AppEngagementsNewRoute
   '/preview/$key': typeof AppPreviewKeyRoute
@@ -232,6 +273,7 @@ export interface FileRoutesByFullPath {
   '/staff/services': typeof AppStaffServicesRoute
   '/staff/templates': typeof AppStaffTemplatesRoute
   '/staff/triage': typeof AppStaffTriageRoute
+  '/admin/': typeof AppAdminIndexRoute
   '/engagements/': typeof AppEngagementsIndexRoute
   '/projects/': typeof AppProjectsIndexRoute
   '/staff/': typeof AppStaffIndexRoute
@@ -255,6 +297,10 @@ export interface FileRoutesByTo {
   '/organisation': typeof AppOrganisationRoute
   '/verify/$code': typeof VerifyCodeRoute
   '/': typeof AppIndexRoute
+  '/admin/audit': typeof AppAdminAuditRoute
+  '/admin/coi': typeof AppAdminCoiRoute
+  '/admin/settings': typeof AppAdminSettingsRoute
+  '/admin/users': typeof AppAdminUsersRoute
   '/engagements/new': typeof AppEngagementsNewRoute
   '/preview/$key': typeof AppPreviewKeyRoute
   '/projects/$projectId': typeof AppProjectsProjectIdRoute
@@ -264,6 +310,7 @@ export interface FileRoutesByTo {
   '/staff/services': typeof AppStaffServicesRoute
   '/staff/templates': typeof AppStaffTemplatesRoute
   '/staff/triage': typeof AppStaffTriageRoute
+  '/admin': typeof AppAdminIndexRoute
   '/engagements': typeof AppEngagementsIndexRoute
   '/projects': typeof AppProjectsIndexRoute
   '/staff': typeof AppStaffIndexRoute
@@ -285,10 +332,15 @@ export interface FileRoutesById {
   '/_app': typeof AppRouteWithChildren
   '/sign-in': typeof SignInRoute
   '/_app/account': typeof AppAccountRoute
+  '/_app/admin': typeof AppAdminRouteWithChildren
   '/_app/integrations': typeof AppIntegrationsRoute
   '/_app/organisation': typeof AppOrganisationRoute
   '/verify/$code': typeof VerifyCodeRoute
   '/_app/': typeof AppIndexRoute
+  '/_app/admin/audit': typeof AppAdminAuditRoute
+  '/_app/admin/coi': typeof AppAdminCoiRoute
+  '/_app/admin/settings': typeof AppAdminSettingsRoute
+  '/_app/admin/users': typeof AppAdminUsersRoute
   '/_app/engagements/$serviceId': typeof AppEngagementsServiceIdRouteWithChildren
   '/_app/engagements/new': typeof AppEngagementsNewRoute
   '/_app/preview/$key': typeof AppPreviewKeyRoute
@@ -299,6 +351,7 @@ export interface FileRoutesById {
   '/_app/staff/services': typeof AppStaffServicesRoute
   '/_app/staff/templates': typeof AppStaffTemplatesRoute
   '/_app/staff/triage': typeof AppStaffTriageRoute
+  '/_app/admin/': typeof AppAdminIndexRoute
   '/_app/engagements/': typeof AppEngagementsIndexRoute
   '/_app/projects/': typeof AppProjectsIndexRoute
   '/_app/staff/': typeof AppStaffIndexRoute
@@ -321,9 +374,14 @@ export interface FileRouteTypes {
     | '/'
     | '/sign-in'
     | '/account'
+    | '/admin'
     | '/integrations'
     | '/organisation'
     | '/verify/$code'
+    | '/admin/audit'
+    | '/admin/coi'
+    | '/admin/settings'
+    | '/admin/users'
     | '/engagements/$serviceId'
     | '/engagements/new'
     | '/preview/$key'
@@ -334,6 +392,7 @@ export interface FileRouteTypes {
     | '/staff/services'
     | '/staff/templates'
     | '/staff/triage'
+    | '/admin/'
     | '/engagements/'
     | '/projects/'
     | '/staff/'
@@ -357,6 +416,10 @@ export interface FileRouteTypes {
     | '/organisation'
     | '/verify/$code'
     | '/'
+    | '/admin/audit'
+    | '/admin/coi'
+    | '/admin/settings'
+    | '/admin/users'
     | '/engagements/new'
     | '/preview/$key'
     | '/projects/$projectId'
@@ -366,6 +429,7 @@ export interface FileRouteTypes {
     | '/staff/services'
     | '/staff/templates'
     | '/staff/triage'
+    | '/admin'
     | '/engagements'
     | '/projects'
     | '/staff'
@@ -386,10 +450,15 @@ export interface FileRouteTypes {
     | '/_app'
     | '/sign-in'
     | '/_app/account'
+    | '/_app/admin'
     | '/_app/integrations'
     | '/_app/organisation'
     | '/verify/$code'
     | '/_app/'
+    | '/_app/admin/audit'
+    | '/_app/admin/coi'
+    | '/_app/admin/settings'
+    | '/_app/admin/users'
     | '/_app/engagements/$serviceId'
     | '/_app/engagements/new'
     | '/_app/preview/$key'
@@ -400,6 +469,7 @@ export interface FileRouteTypes {
     | '/_app/staff/services'
     | '/_app/staff/templates'
     | '/_app/staff/triage'
+    | '/_app/admin/'
     | '/_app/engagements/'
     | '/_app/projects/'
     | '/_app/staff/'
@@ -453,6 +523,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAccountRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/admin': {
+      id: '/_app/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AppAdminRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/integrations': {
       id: '/_app/integrations'
       path: '/integrations'
@@ -473,6 +550,41 @@ declare module '@tanstack/react-router' {
       fullPath: '/verify/$code'
       preLoaderRoute: typeof VerifyCodeRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_app/admin/': {
+      id: '/_app/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AppAdminIndexRouteImport
+      parentRoute: typeof AppAdminRoute
+    }
+    '/_app/admin/audit': {
+      id: '/_app/admin/audit'
+      path: '/audit'
+      fullPath: '/admin/audit'
+      preLoaderRoute: typeof AppAdminAuditRouteImport
+      parentRoute: typeof AppAdminRoute
+    }
+    '/_app/admin/coi': {
+      id: '/_app/admin/coi'
+      path: '/coi'
+      fullPath: '/admin/coi'
+      preLoaderRoute: typeof AppAdminCoiRouteImport
+      parentRoute: typeof AppAdminRoute
+    }
+    '/_app/admin/settings': {
+      id: '/_app/admin/settings'
+      path: '/settings'
+      fullPath: '/admin/settings'
+      preLoaderRoute: typeof AppAdminSettingsRouteImport
+      parentRoute: typeof AppAdminRoute
+    }
+    '/_app/admin/users': {
+      id: '/_app/admin/users'
+      path: '/users'
+      fullPath: '/admin/users'
+      preLoaderRoute: typeof AppAdminUsersRouteImport
+      parentRoute: typeof AppAdminRoute
     }
     '/_app/engagements/': {
       id: '/_app/engagements/'
@@ -652,6 +764,26 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AppAdminRouteChildren {
+  AppAdminAuditRoute: typeof AppAdminAuditRoute
+  AppAdminCoiRoute: typeof AppAdminCoiRoute
+  AppAdminSettingsRoute: typeof AppAdminSettingsRoute
+  AppAdminUsersRoute: typeof AppAdminUsersRoute
+  AppAdminIndexRoute: typeof AppAdminIndexRoute
+}
+
+const AppAdminRouteChildren: AppAdminRouteChildren = {
+  AppAdminAuditRoute: AppAdminAuditRoute,
+  AppAdminCoiRoute: AppAdminCoiRoute,
+  AppAdminSettingsRoute: AppAdminSettingsRoute,
+  AppAdminUsersRoute: AppAdminUsersRoute,
+  AppAdminIndexRoute: AppAdminIndexRoute,
+}
+
+const AppAdminRouteWithChildren = AppAdminRoute._addFileChildren(
+  AppAdminRouteChildren,
+)
+
 interface AppEngagementsServiceIdRouteChildren {
   AppEngagementsServiceIdDocumentsRoute: typeof AppEngagementsServiceIdDocumentsRoute
   AppEngagementsServiceIdLogRoute: typeof AppEngagementsServiceIdLogRoute
@@ -685,6 +817,7 @@ const AppEngagementsServiceIdRouteWithChildren =
 
 interface AppRouteChildren {
   AppAccountRoute: typeof AppAccountRoute
+  AppAdminRoute: typeof AppAdminRouteWithChildren
   AppIntegrationsRoute: typeof AppIntegrationsRoute
   AppOrganisationRoute: typeof AppOrganisationRoute
   AppIndexRoute: typeof AppIndexRoute
@@ -709,6 +842,7 @@ interface AppRouteChildren {
 
 const AppRouteChildren: AppRouteChildren = {
   AppAccountRoute: AppAccountRoute,
+  AppAdminRoute: AppAdminRouteWithChildren,
   AppIntegrationsRoute: AppIntegrationsRoute,
   AppOrganisationRoute: AppOrganisationRoute,
   AppIndexRoute: AppIndexRoute,

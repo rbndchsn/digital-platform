@@ -61,11 +61,19 @@ export interface TeamView {
   coi: { id: string; status: string; declaration: string | null; details: string | null; declaredAt: string | null; decidedAt: string | null } | null
 }
 
+/** Last manager override applied to a step (PRD §7.3: "Completed by override"). */
+export interface StepOverrideInfo {
+  action: StepOverrideAction
+  byName: string
+  reason: string | null
+  at: string
+}
+
 export interface ServiceDetail {
   service: Service
   project: Project
   orgName: string
-  phases: (Phase & { steps: (Step & { slots: SlotView[]; approvals: Approval[]; canStart: boolean; startBlockedReason: string | null })[] })[]
+  phases: (Phase & { steps: (Step & { slots: SlotView[]; approvals: Approval[]; canStart: boolean; startBlockedReason: string | null; lastOverride: StepOverrideInfo | null })[] })[]
   team: TeamView[]
   invoices: Invoice[]
   nextAction: NextAction | null
@@ -210,6 +218,15 @@ export function getSync(serviceId: string): ServiceDetail {
   const nextAction = computeNextAction(snapshotFrom({ services: s.all('services'), phases: s.all('phases'), steps: s.all('steps'), slots: s.all('slots'), approvals: s.all('approvals'), team: s.all('team'), cois: s.all('cois'), findings: s.all('findings'), iterations: s.all('iterations') }, serviceId))
   const myRoles = [...(ctx.serviceRoles[serviceId] ?? [])]
   const v = viewer()
+  const overrides = s.where('auditEvents', (e) => e.service_id === serviceId && e.event_type === 'step.overridden').sort((a, b) => (a.occurred_at < b.occurred_at ? 1 : -1))
+  const lastOverrideOf = (stepId: string, status: Step['status']): StepOverrideInfo | null => {
+    const ev = overrides.find((e) => e.entity_id === stepId)
+    if (!ev) return null
+    const after = ev.after_json as { status?: string; action?: StepOverrideAction } | null
+    // Only shown while the step still sits in the state the override put it in.
+    if (!after?.action || after.status !== status) return null
+    return { action: after.action, byName: userName(ev.actor_user_id), reason: ev.reason, at: ev.occurred_at }
+  }
   return {
     service,
     project,
@@ -227,6 +244,7 @@ export function getSync(serviceId: string): ServiceDetail {
             approvals: s.where('approvals', (a) => a.step_id === st.id),
             canStart: gate.ok,
             startBlockedReason: gate.ok ? null : gate.reason,
+            lastOverride: lastOverrideOf(st.id, st.status),
           }
         }),
     })),

@@ -141,14 +141,15 @@ function PersonaGroup({ title, personas, onPick, busy, tone = 'neutral' }: { tit
           <button
             key={`${p.userId}-${p.orgId}`}
             type="button"
-            disabled={busy}
+            disabled={busy || p.disabled}
+            title={p.disabledReason ?? undefined}
             onClick={() => onPick(p.userId)}
-            className={cn('bg-surface border-border hover:border-primary flex items-center gap-3 rounded-card border p-3 text-left shadow-xs transition-colors disabled:opacity-60')}
+            className={cn('bg-surface border-border hover:border-primary flex items-center gap-3 rounded-card border p-3 text-left shadow-xs transition-colors disabled:opacity-60', p.disabled && 'grayscale')}
           >
             <Avatar name={p.name} size="lg" tone={tone} />
             <span className="min-w-0">
               <span className="text-fg block truncate text-sm font-semibold">{p.name}</span>
-              <span className="text-fg-muted block truncate text-xs">{p.jobTitle}</span>
+              <span className="text-fg-muted block truncate text-xs">{p.disabled ? p.disabledReason : p.jobTitle}</span>
               <span className="text-fg-subtle block truncate text-[11px]">
                 {roleLabel(p.role)} · {p.orgName}
               </span>

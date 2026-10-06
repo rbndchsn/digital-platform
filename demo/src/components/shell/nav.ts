@@ -1,4 +1,4 @@
-import { BarChart3, Briefcase, Building2, ClipboardCheck, FileSpreadsheet, FolderKanban, Home, Inbox, Layers, Leaf, Plug, Receipt, Users, type LucideIcon } from 'lucide-react'
+import { BarChart3, Briefcase, Building2, ClipboardCheck, FileSpreadsheet, FolderKanban, Gauge, Home, Inbox, Layers, Leaf, Plug, Receipt, ScrollText, Settings2, ShieldCheck, Users, UsersRound, type LucideIcon } from 'lucide-react'
 
 export interface NavItem {
   label: string
@@ -50,6 +50,29 @@ export const STAFF_NAV: NavGroup[] = [
   {
     label: 'Administration',
     items: [
+      { label: 'Clients', to: '/staff/clients', icon: Users },
+      { label: 'Templates', to: '/staff/templates', icon: Layers },
+      { label: 'Finance', to: '/staff/finance', icon: Receipt },
+    ],
+  },
+]
+
+/** Administration portal (PRD §7.1 v0.2): platform administrator only. Read-only views of the verifier pages below. */
+export const ADMIN_NAV: NavGroup[] = [
+  {
+    label: 'Administration portal',
+    items: [
+      { label: 'Dashboard', to: '/admin', icon: Gauge, exact: true },
+      { label: 'Users and organisations', to: '/admin/users', icon: UsersRound },
+      { label: 'Audit log', to: '/admin/audit', icon: ScrollText },
+      { label: 'COI register', to: '/admin/coi', icon: ShieldCheck },
+      { label: 'Settings', to: '/admin/settings', icon: Settings2 },
+    ],
+  },
+  {
+    label: 'Read-only views',
+    items: [
+      { label: 'All services', to: '/staff/services', icon: Briefcase },
       { label: 'Clients', to: '/staff/clients', icon: Users },
       { label: 'Templates', to: '/staff/templates', icon: Layers },
       { label: 'Finance', to: '/staff/finance', icon: Receipt },

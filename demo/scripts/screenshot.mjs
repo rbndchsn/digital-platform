@@ -52,6 +52,10 @@ const all = [
   { name: '25-decarb-portfolio', persona: 'Ingrid Vos', path: '/records/decarb-units' },
   { name: '26-emission-factors', persona: 'Ingrid Vos', path: '/records/emission-factors' },
   { name: '27-staff-clients', persona: 'Helena Brandt', path: '/staff/clients' },
+  { name: '28-admin-dashboard', persona: 'Sam Okafor', path: '/admin' },
+  { name: '29-admin-users', persona: 'Sam Okafor', path: '/admin/users' },
+  { name: '30-admin-audit', persona: 'Sam Okafor', path: '/admin/audit?type=override' },
+  { name: '31-manager-override', persona: 'Helena Brandt', path: '/engagements/svc_nw_inv_2025/phases' },
 ]
 const only = process.env.SHOTS?.split(',')
 const shots = only ? all.filter((s) => only.some((o) => s.name.startsWith(o))) : all

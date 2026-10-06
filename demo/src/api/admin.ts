@@ -798,6 +798,66 @@ export async function stats(filter: StatsFilter = {}): Promise<AdminStats> {
   })
 }
 
+// ---------------------------------------------------------------- data operations (PRD FR-72, show-don't-do: Simulate records the event)
+export type DataOperation = 'export_org' | 'export_audit' | 'retention_report' | 'backup_check'
+
+export interface DataOperationResult {
+  jobId: string
+  summary: string
+  details: { label: string; value: string }[]
+}
+
+export async function dataOperation(kind: DataOperation, params: { orgId?: string } = {}): Promise<DataOperationResult> {
+  return call(() => {
+    const ctx = authorize('admin.settings')
+    const s = getStore()
+    const settings = s.get('platformSettings', 'platform')
+    const jobId = newId('job')
+    const today = todayIso()
+    const cutoff = `${Number(today.slice(0, 4)) - settings.retention_years}${today.slice(4)}`
+    let summary: string
+    let details: { label: string; value: string }[]
+    if (kind === 'export_org') {
+      const org = s.get('organisations', params.orgId ?? '')
+      const docs = s.where('documents', (d) => d.org_id === org.id && !d.deleted_at).length
+      const events = s.where('auditEvents', (e) => e.org_id === org.id).length
+      summary = `Export of ${org.name} queued (job ${jobId})`
+      details = [
+        { label: 'Services', value: String(s.where('services', (x) => x.org_id === org.id).length) },
+        { label: 'Documents in manifest', value: String(docs) },
+        { label: 'Audit events', value: String(events) },
+        { label: 'Delivery', value: 'Signed link, expires after 7 days' },
+      ]
+    } else if (kind === 'export_audit') {
+      summary = `Platform audit log export queued (job ${jobId})`
+      details = [
+        { label: 'Audit events', value: String(s.all('auditEvents').length) },
+        { label: 'Format', value: 'CSV + JSON lines, SHA-256 manifest' },
+        { label: 'Delivery', value: 'Signed link, expires after 7 days' },
+      ]
+    } else if (kind === 'retention_report') {
+      const expired = s.where('services', (x) => x.status === 'closed' && Boolean(x.closed_at && x.closed_at.slice(0, 10) < cutoff))
+      summary = `Retention report ready: ${expired.length} service${expired.length === 1 ? '' : 's'} past the ${settings.retention_years}-year period`
+      details = [
+        { label: 'Retention period', value: `${settings.retention_years} years after closure` },
+        { label: 'Cut-off date', value: cutoff },
+        { label: 'Services to purge', value: String(expired.length) },
+        { label: 'Deactivated users eligible for anonymisation', value: String(s.where('users', (u) => u.status === 'disabled' && !u.anonymised_at && Boolean(u.deactivated_at && u.deactivated_at.slice(0, 10) < cutoff)).length) },
+      ]
+    } else {
+      summary = 'Backups verified'
+      details = [
+        { label: 'Last D1 export to R2', value: `${today}T02:00Z (nightly)` },
+        { label: 'Last R2 replication to the secondary bucket', value: `${today}T03:30Z (daily)` },
+        { label: 'D1 Time Travel window', value: '30 days' },
+        { label: 'Last tested restore', value: 'staging, last quarter' },
+      ]
+    }
+    audit(ctx, { orgId: params.orgId ?? 'org_verifassur', serviceId: null, eventType: `admin.${kind}`, entityType: 'job', entityId: jobId, summary: `${summary} by ${userName(ctx.userId)}`, after: Object.fromEntries(details.map((d) => [d.label, d.value])) })
+    return { jobId, summary, details }
+  })
+}
+
 // ---------------------------------------------------------------- break-glass (PRD FR-70)
 export interface BreakGlassGrant {
   serviceId: string

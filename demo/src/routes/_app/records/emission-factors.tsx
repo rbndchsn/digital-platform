@@ -1,7 +1,7 @@
 /** Product emission factors: list, editor, history, submit (PRD FR-46, FR-47). */
 import { useQuery } from '@tanstack/react-query'
 import { Link, createFileRoute } from '@tanstack/react-router'
-import { FileSpreadsheet, Pencil, Plus, Send } from 'lucide-react'
+import { BadgeCheck, FileSpreadsheet, Pencil, Plus, Send } from 'lucide-react'
 import { useState } from 'react'
 import { records } from '@/api'
 import type { EmissionFactorView } from '@/api/records'
@@ -31,8 +31,11 @@ function EmissionFactors() {
   const q = useQuery({ queryKey: ['emissionFactors'], queryFn: records.listEmissionFactors })
   const [edit, setEdit] = useState<EmissionFactorView | 'new' | null>(null)
   const [submit, setSubmit] = useState<EmissionFactorView | null>(null)
+  const [verify, setVerify] = useState<EmissionFactorView | null>(null)
   const submitM = useAppMutation(({ id, target }: { id: string; target: Parameters<typeof records.submitEmissionFactor>[1] }) => records.submitEmissionFactor(id, target), { successMessage: 'Emission factor submitted for verification.' })
   const canEdit = me.org.type === 'client' && me.role !== 'client_viewer'
+  // Verifier roles and the manager (PRD FR-77) enter verified values; the platform administrator never does.
+  const canVerify = me.org.type === 'verifier' && !me.isAdmin
   return (
     <>
       <PageHeader title="Product emission factors" description="One factor per product, functional unit, boundary and year. Verified factors carry the assurance reference of the opinion that verified them." actions={canEdit ? <Button onClick={() => setEdit('new')}><Plus /> New factor</Button> : null} />
@@ -66,6 +69,11 @@ function EmissionFactors() {
                       </Button>
                     </>
                   ) : null}
+                  {canVerify && (ef.status === 'submitted' || ef.status === 'under_verification') ? (
+                    <Button size="sm" variant="secondary" onClick={() => setVerify(ef)}>
+                      <BadgeCheck /> Verified value
+                    </Button>
+                  ) : null}
                 </div>
               </div>
               <DeclaredVerifiedPair declared={ef.declared_value} verified={ef.verified_value} unit={ef.value_unit} decimals={2} className="mt-3" />
@@ -90,8 +98,36 @@ function EmissionFactors() {
         </div>
       )}
       {edit ? <EfDialog ef={edit === 'new' ? null : edit} onClose={() => setEdit(null)} /> : null}
+      {verify ? <VerifyEfDialog ef={verify} onClose={() => setVerify(null)} /> : null}
       {submit ? <SubmitForVerificationDialog open onOpenChange={(o) => !o && setSubmit(null)} serviceType="iso14067_product_verification" defaultName={`Product carbon footprint ${submit.year} — ${submit.product_name}`} onSubmit={(target) => submitM.mutateAsync({ id: submit.id, target })} pending={submitM.isPending} /> : null}
     </>
+  )
+}
+
+/** Verifier (or manager, PRD FR-77) records the verified value of a factor. */
+function VerifyEfDialog({ ef, onClose }: { ef: EmissionFactorView; onClose: () => void }) {
+  const [value, setValue] = useState(String(ef.verified_value ?? ef.declared_value))
+  const [comment, setComment] = useState('')
+  const m = useAppMutation(() => records.setVerifiedEmissionFactor(ef.id, Number(value), comment || undefined), { successMessage: 'Verified value recorded.', onSuccess: onClose })
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent title="Verified value" description={`${ef.product_name} ${ef.year} · declared ${fmtNumber(ef.declared_value, 2)} ${ef.value_unit}`} size="sm">
+        <Field label={`Verified value (${ef.value_unit})`} required>
+          <Input type="number" step="any" value={value} onChange={(e) => setValue(e.target.value)} />
+        </Field>
+        <Field label="Comment (shown to the client)" className="mt-3">
+          <Textarea value={comment} onChange={(e) => setComment(e.target.value)} />
+        </Field>
+        <DialogFooter>
+          <Button variant="secondary" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button onClick={() => m.mutate()} loading={m.isPending} disabled={value === ''}>
+            Record
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   )
 }
 

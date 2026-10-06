@@ -49,7 +49,8 @@ function InventoryEditor() {
   const isClient = me.org.type === 'client'
   const canEdit = isClient && me.role !== 'client_viewer' && inv.status === 'draft'
   const canReopen = isClient && me.role !== 'client_viewer' && inv.status === 'submitted'
-  const canVerify = !isClient && ['submitted', 'under_verification'].includes(inv.status)
+  // Verifier roles and the manager (PRD FR-77) enter verified values; the platform administrator never does.
+  const canVerify = !isClient && !me.isAdmin && ['submitted', 'under_verification'].includes(inv.status)
   const lines = inv.lines.filter((l) => String(l.scope) === scope)
   const scopeTotal = (s: string) => inv.totals.by_scope[s] ?? 0
   const verifiedScope = (s: string) => inv.verifiedTotals?.by_scope[s] ?? null

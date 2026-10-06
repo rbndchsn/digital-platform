@@ -17,8 +17,11 @@ export const Route = createFileRoute('/_app/engagements/$serviceId/log')({
   component: ServiceLog,
 })
 
+const OVERRIDE_TYPES = ['step.overridden', 'service.overridden', 'team.reassigned', 'step.replanned']
+
 const TYPES = [
   ['', 'All events'],
+  ['override', 'Manager overrides'],
   ['service.', 'Service status'],
   ['step.', 'Steps'],
   ['document.', 'Documents'],
@@ -37,11 +40,11 @@ function ServiceLog() {
   const { serviceId } = Route.useParams()
   const [type, setType] = useState('')
   const [search, setSearch] = useState('')
-  const q = useQuery({ queryKey: ['log', serviceId, type, search], queryFn: () => services.log(serviceId, { types: type ? [type] : undefined, search: search || undefined }) })
+  const q = useQuery({ queryKey: ['log', serviceId, type, search], queryFn: () => services.log(serviceId, { types: type === 'override' ? OVERRIDE_TYPES : type ? [type] : undefined, search: search || undefined }) })
   function exportCsv() {
     const rows = q.data ?? []
-    const esc = (s: string) => `"${String(s).replace(/"/g, '""')}"`
-    const csv = ['occurred_at,event_type,actor,entity_type,entity_id,summary', ...rows.map((e) => [e.occurred_at, e.event_type, e.actorName, e.entity_type, e.entity_id, e.summary].map(esc).join(','))].join('\n')
+    const esc = (s: string) => `"${String(s ?? '').replace(/"/g, '""')}"`
+    const csv = ['occurred_at,event_type,actor,entity_type,entity_id,reason,summary', ...rows.map((e) => [e.occurred_at, e.event_type, e.actorName, e.entity_type, e.entity_id, e.reason ?? '', e.summary].map(esc).join(','))].join('\n')
     const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }))
     const a = document.createElement('a')
     a.href = url
@@ -91,16 +94,22 @@ function ServiceLog() {
               </tr>
             </THead>
             <TBody>
-              {q.data.map((e) => (
-                <TR key={e.id}>
-                  <TD className="text-fg-muted text-xs whitespace-nowrap">{fmtDateTime(e.occurred_at)}</TD>
-                  <TD>
-                    <Badge tone="outline">{e.event_type}</Badge>
-                  </TD>
-                  <TD className="text-xs whitespace-nowrap">{e.actorName}</TD>
-                  <TD className="text-sm">{e.summary}</TD>
-                </TR>
-              ))}
+              {q.data.map((e) => {
+                const override = OVERRIDE_TYPES.includes(e.event_type) && e.event_type !== 'step.replanned'
+                return (
+                  <TR key={e.id} className={override ? 'bg-warning-soft/40' : undefined}>
+                    <TD className="text-fg-muted text-xs whitespace-nowrap">{fmtDateTime(e.occurred_at)}</TD>
+                    <TD>
+                      <Badge tone={override ? 'warning' : 'outline'}>{override ? `Override · ${e.event_type}` : e.event_type}</Badge>
+                    </TD>
+                    <TD className="text-xs whitespace-nowrap">{e.actorName}</TD>
+                    <TD className="text-sm">
+                      {e.summary}
+                      {e.reason && !e.summary.includes(e.reason) ? <div className="text-fg-muted text-xs italic">Reason: {e.reason}</div> : null}
+                    </TD>
+                  </TR>
+                )
+              })}
             </TBody>
           </Table>
         )}

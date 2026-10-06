@@ -1,20 +1,44 @@
-import { useQueryClient } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate, useRouterState } from '@tanstack/react-router'
-import { Building2, ChevronsUpDown, LogOut, Menu, MoonStar, Settings, SunMedium, X } from 'lucide-react'
+import { Building2, ChevronsUpDown, Eye, LogOut, Megaphone, Menu, MoonStar, Settings, SunMedium, Wrench, X } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
-import { auth, demo } from '@/api'
+import { admin, auth, demo } from '@/api'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown'
-import { Avatar } from '@/components/ui/misc'
+import { Alert, Avatar } from '@/components/ui/misc'
 import { useFeature } from '@/components/preview-overlay'
 import { cn } from '@/lib/cn'
 import { useMe } from '@/lib/auth'
 import { roleLabel } from '@/lib/format'
 import { useTheme } from '@/lib/theme'
 import { DemoPanel, usePresenterNotes } from './demo-panel'
-import { CLIENT_NAV, STAFF_NAV, type NavItem } from './nav'
+import { ADMIN_NAV, CLIENT_NAV, STAFF_NAV, type NavItem } from './nav'
 import { NotificationsBell } from './notifications-bell'
+
+/** Announcement banner (PRD FR-67) and maintenance notice, for every viewer in the audience. */
+function PlatformBanners() {
+  const me = useMe()
+  const q = useQuery({ queryKey: ['announcements', 'active', me.org.id], queryFn: async () => ({ announcements: admin.activeAnnouncementsSync(), settings: admin.settingsSync() }), refetchInterval: 4000 })
+  const list = q.data?.announcements ?? []
+  const maintenance = q.data?.settings?.maintenance_mode ? q.data.settings : null
+  if (!list.length && !maintenance) return null
+  return (
+    <div className="space-y-2 px-4 pt-4 md:px-8">
+      {maintenance ? (
+        <Alert tone="warning" icon={<Wrench />} title="Maintenance mode">
+          {maintenance.maintenance_message ?? 'The platform is read-only for a short while.'}
+          {me.isAdmin ? ' Only platform administrators can make changes right now.' : ''}
+        </Alert>
+      ) : null}
+      {list.map((a) => (
+        <Alert key={a.id} tone={a.tone} icon={<Megaphone />} title={a.title}>
+          {a.body}
+        </Alert>
+      ))}
+    </div>
+  )
+}
 
 function NavLink({ item, onClick }: { item: NavItem; onClick?: () => void }) {
   const path = useRouterState({ select: (s) => s.location.pathname })
@@ -47,7 +71,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [presenter] = usePresenterNotes()
   const isStaff = me.org.type === 'verifier'
-  const groups = isStaff ? STAFF_NAV : CLIENT_NAV
+  const groups = me.isAdmin ? ADMIN_NAV : isStaff ? STAFF_NAV : CLIENT_NAV
   const chapter = demo.currentChapter()
   const chapterInfo = demo.CHAPTERS.find((c) => c.no === chapter)
 
@@ -70,7 +94,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </span>
         <div className="min-w-0">
           <div className="text-fg text-sm font-semibold tracking-tight">VERIFASSUR_X</div>
-          <div className="text-fg-subtle text-[11px]">{isStaff ? 'Verifier workspace' : 'Client portal'}</div>
+          <div className="text-fg-subtle text-[11px]">{me.isAdmin ? 'Administration portal' : isStaff ? 'Verifier workspace' : 'Client portal'}</div>
         </div>
         <button type="button" className="text-fg-muted ml-auto md:hidden" onClick={() => setMobileOpen(false)} aria-label="Close menu">
           <X className="size-5" />
@@ -139,6 +163,11 @@ export function AppShell({ children }: { children: ReactNode }) {
           <Badge tone="outline" className="hidden sm:inline-flex">
             Your role: {me.role ? roleLabel(me.role) : '—'}
           </Badge>
+          {me.isAdmin ? (
+            <Badge tone="warning" className="hidden lg:inline-flex" title="The platform administrator sees everything and changes no engagement or record data.">
+              <Eye className="size-3" /> Read-only on engagements
+            </Badge>
+          ) : null}
           <Button variant="ghost" size="icon" onClick={toggle} aria-label="Toggle theme">
             {theme === 'dark' ? <SunMedium /> : <MoonStar />}
           </Button>
@@ -164,6 +193,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             </DropdownMenuContent>
           </DropdownMenu>
         </header>
+        <PlatformBanners />
         <main className="flex-1 px-4 py-6 md:px-8">
           <div className="mx-auto max-w-7xl">{children}</div>
         </main>

@@ -98,12 +98,12 @@ export function DemoPanel({ currentUserId }: { currentUserId: string | null }) {
                 <h4 className="text-fg-subtle mb-2 text-xs font-semibold uppercase tracking-wide">Enter as</h4>
                 <div className="grid grid-cols-1 gap-1 sm:grid-cols-2">
                   {personas.map((p) => (
-                    <button key={`${p.userId}-${p.orgId}`} type="button" onClick={() => enterAs(p.userId)} className={cn('hover:bg-surface-muted flex items-center gap-2 rounded-md px-2 py-1.5 text-left', p.userId === currentUserId && 'bg-primary-soft/50')}>
+                    <button key={`${p.userId}-${p.orgId}`} type="button" disabled={p.disabled} title={p.disabledReason ?? undefined} onClick={() => enterAs(p.userId)} className={cn('hover:bg-surface-muted flex items-center gap-2 rounded-md px-2 py-1.5 text-left disabled:opacity-50', p.userId === currentUserId && 'bg-primary-soft/50')}>
                       <Avatar name={p.name} size="sm" tone={p.orgType === 'verifier' ? 'primary' : 'neutral'} />
                       <span className="min-w-0">
                         <span className="text-fg block truncate text-xs font-medium">{p.name}</span>
                         <span className="text-fg-subtle block truncate text-[11px]">
-                          {roleLabel(p.role)} · {p.orgName}
+                          {p.disabled ? p.disabledReason : `${roleLabel(p.role)} · ${p.orgName}`}
                         </span>
                       </span>
                       {p.userId === currentUserId ? <UserRoundCheck className="text-primary ml-auto size-4" /> : null}

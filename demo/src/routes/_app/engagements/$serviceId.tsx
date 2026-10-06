@@ -1,13 +1,16 @@
 /** Service workspace layout: header, next-action banner, tabs (PRD §7.1). */
+import { useQuery } from '@tanstack/react-query'
 import { Link, Outlet, createFileRoute, useNavigate, useRouterState } from '@tanstack/react-router'
-import { Archive, MoreHorizontal, PauseCircle, PlayCircle, XCircle } from 'lucide-react'
+import { Archive, Eye, KeyRound, MoreHorizontal, PauseCircle, PlayCircle, ShieldAlert, XCircle } from 'lucide-react'
 import { useState } from 'react'
-import { services, team } from '@/api'
+import { admin, services, team } from '@/api'
 import type { ServiceDetail } from '@/api/services'
+import type { ServiceOverrideAction } from '@/domain/enums'
 import { ActionPill } from '@/components/action-pill'
 import { CoiDeclareCard } from '@/components/coi-declare'
 import { ConfirmTyped } from '@/components/confirm-typed'
 import { PageHeader } from '@/components/page-header'
+import { ReasonDialog } from '@/components/reason-dialog'
 import { StatusChip } from '@/components/status-chip'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -73,6 +76,7 @@ function ServiceLayout() {
         }
         actions={<ServiceActions detail={d} />}
       />
+      {me.isAdmin ? <AdminReadOnlyBanner serviceId={serviceId} reference={s.reference} /> : null}
       {d.nextAction ? (
         <div className={cn('mb-5 flex flex-wrap items-center gap-3 rounded-card border px-4 py-3', d.actionForMe ? 'border-blocking/40 bg-blocking-soft/40' : 'border-info/30 bg-info-soft/40')}>
           <span className="text-fg text-sm font-medium">{d.actionForMe ? 'Needs you:' : d.nextAction.party === me.org.type ? 'Next on your side:' : d.nextAction.party === 'client' ? 'Waiting on the client:' : 'Waiting on VERIFASSUR:'}</span>
@@ -101,6 +105,27 @@ function ServiceLayout() {
   )
 }
 
+/** PRD §7.3: the platform administrator is read-only; evidence content needs break-glass (FR-70). */
+function AdminReadOnlyBanner({ serviceId, reference }: { serviceId: string; reference: string }) {
+  const q = useQuery({ queryKey: ['breakGlass', serviceId], queryFn: async () => admin.canReadEvidenceContentSync(serviceId) })
+  const [ask, setAsk] = useState(false)
+  const m = useAppMutation((reason: string) => admin.breakGlass(serviceId, reason), { successMessage: `Break-glass access to ${reference} recorded; the managers were notified.` })
+  const granted = q.data === true
+  return (
+    <>
+      <Alert tone="warning" className="mb-5" icon={<Eye />} title="Platform administrator: read-only view">
+        <span>You see every detail of this engagement but cannot act on it. {granted ? 'Evidence content is open for this session under break-glass access; every view is logged.' : 'Document contents stay closed until you request break-glass access with a reason.'}</span>
+        {!granted ? (
+          <Button size="sm" variant="outline" className="ml-3" onClick={() => setAsk(true)}>
+            <KeyRound /> Break-glass access
+          </Button>
+        ) : null}
+      </Alert>
+      <ReasonDialog open={ask} onOpenChange={setAsk} title={`Break-glass access to ${reference}`} description="Grants you the content of the evidence on this engagement for the rest of this session. The request and every subsequent view are written to the audit log and the verifier managers are notified." reasonLabel="Why do you need the evidence content?" placeholder="e.g. Support ticket 2210: the client cannot open the activity data sample." confirmLabel="Request access" onConfirm={(reason) => m.mutateAsync(reason)} />
+    </>
+  )
+}
+
 function ServiceActions({ detail }: { detail: ServiceDetail }) {
   const me = useMe()
   const navigate = useNavigate()
@@ -109,14 +134,18 @@ function ServiceActions({ detail }: { detail: ServiceDetail }) {
   const [cancel, setCancel] = useState(false)
   const [close, setClose] = useState(false)
   const [reason, setReason] = useState('')
+  const [override, setOverride] = useState<ServiceOverrideAction | null>(null)
   const holdM = useAppMutation(() => services.hold(s.id, reason), { successMessage: 'Service put on hold.', onSuccess: () => setHold(false) })
   const resumeM = useAppMutation(() => services.resume(s.id), { successMessage: 'Service resumed.' })
   const cancelM = useAppMutation(() => services.cancel(s.id, reason || 'Cancelled'), { successMessage: 'Service cancelled.' })
   const closeM = useAppMutation(() => services.close(s.id), { successMessage: 'Service closed.' })
+  const overrideM = useAppMutation(({ action, r }: { action: ServiceOverrideAction; r: string }) => services.overrideService(s.id, action, r), { successMessage: (svc) => `Override recorded: ${svc.reference} is now ${svc.status.replace('_', ' ')}. Both parties were notified.` })
   const renewM = useAppMutation(() => services.renew(s.id), { successMessage: 'Renewal drafted.', onSuccess: (svc) => navigate({ to: '/engagements/new', search: { draft: svc.id } }) })
-  const isManager = me.org.type === 'verifier' && me.role === 'verifier_manager'
-  const isCoord = me.org.type === 'verifier' && (me.role === 'verifier_coordinator' || isManager)
+  const isManager = me.org.type === 'verifier' && !me.isAdmin && me.role === 'verifier_manager'
+  const isCoord = me.org.type === 'verifier' && !me.isAdmin && (me.role === 'verifier_coordinator' || isManager)
   const active = ['contracting', 'planning', 'execution', 'opinion_review'].includes(s.status)
+  // The platform administrator changes nothing on an engagement (PRD §3.2 v0.2).
+  if (me.isAdmin) return null
   if (me.org.type === 'client') {
     if (s.status === 'closed' && (me.role === 'client_admin' || me.role === 'client_owner')) {
       return (
@@ -156,9 +185,20 @@ function ServiceActions({ detail }: { detail: ServiceDetail }) {
               <XCircle /> Cancel service
             </DropdownMenuItem>
           ) : null}
+          {isManager && s.status === 'opinion_review' ? (
+            <DropdownMenuItem onSelect={() => setOverride('return_to_execution')}>
+              <ShieldAlert /> Override: return to execution
+            </DropdownMenuItem>
+          ) : null}
+          {isManager && s.status === 'issued' ? (
+            <DropdownMenuItem onSelect={() => setOverride('close')}>
+              <ShieldAlert /> Override: close with reason
+            </DropdownMenuItem>
+          ) : null}
           {!isManager && !isCoord ? <DropdownMenuItem disabled>No actions for your role</DropdownMenuItem> : null}
         </DropdownMenuContent>
       </DropdownMenu>
+      <ReasonDialog open={override !== null} onOpenChange={(o) => !o && setOverride(null)} title={override === 'return_to_execution' ? 'Override: return the service to execution' : 'Override: close the service'} description="A manager override of the service status. Both parties are notified and the Service Log records it as an override with your reason." reasonLabel="Reason for the override" confirmLabel="Apply override" danger onConfirm={(r) => override && overrideM.mutateAsync({ action: override, r })} />
       <Dialog open={hold} onOpenChange={setHold}>
         <DialogContent title="Put the service on hold" description="Both parties are notified and the timeline records the hold." size="sm">
           <Field label="Reason" required>

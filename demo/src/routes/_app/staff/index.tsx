@@ -1,6 +1,6 @@
 /** Staff "My Work" (PRD FR-54): progress, COI to declare, triage count, work queue by service role, clients. */
 import { useQuery } from '@tanstack/react-query'
-import { Link, createFileRoute, useNavigate } from '@tanstack/react-router'
+import { Link, createFileRoute, redirect, useNavigate } from '@tanstack/react-router'
 import { ArrowRight, Inbox, ShieldAlert } from 'lucide-react'
 import { dashboard } from '@/api'
 import { ActionPill } from '@/components/action-pill'
@@ -18,6 +18,10 @@ import { useMe } from '@/lib/auth'
 import { fmtRelative, roleLabel } from '@/lib/format'
 
 export const Route = createFileRoute('/_app/staff/')({
+  beforeLoad: ({ context }) => {
+    // The platform administrator has no work queue; the Administration dashboard is their home.
+    if (context.me.isAdmin) throw redirect({ to: '/admin' })
+  },
   component: MyWork,
 })
 
