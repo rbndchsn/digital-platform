@@ -73,6 +73,7 @@ export interface ServiceDetail {
   statementCode: string | null
   myRoles: string[]
   canEdit: boolean
+  clientContactName: string | null
 }
 
 // ---------------------------------------------------------------- helpers
@@ -240,6 +241,7 @@ export function getSync(serviceId: string): ServiceDetail {
     statementCode: s.where('statements', (st) => st.service_id === serviceId)[0]?.public_code ?? null,
     myRoles,
     canEdit: ctx.orgType === 'client' ? service.status === 'draft' : false,
+    clientContactName: service.client_contact_user_id ? userName(service.client_contact_user_id) : null,
   }
 }
 

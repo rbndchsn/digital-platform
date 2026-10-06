@@ -28,6 +28,9 @@ const all = [
   { name: '12-timeline', persona: 'Ingrid Vos', path: '/engagements/svc_nw_decarb_2025/timeline' },
   { name: '13-service-log', persona: 'Ingrid Vos', path: '/engagements/svc_nw_decarb_2025/log' },
   { name: '14-team-coi', persona: 'Helena Brandt', path: '/engagements/svc_atlas_decarb_2025/phases' },
+  { name: '15-staff-my-work', persona: 'Marcus Oyelaran', path: '/staff' },
+  { name: '16-triage', persona: 'Helena Brandt', path: '/staff/triage' },
+  { name: '17-finance', persona: 'Jonas Weber', path: '/staff/finance' },
 ]
 const only = process.env.SHOTS?.split(',')
 const shots = only ? all.filter((s) => only.some((o) => s.name.startsWith(o))) : all

@@ -193,13 +193,13 @@ Tick sub-items as you go; tick the step only when its "Done when" holds.
   - [x] Playwright `workspace.spec.ts`: chapter 5 (re-upload → accept → log → timeline) and the chapter 3 COI gate.
   - Done when: chapters 5 and 9 run; every action writes to the Service Log. ✔
 
-- [ ] **Step 8 — Staff workflow: triage, team, COI, approvals, transitions**
-  - [ ] `/staff` My Work (by service role, blocking pills, phase | step) and Triage queue.
-  - [ ] Triage accept (choose template → instantiate workflow → `contracting`) or decline with reason.
-  - [ ] Approvals UI for technical scope, impartiality, contract review; team nomination dialog with role validation (IR exclusivity); COI declaration screen shown to a nominated member on first open; manager COI decision; locked-service state until approved.
-  - [ ] Client agreement acceptance dialog (re-auth mock, name, time, hash recorded; Contracting completes → Planning opens).
-  - [ ] Hold / resume / cancel / close with reasons.
-  - Done when: chapters 3 and 4 run end to end across persona switches.
+- [x] **Step 8 — Staff workflow: triage, team, COI, approvals, transitions**
+  - [x] `/staff` My Work: progress bars, outstanding COI alert, notifications, work queue (project, service, team role, next-action pill, phase | step, status), ongoing by client, triage preview. Triage queue with request details (scope, sites, products, interventions, materiality, contact, attachments, workflow summary), Accept into Contracting (instantiated template already on the service; starts the first step) or Decline with reason. All services with client/type/search filters. Finance table with add quote/invoice and mark paid.
+  - [x] Approvals UI (technical scope, impartiality, contract review), team nomination dialog with IR exclusivity and workload, COI declaration gate, manager COI decision closing the nomination step, locked-service state — all delivered in step 7's step detail.
+  - [x] Client agreement acceptance dialog (read confirmation, typed name, document hash, recorded IP/time; Contracting completes → Planning) — step 7.
+  - [x] Hold / resume / cancel / close in the workspace Actions menu — step 7.
+  - [x] Playwright `staff.spec.ts`: triage accept + request document, audit-plan acceptance (chapter 4), COI approval, finance mark paid.
+  - Done when: chapters 3 and 4 run end to end across persona switches. ✔
 
 - [ ] **Step 9 — Findings**
   - [ ] Findings tab table, raise-finding dialog (staff), thread view with responses and attachments, respond (client), under review / close / reopen / withdraw (staff), due-date badges.
@@ -326,7 +326,8 @@ Tick sub-items as you go; tick the step only when its "Done when" holds.
 | 2026-10-06 | 4 | c27b0b7 | App shell, sign-in with persona picker, navigation for both portals, notifications bell, demo panel, UI primitives and domain components, feature previews, Integrations/Account/Organisation pages, placeholder routes for every nav entry, Playwright smoke tests in Chromium. | Lint reports 5 fast-refresh warnings (hooks exported next to components); harmless, left as warnings |
 | 2026-10-06 | 5 | a92c47a | Client home, engagements lists (ongoing/past/drafts, renewal), projects list/detail with create dialog, shared service table. | Fixed Button `asChild` slotting; added `scripts/probe.mjs` to surface runtime errors per page |
 | 2026-10-06 | 6 | e8b6074 | Request wizard with autosave/resume/renewal, upload dialog, stepper, wizard e2e test. | React Hooks v7 forbids setState in effects: dialogs derive defaults, the wizard mounts with initial values |
-| 2026-10-06 | 7 | (this commit) | Service workspace: layout, overview, step detail with slots/approvals/team/COI, documents, Gantt, Service Log; document and approval rows; COI gate; workspace e2e tests. | Step 8 items already present where natural (step transitions, approvals, team nomination, agreement acceptance); step 8 adds the staff pages |
+| 2026-10-06 | 7 | e3ca156 | Service workspace: layout, overview, step detail with slots/approvals/team/COI, documents, Gantt, Service Log; document and approval rows; COI gate; workspace e2e tests. | Step 8 items already present where natural (step transitions, approvals, team nomination, agreement acceptance); step 8 adds the staff pages |
+| 2026-10-06 | 8 | (this commit) | Staff pages: My Work, triage queue, all services, finance; staff e2e tests. | — |
 
 ---
 
