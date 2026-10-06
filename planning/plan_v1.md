@@ -160,13 +160,14 @@ Tick sub-items as you go; tick the step only when its "Done when" holds.
   - [x] `api/storyline.test.ts` runs all ten chapters end to end through the api with no UI, including the negative cases (IR cannot approve without the checklist, team leader cannot approve their own opinion, wrong typed name rejected, kg/L mismatch rejected, auditor locked out until COI declared).
   - Done when: the full storyline can be executed in tests with no UI (✔ 69 tests), and a reload within the same tab preserves state while a new tab starts from fixtures (✔ by construction of `Store`; verified in the browser in step 4).
 
-- [ ] **Step 4 — App shell, mock auth, demo panel, flags**
-  - [ ] `/sign-in` persona picker, fake MFA screen, sign-out, org switcher for multi-org users; `AuthContext` provider; route guards (client vs `/staff`).
-  - [ ] `AppShell`: client navigation and staff navigation per PRD §7.1, role badge, notifications bell with unread count and dropdown, theme toggle, breadcrumbs.
-  - [ ] Design-system components with tests: `StatusChip`, `ActionPill`, `PhaseRail`, `DocumentRow`, `ApprovalRow`, `ProvenanceLine`, `DeclaredVerifiedPair`, `EvidenceChip`, `IterationAccordion`, `KpiTile` (donut, big number), `EmptyState`, `PreviewOverlay`, `ConfirmTyped`, `DataTable` (sort, filter, cursor-less pagination).
-  - [ ] `DemoPanel`: persona switch, storyline chapter jump links, slow network, fail next call, reset demo, "presenter notes" toggle.
-  - [ ] `useFeature(key)` hook, `/features` mock, `PreviewOverlay` wiring, interest capture.
-  - Done when: a presenter can sign in as any persona, navigate every nav entry (pages may be placeholders), and reset the demo.
+- [x] **Step 4 — App shell, mock auth, demo panel, flags**
+  - [x] `/sign-in`: realistic e-mail/password form, passkey and magic-link buttons, fake MFA step (any six digits), all non-functional and bypassed; persona picker "Demo: enter as…" grouped by client orgs and VERIFASSUR; sign-out; org switcher in the sidebar footer; `AuthProvider`/`useMe`; `_app` layout route guard redirects to `/sign-in` and staff personas to `/staff`.
+  - [x] `AppShell`: client and staff navigation per PRD §7.1 (`shell/nav.ts`), "Soon" marker on preview entries, role badge, notifications bell with unread count and dropdown that marks read and navigates, theme toggle, account menu, mobile drawer, presenter-notes banner.
+  - [x] Components: `StatusChip`, `ActionPill`, `PhaseRail`, `KpiNumber/KpiDonut/KpiBars`, `EmptyState`, `PageHeader` (breadcrumbs), `ProvenanceLine` + `Hash`, `ShowDontDoDialog` (the "show, don't do" pattern with Back to demo / Simulate), `ConfirmTyped`, `PreviewOverlay` + `InterestButton` + `ComingBadge` + `useFeature`, UI primitives (button, card, badge, input/textarea/select/field, dialog, dropdown, tabs, switch, checkbox, progress, tooltip, avatar, skeleton, alert, table). `DocumentRow`, `ApprovalRow`, `DeclaredVerifiedPair`, `EvidenceChip`, `IterationAccordion` and `DataTable` are built with the screens that need them (steps 7, 10, 11).
+  - [x] `DemoPanel` (floating "Demo" button, Ctrl+.): storyline chapter links that switch persona and navigate, persona grid, slow network, fail next call, presenter notes, theme, reset with typed confirmation.
+  - [x] Feature flags: `useFeature`, preview overlay with interest capture; Integrations page already real (API keys, MCP, webhooks, import in preview; "further out" cards); Account and Organisation pages functional with show-don't-do dialogs for passkey and invitations.
+  - [x] Playwright smoke tests: persona enters the client portal; verifier lands on `/staff`. `scripts/screenshot.mjs` captures key screens from the build.
+  - Done when: a presenter can sign in as any persona, navigate every nav entry (pages may be placeholders), and reset the demo. ✔
 
 - [ ] **Step 5 — Client home, engagements lists, projects**
   - [ ] Client Home: progress bars (ongoing vs completed this year), "Needs your action" cards (one next action per service, orange pill, due), latest notifications, records shortcuts.
@@ -286,6 +287,13 @@ Tick sub-items as you go; tick the step only when its "Done when" holds.
 | `demo/src/api/core.ts` | Auth context, authorize, call wrapper, audit, notify, ids, errors |
 | `demo/src/api/*.ts` | One module per resource (see step 3); `index.ts` barrel |
 | `demo/src/api/storyline.test.ts` | End-to-end storyline through the api |
+| `demo/src/lib/cn.ts`, `format.ts`, `query.tsx`, `auth.tsx`, `theme.ts` | Class merge, formatting, query client + `useAppMutation`, session context, theme |
+| `demo/src/components/ui/*` | UI primitives (shadcn-style on Radix) |
+| `demo/src/components/*.tsx` | Domain components: status chip, action pill, phase rail, KPI tiles, empty state, page header, provenance, show-don't-do dialog, typed confirm, preview overlay, placeholder |
+| `demo/src/components/shell/*` | App shell, nav config, notifications bell, demo panel |
+| `demo/src/routes/__root.tsx`, `_app.tsx`, `sign-in.tsx`, `verify.$code.tsx` | Providers, guarded layout, sign-in, public statement route |
+| `demo/src/routes/_app/**` | One file per screen; placeholders until their step |
+| `demo/scripts/screenshot.mjs` | Screenshot capture from the production build |
 
 ---
 
@@ -297,7 +305,8 @@ Tick sub-items as you go; tick the step only when its "Done when" holds.
 | 2026-10-05 | 0 | 3d11574 | Repo initialised, planning docs, CLAUDE.md, README, .gitignore pushed to `main`. | — |
 | 2026-10-05 | 1 | a3134a2 | `demo/` scaffolded: Vite 8, React 19, TS 6, Tailwind 4, TanStack Router, tokens, tests, Playwright, deploy workflow; GitHub Pages enabled. CI run 37409270913 green; https://rbndchsn.github.io/digital-platform/ returns 200. | Cloudflare Pages job skipped until repo secrets `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID` exist |
 | 2026-10-05 | 2 | 21ad0c7 | Domain layer: enums, zod schemas, units + GWP, inventory and decarb compute, 8 workflow templates, instantiate, 7 state machines, next-action, policy. 46 unit tests. | Schema coverage counted in step 3 via fixture validation |
-| 2026-10-06 | 3 | (this commit) | Mock backend: store with sessionStorage snapshot, latency toggles, programmatic seed for the whole storyline, 15 api modules, fixture validation and end-to-end storyline tests. 69 tests. | Storyline §2.4 adjusted: the opinion chapter (8) runs on the insetting service `svc_nw_decarb_2025`, the evidence and findings chapters (5, 6) on the inventory service `svc_nw_inv_2025` |
+| 2026-10-06 | 3 | 7f72cac | Mock backend: store with sessionStorage snapshot, latency toggles, programmatic seed for the whole storyline, 15 api modules, fixture validation and end-to-end storyline tests. 69 tests. | Storyline §2.4 adjusted: the opinion chapter (8) runs on the insetting service `svc_nw_decarb_2025`, the evidence and findings chapters (5, 6) on the inventory service `svc_nw_inv_2025` |
+| 2026-10-06 | 4 | (this commit) | App shell, sign-in with persona picker, navigation for both portals, notifications bell, demo panel, UI primitives and domain components, feature previews, Integrations/Account/Organisation pages, placeholder routes for every nav entry, Playwright smoke tests in Chromium. | Lint reports 5 fast-refresh warnings (hooks exported next to components); harmless, left as warnings |
 
 ---
 

@@ -9,50 +9,459 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
+import { Route as AppRouteImport } from './routes/_app'
+import { Route as SignInRouteImport } from './routes/sign-in'
+import { Route as AppIndexRouteImport } from './routes/_app/index'
+import { Route as AppAccountRouteImport } from './routes/_app/account'
+import { Route as AppIntegrationsRouteImport } from './routes/_app/integrations'
+import { Route as AppOrganisationRouteImport } from './routes/_app/organisation'
+import { Route as VerifyCodeRouteImport } from './routes/verify.$code'
+import { Route as AppEngagementsIndexRouteImport } from './routes/_app/engagements/index'
+import { Route as AppEngagementsServiceIdRouteImport } from './routes/_app/engagements/$serviceId'
+import { Route as AppEngagementsNewRouteImport } from './routes/_app/engagements/new'
+import { Route as AppProjectsIndexRouteImport } from './routes/_app/projects/index'
+import { Route as AppRecordsEmissionFactorsRouteImport } from './routes/_app/records/emission-factors'
+import { Route as AppStaffIndexRouteImport } from './routes/_app/staff/index'
+import { Route as AppStaffClientsRouteImport } from './routes/_app/staff/clients'
+import { Route as AppStaffFinanceRouteImport } from './routes/_app/staff/finance'
+import { Route as AppStaffServicesRouteImport } from './routes/_app/staff/services'
+import { Route as AppStaffTemplatesRouteImport } from './routes/_app/staff/templates'
+import { Route as AppStaffTriageRouteImport } from './routes/_app/staff/triage'
+import { Route as AppRecordsDecarbUnitsIndexRouteImport } from './routes/_app/records/decarb-units/index'
+import { Route as AppRecordsInventoriesIndexRouteImport } from './routes/_app/records/inventories/index'
 
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const AppRoute = AppRouteImport.update({
+  id: '/_app',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SignInRoute = SignInRouteImport.update({
+  id: '/sign-in',
+  path: '/sign-in',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppIndexRoute = AppIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAccountRoute = AppAccountRouteImport.update({
+  id: '/account',
+  path: '/account',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppIntegrationsRoute = AppIntegrationsRouteImport.update({
+  id: '/integrations',
+  path: '/integrations',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppOrganisationRoute = AppOrganisationRouteImport.update({
+  id: '/organisation',
+  path: '/organisation',
+  getParentRoute: () => AppRoute,
+} as any)
+const VerifyCodeRoute = VerifyCodeRouteImport.update({
+  id: '/verify/$code',
+  path: '/verify/$code',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppEngagementsIndexRoute = AppEngagementsIndexRouteImport.update({
+  id: '/engagements/',
+  path: '/engagements/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppEngagementsServiceIdRoute = AppEngagementsServiceIdRouteImport.update({
+  id: '/engagements/$serviceId',
+  path: '/engagements/$serviceId',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppEngagementsNewRoute = AppEngagementsNewRouteImport.update({
+  id: '/engagements/new',
+  path: '/engagements/new',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppProjectsIndexRoute = AppProjectsIndexRouteImport.update({
+  id: '/projects/',
+  path: '/projects/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppRecordsEmissionFactorsRoute =
+  AppRecordsEmissionFactorsRouteImport.update({
+    id: '/records/emission-factors',
+    path: '/records/emission-factors',
+    getParentRoute: () => AppRoute,
+  } as any)
+const AppStaffIndexRoute = AppStaffIndexRouteImport.update({
+  id: '/staff/',
+  path: '/staff/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppStaffClientsRoute = AppStaffClientsRouteImport.update({
+  id: '/staff/clients',
+  path: '/staff/clients',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppStaffFinanceRoute = AppStaffFinanceRouteImport.update({
+  id: '/staff/finance',
+  path: '/staff/finance',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppStaffServicesRoute = AppStaffServicesRouteImport.update({
+  id: '/staff/services',
+  path: '/staff/services',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppStaffTemplatesRoute = AppStaffTemplatesRouteImport.update({
+  id: '/staff/templates',
+  path: '/staff/templates',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppStaffTriageRoute = AppStaffTriageRouteImport.update({
+  id: '/staff/triage',
+  path: '/staff/triage',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppRecordsDecarbUnitsIndexRoute =
+  AppRecordsDecarbUnitsIndexRouteImport.update({
+    id: '/records/decarb-units/',
+    path: '/records/decarb-units/',
+    getParentRoute: () => AppRoute,
+  } as any)
+const AppRecordsInventoriesIndexRoute =
+  AppRecordsInventoriesIndexRouteImport.update({
+    id: '/records/inventories/',
+    path: '/records/inventories/',
+    getParentRoute: () => AppRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
+  '/': typeof AppIndexRoute
+  '/sign-in': typeof SignInRoute
+  '/account': typeof AppAccountRoute
+  '/integrations': typeof AppIntegrationsRoute
+  '/organisation': typeof AppOrganisationRoute
+  '/verify/$code': typeof VerifyCodeRoute
+  '/engagements/$serviceId': typeof AppEngagementsServiceIdRoute
+  '/engagements/new': typeof AppEngagementsNewRoute
+  '/records/emission-factors': typeof AppRecordsEmissionFactorsRoute
+  '/staff/clients': typeof AppStaffClientsRoute
+  '/staff/finance': typeof AppStaffFinanceRoute
+  '/staff/services': typeof AppStaffServicesRoute
+  '/staff/templates': typeof AppStaffTemplatesRoute
+  '/staff/triage': typeof AppStaffTriageRoute
+  '/engagements/': typeof AppEngagementsIndexRoute
+  '/projects/': typeof AppProjectsIndexRoute
+  '/staff/': typeof AppStaffIndexRoute
+  '/records/decarb-units/': typeof AppRecordsDecarbUnitsIndexRoute
+  '/records/inventories/': typeof AppRecordsInventoriesIndexRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
+  '/sign-in': typeof SignInRoute
+  '/account': typeof AppAccountRoute
+  '/integrations': typeof AppIntegrationsRoute
+  '/organisation': typeof AppOrganisationRoute
+  '/verify/$code': typeof VerifyCodeRoute
+  '/': typeof AppIndexRoute
+  '/engagements/$serviceId': typeof AppEngagementsServiceIdRoute
+  '/engagements/new': typeof AppEngagementsNewRoute
+  '/records/emission-factors': typeof AppRecordsEmissionFactorsRoute
+  '/staff/clients': typeof AppStaffClientsRoute
+  '/staff/finance': typeof AppStaffFinanceRoute
+  '/staff/services': typeof AppStaffServicesRoute
+  '/staff/templates': typeof AppStaffTemplatesRoute
+  '/staff/triage': typeof AppStaffTriageRoute
+  '/engagements': typeof AppEngagementsIndexRoute
+  '/projects': typeof AppProjectsIndexRoute
+  '/staff': typeof AppStaffIndexRoute
+  '/records/decarb-units': typeof AppRecordsDecarbUnitsIndexRoute
+  '/records/inventories': typeof AppRecordsInventoriesIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
+  '/_app': typeof AppRouteWithChildren
+  '/sign-in': typeof SignInRoute
+  '/_app/account': typeof AppAccountRoute
+  '/_app/integrations': typeof AppIntegrationsRoute
+  '/_app/organisation': typeof AppOrganisationRoute
+  '/verify/$code': typeof VerifyCodeRoute
+  '/_app/': typeof AppIndexRoute
+  '/_app/engagements/$serviceId': typeof AppEngagementsServiceIdRoute
+  '/_app/engagements/new': typeof AppEngagementsNewRoute
+  '/_app/records/emission-factors': typeof AppRecordsEmissionFactorsRoute
+  '/_app/staff/clients': typeof AppStaffClientsRoute
+  '/_app/staff/finance': typeof AppStaffFinanceRoute
+  '/_app/staff/services': typeof AppStaffServicesRoute
+  '/_app/staff/templates': typeof AppStaffTemplatesRoute
+  '/_app/staff/triage': typeof AppStaffTriageRoute
+  '/_app/engagements/': typeof AppEngagementsIndexRoute
+  '/_app/projects/': typeof AppProjectsIndexRoute
+  '/_app/staff/': typeof AppStaffIndexRoute
+  '/_app/records/decarb-units/': typeof AppRecordsDecarbUnitsIndexRoute
+  '/_app/records/inventories/': typeof AppRecordsInventoriesIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/sign-in'
+    | '/account'
+    | '/integrations'
+    | '/organisation'
+    | '/verify/$code'
+    | '/engagements/$serviceId'
+    | '/engagements/new'
+    | '/records/emission-factors'
+    | '/staff/clients'
+    | '/staff/finance'
+    | '/staff/services'
+    | '/staff/templates'
+    | '/staff/triage'
+    | '/engagements/'
+    | '/projects/'
+    | '/staff/'
+    | '/records/decarb-units/'
+    | '/records/inventories/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/sign-in'
+    | '/account'
+    | '/integrations'
+    | '/organisation'
+    | '/verify/$code'
+    | '/'
+    | '/engagements/$serviceId'
+    | '/engagements/new'
+    | '/records/emission-factors'
+    | '/staff/clients'
+    | '/staff/finance'
+    | '/staff/services'
+    | '/staff/templates'
+    | '/staff/triage'
+    | '/engagements'
+    | '/projects'
+    | '/staff'
+    | '/records/decarb-units'
+    | '/records/inventories'
+  id:
+    | '__root__'
+    | '/_app'
+    | '/sign-in'
+    | '/_app/account'
+    | '/_app/integrations'
+    | '/_app/organisation'
+    | '/verify/$code'
+    | '/_app/'
+    | '/_app/engagements/$serviceId'
+    | '/_app/engagements/new'
+    | '/_app/records/emission-factors'
+    | '/_app/staff/clients'
+    | '/_app/staff/finance'
+    | '/_app/staff/services'
+    | '/_app/staff/templates'
+    | '/_app/staff/triage'
+    | '/_app/engagements/'
+    | '/_app/projects/'
+    | '/_app/staff/'
+    | '/_app/records/decarb-units/'
+    | '/_app/records/inventories/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
+  AppRoute: typeof AppRouteWithChildren
+  SignInRoute: typeof SignInRoute
+  VerifyCodeRoute: typeof VerifyCodeRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
+    '/_app': {
+      id: '/_app'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AppRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sign-in': {
+      id: '/sign-in'
+      path: '/sign-in'
+      fullPath: '/sign-in'
+      preLoaderRoute: typeof SignInRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_app/': {
+      id: '/_app/'
       path: '/'
       fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+      preLoaderRoute: typeof AppIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/account': {
+      id: '/_app/account'
+      path: '/account'
+      fullPath: '/account'
+      preLoaderRoute: typeof AppAccountRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/integrations': {
+      id: '/_app/integrations'
+      path: '/integrations'
+      fullPath: '/integrations'
+      preLoaderRoute: typeof AppIntegrationsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/organisation': {
+      id: '/_app/organisation'
+      path: '/organisation'
+      fullPath: '/organisation'
+      preLoaderRoute: typeof AppOrganisationRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/verify/$code': {
+      id: '/verify/$code'
+      path: '/verify/$code'
+      fullPath: '/verify/$code'
+      preLoaderRoute: typeof VerifyCodeRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_app/engagements/': {
+      id: '/_app/engagements/'
+      path: '/engagements'
+      fullPath: '/engagements/'
+      preLoaderRoute: typeof AppEngagementsIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/engagements/$serviceId': {
+      id: '/_app/engagements/$serviceId'
+      path: '/engagements/$serviceId'
+      fullPath: '/engagements/$serviceId'
+      preLoaderRoute: typeof AppEngagementsServiceIdRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/engagements/new': {
+      id: '/_app/engagements/new'
+      path: '/engagements/new'
+      fullPath: '/engagements/new'
+      preLoaderRoute: typeof AppEngagementsNewRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/projects/': {
+      id: '/_app/projects/'
+      path: '/projects'
+      fullPath: '/projects/'
+      preLoaderRoute: typeof AppProjectsIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/records/emission-factors': {
+      id: '/_app/records/emission-factors'
+      path: '/records/emission-factors'
+      fullPath: '/records/emission-factors'
+      preLoaderRoute: typeof AppRecordsEmissionFactorsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/staff/': {
+      id: '/_app/staff/'
+      path: '/staff'
+      fullPath: '/staff/'
+      preLoaderRoute: typeof AppStaffIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/staff/clients': {
+      id: '/_app/staff/clients'
+      path: '/staff/clients'
+      fullPath: '/staff/clients'
+      preLoaderRoute: typeof AppStaffClientsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/staff/finance': {
+      id: '/_app/staff/finance'
+      path: '/staff/finance'
+      fullPath: '/staff/finance'
+      preLoaderRoute: typeof AppStaffFinanceRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/staff/services': {
+      id: '/_app/staff/services'
+      path: '/staff/services'
+      fullPath: '/staff/services'
+      preLoaderRoute: typeof AppStaffServicesRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/staff/templates': {
+      id: '/_app/staff/templates'
+      path: '/staff/templates'
+      fullPath: '/staff/templates'
+      preLoaderRoute: typeof AppStaffTemplatesRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/staff/triage': {
+      id: '/_app/staff/triage'
+      path: '/staff/triage'
+      fullPath: '/staff/triage'
+      preLoaderRoute: typeof AppStaffTriageRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/records/decarb-units/': {
+      id: '/_app/records/decarb-units/'
+      path: '/records/decarb-units'
+      fullPath: '/records/decarb-units/'
+      preLoaderRoute: typeof AppRecordsDecarbUnitsIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/records/inventories/': {
+      id: '/_app/records/inventories/'
+      path: '/records/inventories'
+      fullPath: '/records/inventories/'
+      preLoaderRoute: typeof AppRecordsInventoriesIndexRouteImport
+      parentRoute: typeof AppRoute
     }
   }
 }
 
+interface AppRouteChildren {
+  AppAccountRoute: typeof AppAccountRoute
+  AppIntegrationsRoute: typeof AppIntegrationsRoute
+  AppOrganisationRoute: typeof AppOrganisationRoute
+  AppIndexRoute: typeof AppIndexRoute
+  AppEngagementsServiceIdRoute: typeof AppEngagementsServiceIdRoute
+  AppEngagementsNewRoute: typeof AppEngagementsNewRoute
+  AppRecordsEmissionFactorsRoute: typeof AppRecordsEmissionFactorsRoute
+  AppStaffClientsRoute: typeof AppStaffClientsRoute
+  AppStaffFinanceRoute: typeof AppStaffFinanceRoute
+  AppStaffServicesRoute: typeof AppStaffServicesRoute
+  AppStaffTemplatesRoute: typeof AppStaffTemplatesRoute
+  AppStaffTriageRoute: typeof AppStaffTriageRoute
+  AppEngagementsIndexRoute: typeof AppEngagementsIndexRoute
+  AppProjectsIndexRoute: typeof AppProjectsIndexRoute
+  AppStaffIndexRoute: typeof AppStaffIndexRoute
+  AppRecordsDecarbUnitsIndexRoute: typeof AppRecordsDecarbUnitsIndexRoute
+  AppRecordsInventoriesIndexRoute: typeof AppRecordsInventoriesIndexRoute
+}
+
+const AppRouteChildren: AppRouteChildren = {
+  AppAccountRoute: AppAccountRoute,
+  AppIntegrationsRoute: AppIntegrationsRoute,
+  AppOrganisationRoute: AppOrganisationRoute,
+  AppIndexRoute: AppIndexRoute,
+  AppEngagementsServiceIdRoute: AppEngagementsServiceIdRoute,
+  AppEngagementsNewRoute: AppEngagementsNewRoute,
+  AppRecordsEmissionFactorsRoute: AppRecordsEmissionFactorsRoute,
+  AppStaffClientsRoute: AppStaffClientsRoute,
+  AppStaffFinanceRoute: AppStaffFinanceRoute,
+  AppStaffServicesRoute: AppStaffServicesRoute,
+  AppStaffTemplatesRoute: AppStaffTemplatesRoute,
+  AppStaffTriageRoute: AppStaffTriageRoute,
+  AppEngagementsIndexRoute: AppEngagementsIndexRoute,
+  AppProjectsIndexRoute: AppProjectsIndexRoute,
+  AppStaffIndexRoute: AppStaffIndexRoute,
+  AppRecordsDecarbUnitsIndexRoute: AppRecordsDecarbUnitsIndexRoute,
+  AppRecordsInventoriesIndexRoute: AppRecordsInventoriesIndexRoute,
+}
+
+const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
+  AppRoute: AppRouteWithChildren,
+  SignInRoute: SignInRoute,
+  VerifyCodeRoute: VerifyCodeRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
