@@ -1,6 +1,6 @@
 # Tasks — PRD 0001 VERIFASSUR_X Assurance Platform (Release 1)
 
-Source PRD: `0001-prd-verifassurx-platform.md`. Parent tasks map to the Release 1 milestones in PRD §13 (M1–M6) plus a foundation task (M0). Work top to bottom; each parent task ends in a deployable increment on the `dev` environment.
+Source PRD: `0001-prd-verifassurx-platform.md` (Draft v0.2, 2026-10-06). Parent tasks map to the Release 1 milestones in PRD §13 (M1–M6, M6b) plus a foundation task (M0). Work top to bottom; each parent task ends in a deployable increment on the `dev` environment. v0.2 added sub-tasks 3.11–3.14, 5.11, 6.8, 11.8 and parent task 13.0 (Administration console).
 
 Current state: no application code exists yet. The only related code in the workspace is `verra-v5-qa/` (a TypeScript Cloudflare Worker with `wrangler.toml`), whose wrangler and tsconfig conventions can be copied. The new monorepo root is `C:\Projects\MyPythonProjects\MyScripts\digital-platform\verifassurx\`; all paths below are relative to it.
 
@@ -40,6 +40,8 @@ Current state: no application code exists yet. The only related code in the work
 - `apps/app/src/api/routes/staff.ts` - triage, my-work, templates, clients, flags, interest.
 - `apps/app/src/api/routes/features.ts` - effective flags and interest.
 - `apps/app/src/api/routes/invoices.ts`
+- `apps/app/src/api/routes/admin.ts` - ADMIN console (PRD §6.13): users, organisations, settings, announcements, global audit and auth events, COI register, break-glass, stats, data operations.
+- `apps/app/src/api/routes/overrides.ts` - manager overrides (PRD §6.14): step override, service override, team reassign, planned dates.
 - `apps/app/src/auth/better-auth.ts` - Better Auth instance (Drizzle D1 adapter, plugins).
 - `apps/app/src/auth/access-jwt.ts` - Cloudflare Access JWT validation for `/staff/*`.
 - `apps/app/src/jobs/queue.ts` - queue consumer dispatcher (email, hash, zip, pdf, notify).
@@ -54,6 +56,7 @@ Current state: no application code exists yet. The only related code in the work
 - `apps/app/src/web/api/client.ts` - typed fetch client generated from OpenAPI.
 - `apps/app/src/web/layouts/AppShell.tsx` - nav, org switcher, role badge, notifications bell.
 - `apps/app/src/web/pages/...` - one folder per screen (see tasks).
+- `apps/app/src/web/pages/admin/*` - Administration portal (`/admin/*`): dashboard, users and organisations, audit log, COI register, settings.
 - `apps/app/src/web/components/...` - phase rail, status chip, action pill, document row, approval row, iteration accordion, gantt, kpi tiles, evidence chip, declared/verified pair, preview overlay.
 - `apps/app/test/*.test.ts` - Vitest with `@cloudflare/vitest-pool-workers` against real bindings.
 - `apps/app/e2e/*.spec.ts` - Playwright end-to-end flows.
@@ -128,6 +131,10 @@ Current state: no application code exists yet. The only related code in the work
   - [ ] 3.8 Add Turnstile verification on sign-in and magic-link request; add Rate Limiting on `/auth/*` (10/min per IP) and on `/api/v1/*` (600/min per session).
   - [ ] 3.9 Org routes: `GET/PATCH /orgs/me`, members list, role change, disable member; audit events for every auth and role event.
   - [ ] 3.10 Web: sign-in, magic link, MFA enrol/verify, passkey register, accept invitation, org switcher, account page (profile, MFA, passkeys); Playwright test for invite → sign-in → MFA → dashboard.
+  - [ ] 3.11 ADMIN role (PRD §3.2): `platform_admin` as an org-level role on the verifier org; policy allow-list (`org.read`, every `*.read`, `admin.*`, flag management) and explicit denial of every engagement and record mutation; unit tests per denied action (step transition, approval, upload, finding, iteration, record verify, invoice).
+  - [ ] 3.12 User lifecycle (FR-63/64/65): `users.last_sign_in_at`, `deactivated_at/by/reason`, `anonymised_at`; deactivate (disable memberships, revoke sessions, remove from active teams, reassignment summary, notify managers), reactivate, reset password, reset MFA and passkeys, force sign-out, anonymise after retention; never delete.
+  - [ ] 3.13 Organisation lifecycle (FR-66): create with first admin invitation, rename, legal name and country, suspend (members cannot sign in) and unsuspend; `portfolio_manager_user_id` column (R2, no behaviour yet).
+  - [ ] 3.14 Record every authentication event as `audit_events` `auth.*` rows (sign-in, failed sign-in, MFA, password reset, role change, force sign-out) for the ADMIN auth log (FR-68).
 
 - [ ] 4.0 M1c — Web shell, design system, feature flags and previews
   - [ ] 4.1 Create `packages/ui` with Tailwind config, `tokens.css` (teal/green primary, status colours from PRD §7.4, dark mode), shadcn/ui setup, Inter font, lucide icons.
@@ -150,6 +157,7 @@ Current state: no application code exists yet. The only related code in the work
   - [ ] 5.8 Staff triage: `GET /staff/triage`, `POST /services/:id/triage` (accept with template → instantiates workflow, status `contracting`; or decline with reason), triage page and "My Work" (`GET /staff/my-work`) with blocking pills and phase | step chips.
   - [ ] 5.9 Service hold/resume/cancel/close endpoints with reasons and audit; `GET /services/:id/next-action`; Service Overview page with phase rail, next-action banner, team contacts, key dates.
   - [ ] 5.10 Step transition endpoint `POST /services/:id/steps/:stepId/transition` with policy check, planned date edits by team leader, and the step detail page skeleton (header, status chip, role badge, slots area, approvals area, Close step).
+  - [ ] 5.11 Manager overrides (FR-73, FR-74, FR-76): `stepOverride` machine in `packages/workflow` (complete / reopen / skip from any state, refused for `team_nomination` and `final_opinion` → completed); `POST /services/:id/steps/:stepId/override` and `POST /services/:id/override` with mandatory reason, audit events `step.overridden` / `service.overridden` carrying `reason`, notifications to the step owner party and client contact, next action recomputed; `PATCH /services/:id/steps/:stepId/plan` (`step.replanned`); "Override status" menu with reason dialog and editable planned dates on the step detail, override rows highlighted in the Service Log; tests.
 
 - [ ] 6.0 M2b — Contracting: approvals, team nomination, COI, agreement, invoices
   - [ ] 6.1 Approvals API: list, `POST /services/:id/approvals/:id/decide` (technical scope and impartiality by manager; audit plan acceptance by client; contract review); block team nomination until both scope and impartiality approved.
@@ -159,6 +167,7 @@ Current state: no application code exists yet. The only related code in the work
   - [ ] 6.5 UI: step detail for Contracting steps (CPF form view, upload slots, approval rows with approver/date/tick), team & COI panel (staff), agreement acceptance dialog (client), quote/invoice card.
   - [ ] 6.6 Notifications for: request received, triaged, document requested, COI required, team assignment, approvals decided, agreement accepted, invoice added (uses task 11.1 service; stub until then).
   - [ ] 6.7 Playwright: request → triage → approvals → team + COI → agreement accepted → Planning open.
+  - [ ] 6.8 Team reassignment (FR-75): `POST /services/:id/team/:memberId/reassign` `{to_user_id, reason}` keeping the service role, enforcing independent-reviewer exclusivity, creating the COI requirement for the new member, audit `team.reassigned`, notifications to both people; "Reassign" action on the team panel for managers.
 
 - [ ] 7.0 M2c — Evidence vault
   - [ ] 7.1 Implement `services/r2.ts`: presigned PUT (15 min) and GET (5 min) with `aws4fetch`, immutable key scheme `org/{orgId}/doc/{documentId}/v{n}/{ulid}-{filename}`; fallback Worker-proxied upload for files < 100 MB.
@@ -207,6 +216,7 @@ Current state: no application code exists yet. The only related code in the work
   - [ ] 11.5 Client dashboard endpoint and page: progress counters, "needs your action" (one next action per service ranked by due), latest notifications, records shortcuts; staff "My Work" polish.
   - [ ] 11.6 Past services table (filters, download-all per service) and Documents tab cross-service search (LIKE on title/filename).
   - [ ] 11.7 Product analytics events to Analytics Engine (request submitted, step closed, finding raised/closed, opinion issued, interest clicked); Sentry error tracking.
+  - [ ] 11.8 `GET /admin/stats` (FR-71) computed from live data with year / client / service-type filters: engagements started / issued / closed per year, client, type and standard, staff member and role; revenue quoted / invoiced / paid / outstanding per year, client and type (ADMIN only); median cycle times request→contract and contract→issue; overdue steps; open blocking findings; COI pending; workload per staff member; client concentration. Tests against the seed.
 
 - [ ] 12.0 M6 — Hardening, templates admin, pilot readiness
   - [ ] 12.1 Staff Templates admin: list, edit template JSON with schema validation and version bump; new services use the latest active version.
@@ -217,3 +227,14 @@ Current state: no application code exists yet. The only related code in the work
   - [ ] 12.6 End-to-end Playwright suite covering PRD user stories 1–16; accessibility audit (axe) on all pages.
   - [ ] 12.7 Staging environment with Cloudflare Access on staff routes, seed two pilot client orgs, onboarding guide, support mailbox, and feedback form; run the pilot checklist.
   - [ ] 12.8 Publish OpenAPI spec at `/api/v1/openapi.json` and Swagger UI at `/api/docs` (staff only) so Release 2 API and MCP work starts from the live contract.
+
+- [ ] 13.0 M6b — Administration console (PRD §6.13, §7.1 `/admin/*`)
+  - [ ] 13.1 `routes/admin.ts` skeleton behind `platform_admin` + `requireRecentAuth(15)`; Administration portal navigation (Dashboard, Users and organisations, Audit log, COI register, Settings); ADMIN lands on `/admin`; every engagement and record screen hides action controls and shows the "Platform administrator: read-only view" banner when the viewer is ADMIN.
+  - [ ] 13.2 Users page: table across organisations (name, e-mail, org, role, status, MFA, last sign-in, open work) with filters; row actions wired to 3.12 (edit, change role, deactivate with typed confirmation and reassignment summary dialog, reactivate, reset password, reset MFA, force sign-out, anonymise); invite dialog.
+  - [ ] 13.3 Organisations tab: create, rename, legal name and country, suspend / unsuspend with typed confirmation; per-org counts and flag states; read-only "Portfolio manager" column under the `portfolios` preview badge.
+  - [ ] 13.4 Settings page: feature flag defaults (`PUT /admin/flags/defaults`), announcement banner CRUD rendered in the app shell for the chosen audience and window, maintenance mode (banner + mutation block for non-ADMIN during the window), notification templates editor, branding (name, logo upload to R2, primary colour), `platform_settings` row.
+  - [ ] 13.5 Audit log page: `GET /admin/audit` with cursor pagination and org / actor / type / entity / date / text filters, auth-events view, CSV export job; COI register page from `GET /admin/coi-register` with filters and export.
+  - [ ] 13.6 Break-glass (FR-70): `POST /admin/break-glass` grants session-scoped evidence access for one service, audit `admin.break_glass` with reason, each content read logged as `admin.break_glass_read`, managers notified; document rows for ADMIN show "Request access" until granted.
+  - [ ] 13.7 Dashboard page on `GET /admin/stats` (11.8): KPI tiles, charts per year / client / type, cycle-time tiles, workload table, client concentration, money tiles; filters.
+  - [ ] 13.8 Data operations (FR-72): `POST /admin/exports` (org export zip with records, document manifest and audit log; platform audit export) as queue jobs, `GET /admin/backups` (last D1 export, last R2 replication), `GET /admin/retention-report`, anonymisation trigger; audit events for each.
+  - [ ] 13.9 Tests: policy denials for ADMIN on every engagement mutation; deactivation reassignment summary; stats against the seed; Playwright: ADMIN deactivates a user and finds it in the audit log, ADMIN opens an engagement and sees no action controls, manager overrides a step with a reason and the client's next action changes.

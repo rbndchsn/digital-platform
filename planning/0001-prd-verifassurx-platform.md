@@ -2,11 +2,12 @@
 
 | | |
 |---|---|
-| Status | Draft v0.1 |
-| Date | 2026-10-05 |
+| Status | Draft v0.2 |
+| Date | 2026-10-06 |
 | Author | Robin Duchesneau with Claude |
 | Source notes | `brainstorming.md` (same folder), 16 reference screenshots in `../assets/sourceimages/` |
 | Audience | Developers (junior to senior), designers, VERIFASSUR management |
+| Changes in v0.2 | ADMIN defined as the **platform administrator** (sees everything, changes no engagement or record data); manager **overrides** with mandatory reason; **Administration console** (§6.13, §7.1 `/admin/*`) with user, organisation and settings management, global audit, COI register, break-glass, statistics and money rollups; **portfolios** (R2, flag `portfolios`); matching data model, API, RBAC and release-plan updates. Decisions recorded in `plan_v1.md` §8. |
 
 ---
 
@@ -66,7 +67,7 @@ Two organisation types share one platform:
 
 | Role | Can |
 |---|---|
-| `verifier_manager` | Triage requests, approve technical scope and impartiality, nominate team, approve contracts, approve opinion iterations, close services, manage templates and feature flags for clients |
+| `verifier_manager` | Triage requests, approve technical scope and impartiality, nominate team, approve contracts, approve opinion iterations, close services, manage templates and feature flags for clients. **Overrides (§6.14), each with a mandatory reason:** force a step to `completed`, `in_progress` (reopen) or `skipped`; force a service status change (hold, resume, cancel, close, return to execution); reassign a team role to another person; change planned dates; edit verified figures on inventory lines, emission factors and `decarb_unit` records |
 | `verifier_team_leader` | Run the engagement: plan, open/close steps, raise findings, draft opinion iterations, request documents |
 | `verifier_auditor` | Work assigned steps, review evidence, raise findings |
 | `verifier_technical_expert` | Same as auditor, limited to assigned steps |
@@ -74,7 +75,26 @@ Two organisation types share one platform:
 | `verifier_coordinator` | Administrative: upload contract documents, schedule, manage invoices references, notifications |
 | `verifier_finance` | Quotes, invoice references, paid status |
 
-**Platform role**: `platform_admin` (VERIFASSUR IT) — tenant management, flags, system health. No access to client evidence content by default (break-glass with audit entry).
+**ADMIN — platform administrator** (`platform_admin`, held by VERIFASSUR IT / platform operations). ADMIN administers the **digital platform**, not clients, projects or staff work. It is an org-level role on the verifier org (`memberships.role = platform_admin`); there is no separate per-user flag.
+
+ADMIN **can**:
+- see everything on the platform: every organisation, user, project, service, step, document (metadata, versions, hashes), finding, iteration, statement, record, invoice, feature flag, interest signal, notification volume and audit event; see **money rollups** (quoted, invoiced, paid, outstanding by year, client and service type) — the only role that does;
+- manage **users**: invite, rename, change e-mail, job title and org role, deactivate and reactivate (never delete), reset password, reset MFA and passkeys, force sign-out, see last sign-in;
+- manage **organisations**: create, rename, change legal name and country, suspend and unsuspend;
+- manage **platform settings**: feature flag defaults and per-client states, announcement banner, maintenance mode, notification templates, branding;
+- read the **global audit log** and the **authentication event log**, export them, and read the **COI register** across engagements;
+- open the content of client evidence only through **break-glass** access with a typed reason, which is itself an audit event;
+- trigger data operations: export, backup, retention report, anonymisation of deactivated users after the retention period.
+
+ADMIN **cannot** (enforced in policy, and the UI shows no such control to ADMIN):
+- open, complete, reopen, skip, hold or plan a step; change a service status; triage, hold, resume, cancel or close a service;
+- decide any approval (technical scope, impartiality, contract, audit plan, agreement), nominate or reassign a team, decide a COI declaration;
+- upload, replace, accept, reject or delete a document; raise, respond to or transition a finding;
+- create, submit, review, approve or issue an opinion iteration;
+- create, edit, submit or verify records, or edit declared or verified figures;
+- add or change quotes and invoices (finance keeps managing them per engagement).
+
+Rationale: platform administration is separated from assurance decisions (ISO/IEC 17029 impartiality). Every ADMIN action is an audit event with actor, reason where applicable and before/after values, and requires recent re-authentication (§11.3).
 
 ### 3.3 Service team
 
@@ -103,9 +123,18 @@ A user is attached to a service with a **service role** (one of the verifier rol
 14. As an independent reviewer, I want the opinion iteration bundle, the checklist, and an approve / request-changes decision that is recorded with my name and time.
 15. As a manager, I want to approve an iteration and issue the opinion, which locks the documents and writes the verified figures to the client's records.
 16. As any verifier, I want a Service Log that shows every status change, upload, approval and decision with who and when.
+17. As a manager, I want to **override** a step or service status with a mandatory reason when the normal flow is stuck (a client that cannot supply a document, a step closed by mistake), reassign a team role when someone leaves, change planned dates and correct a verified figure, with every override written to the Service Log, the affected people notified and the next action recomputed.
+
+**Platform administrator (ADMIN)**
+18. As the platform administrator, I want to **see the whole picture**: every organisation, user, engagement, record and audit event, so I can support users and answer management questions without being able to change any engagement data.
+19. As the platform administrator, I want to **manage users and organisations**: invite, rename, change roles, deactivate (never delete) with a summary of the open work to hand to a manager, reset passwords, MFA and passkeys, force sign-out, create and suspend organisations.
+20. As the platform administrator, I want **platform settings** in one place: feature flag defaults and per-client states, the announcement banner, maintenance mode, notification templates and branding.
+21. As the platform administrator, I want **governance views**: the global audit log and authentication events with filters and export, and the register of conflict-of-interest declarations across all engagements.
+22. As the platform administrator, I want **rollups and statistics**: engagements by year, client, service type, standard and staff; revenue quoted, invoiced, paid and outstanding; cycle times; overdue steps; open blocking findings; workload; client concentration.
+23. As the platform administrator, I want **data operations**: export, backup status, retention report and anonymisation of deactivated users after the retention period, each with an audit entry; and break-glass access to evidence content with a typed reason when support requires it.
 
 **Machine (future, preview in Release 1)**
-17. As a client's carbon-accounting SaaS, I want to push an inventory into a draft request through an API or MCP tool so a human only has to review and submit.
+24. As a client's carbon-accounting SaaS, I want to push an inventory into a draft request through an API or MCP tool so a human only has to review and submit.
 
 ---
 
@@ -125,9 +154,12 @@ A user is attached to a service with a **service role** (one of the verifier rol
 - Home dashboard, past services, documents tab, basic KPI tiles.
 - Quotes and invoice references with paid status (no invoicing engine).
 - Feature flags with preview state and interest capture.
+- **Administration console** (`/admin/*`, §6.13) for the platform administrator: users, organisations, settings, global audit and auth logs, COI register, break-glass, statistics and money rollups, data operations.
+- **Manager overrides** (§6.14) with mandatory reason.
 
 ### 5.2 In scope — Preview in Release 1, live in Release 2
 
+- **Portfolios** (§6.15): a senior manager owns a handful of clients and their engagements; views and triage scoped by portfolio. Flag `portfolios`.
 - Spreadsheet template import for inventories and `decarb_unit` records.
 - REST API with per-org API keys (schemas published from day one; endpoints enabled by flag).
 - MCP server exposing the same operations as tools.
@@ -253,6 +285,40 @@ Numbered for traceability. "Must" = Release 1. "R2"/"R3" = later releases, shown
 - FR-61 R2: MCP server exposing tools `list_services`, `get_service`, `create_request`, `upload_evidence`, `submit_inventory`, `submit_decarb_unit_record`, `list_findings`, `respond_to_finding`, `get_opinion`. Authenticated by API key; every call logged as a submission with source `mcp`.
 - FR-62 R2: Outbound webhooks for service status, finding and opinion events.
 
+### 6.13 Administration (ADMIN console)
+
+All FR-63 to FR-72 are Release 1, available only to `platform_admin`. Every action in this block writes an `audit_events` row with `actor_user_id`, `event_type` (`admin.*`), `reason` where the action takes one, and `before_json` / `after_json`.
+
+- FR-63 **User management.** ADMIN must be able to list every user across organisations (name, e-mail, organisation, role, status, MFA enabled, last sign-in, open work count) with filters by organisation, role and status, and to: invite a user to an organisation with a role; rename; change e-mail and job title; change org role; **deactivate** and **reactivate**; reset password (sends a reset link); reset MFA and passkeys (next sign-in re-enrols); force sign-out (revokes all sessions); see last sign-in and active sessions. Users are **never deleted**.
+- FR-64 **Deactivation.** Deactivating a user sets `users.status = disabled`, records `deactivated_at`, `deactivated_by` and `deactivation_reason`, disables every membership, revokes sessions, removes the user from active service teams (`service_team.status = removed`), and returns a **reassignment summary**: services and roles held, open findings assigned, COI declarations pending, draft requests owned. The summary is shown to ADMIN and sent as a notification to the verifier managers (and to the client admins for a client user), who reassign the work through the normal team and finding tools (or the manager override §6.14). Reactivation restores the memberships but not the team roles.
+- FR-65 **Anonymisation.** After the retention period (§9.5) ADMIN may anonymise a deactivated user: name and e-mail replaced by a pseudonym, audit events keep the user id. Requires a typed confirmation and a reason; irreversible; logged.
+- FR-66 **Organisation management.** ADMIN must be able to create a client organisation (name, legal name, country, registration number, first admin invitation), rename it, change legal name and country, **suspend** and unsuspend it (suspended: members cannot sign in, data retained, services shown as frozen to staff), and see per-organisation counts (users, ongoing and closed services, verified records) and its feature flag states.
+- FR-67 **Platform settings.** Feature flag defaults and per-client states (FR-58/59, editable by ADMIN as well as by managers); **announcement banner** (title, body, tone, audience `all | clients | staff`, start and end) shown in the app shell to everyone in the audience; **maintenance mode** (message, scheduled window; the app shows a banner and blocks mutations for non-ADMIN users during the window); notification templates (subject and body per notification type); branding (product name, logo, primary colour used on the statement page and e-mails).
+- FR-68 **Global audit log and authentication log.** ADMIN must be able to read every `audit_events` row across organisations, filtered by organisation, actor, event type, entity, date range and free text, and export the filtered result as CSV. Authentication events (`auth.*`: sign-in, failed sign-in, MFA, password reset, role change, API key use) are shown as a separate view of the same log.
+- FR-69 **COI register.** ADMIN must be able to list every conflict-of-interest declaration across engagements: person, service, service role, declaration (clear / potential conflict), details, status, decided by, dates; filters by status, person and client; export CSV.
+- FR-70 **Break-glass evidence access.** ADMIN sees document metadata (title, versions, hashes, status) everywhere but may open or download evidence content only after a **break-glass** request with a typed reason, valid for the current session and that service. The request and each subsequent content access are audit events (`admin.break_glass`, `admin.break_glass_read`) and notify the verifier managers.
+- FR-71 **Rollups and statistics.** ADMIN must see, with filters by year, client and service type, computed from the live data (never stored):
+  - engagements **started** (requested), **issued** and **closed** per year; per client; per service type and standard; per staff member and service role (team rows on those services);
+  - **revenue** quoted, invoiced, paid and **outstanding** (invoiced − paid) per year and per client, and per service type; the only place money is aggregated across engagements;
+  - **cycle times**: median days request→contract (`requested_at` → `contracted_at`) and contract→issue (`contracted_at` → `issued_at`), per year and per service type;
+  - **overdue steps**: steps not completed or skipped whose `planned_end` is before today, on active services, with service and owner role;
+  - **open blocking findings** across services; **COI declarations pending** (required or declared, not yet approved);
+  - **workload per staff member**: active team rows on active services, by role;
+  - **client concentration**: share of engagements and of invoiced revenue by client, and the largest client's share.
+- FR-72 **Data operations.** ADMIN must be able to request a full data export of an organisation (zip of records, documents manifest and audit log) and of the platform audit log; see backup status (last D1 export, last R2 replication); run a **retention report** (services past the retention period and what would be purged); and trigger anonymisation (FR-65). Each is an asynchronous job with an audit event; exports are delivered as signed links that expire.
+
+### 6.14 Manager overrides
+
+- FR-73 A `verifier_manager` must be able to **override a step status** to `completed`, `in_progress` (reopen) or `skipped` from any state, bypassing the required-slot and approval checks of the normal transition, with a **mandatory reason** (minimum 10 characters). The override is a distinct audit event `step.overridden` (before/after status, reason) so it is distinguishable from a normal transition in the Service Log, notifies the step owner party and the client contact, and the next action is recomputed. Steps `team_nomination` and `final_opinion` cannot be overridden to `completed` (impartiality and issuance cannot be skipped, PRD G5).
+- FR-74 A manager must be able to **override a service status** (hold, resume, cancel, close, return to execution from opinion review) with a mandatory reason; audit event `service.overridden`; both parties notified.
+- FR-75 A manager must be able to **reassign a team role** from one person to another (same service role, independent-reviewer exclusivity still enforced) with a reason; the new member receives the COI requirement; audit event `team.reassigned`.
+- FR-76 A manager (and the team leader) must be able to **change the planned start and end** of a step; the Timeline shows the latest plan and the change is logged (`step.replanned`).
+- FR-77 A manager must be able to **edit verified figures** (inventory lines, emission factors, `decarb_unit` records) through the same verified-value dialogs as the team; each edit is logged with before/after and, once an opinion is issued, requires a new iteration (verified figures of an issued opinion are immutable).
+
+### 6.15 Portfolios (R2, flag `portfolios`)
+
+- FR-78 R2: An organisation may have a **portfolio manager** (`organisations.portfolio_manager_user_id`, a `verifier_manager`). A senior manager owns a handful of clients and their auditors; My Work, triage and the Clients page can be scoped to "my portfolio"; ADMIN rollups can be grouped by portfolio. In Release 1 the field exists, is shown read-only on the staff Clients page under the "Coming" badge, and has no effect on access.
+
 ---
 
 ## 7. User experience
@@ -289,9 +355,16 @@ Verifier portal (same app, verifier org context; optional Cloudflare Access in f
 ├── Services                      all, filters (standard, type, country, status, team)
 ├── Service workspace             same tabs as client, plus: team & COI, approvals, raise finding, iteration actions, verified values entry
 ├── Templates                     service-type workflow templates, document slots, checklists
-├── Clients                       orgs, flags, interest signals
-├── Finance                       quotes, invoice refs, paid status
-└── Admin                         users, roles, audit, flags, system
+├── Clients                       orgs, flags, interest signals, portfolio manager (R2)
+└── Finance                       quotes, invoice refs, paid status
+
+Administration portal (same app, platform_admin only; /admin/*)
+├── Dashboard                     KPI tiles, charts, money rollups, filters by year/client/type
+├── Users and organisations       every user across orgs; organisations tab
+├── Audit log                     global audit events and auth events, filters, CSV export
+├── COI register                  every COI declaration across engagements
+└── Settings                      flag defaults, announcement banner, maintenance, templates, branding, data operations
+ADMIN also reaches the verifier read-only pages (All services, Clients, Templates, Finance) and any engagement, with no action controls.
 ```
 
 ### 7.2 Key screens (Release 1)
@@ -311,6 +384,12 @@ Verifier portal (same app, verifier org context; optional Cloudflare Access in f
 | `decarb_unit` record editor | Enter intervention delta | Two-column **Baseline / Project** emission profiles (gas rows, biogenic, removals, reference volume), attributed volume, computed factor and units panel with unit checks, evidence per figure, submit |
 | Records portfolio | Reuse verified data | Per-year cards and table, status chips Verified / Superseded / Declared, assurance link opens the opinion |
 | Preview page | Future features | Greyed real layout, "Coming" badge, 2-line explainer, "I'm interested" |
+| Admin dashboard | Whole-platform picture | KPI tiles (engagements started / issued / closed, outstanding revenue, overdue steps, open blocking findings, COI pending), bar charts by year, client and service type, cycle-time tiles, workload table, client concentration; year / client / type filters; money only here |
+| Admin users and organisations | Manage people and tenants | Users table across orgs (name, e-mail, org, role, status, MFA, last sign-in, open work), filters, row menu (edit, change role, deactivate with typed confirm → reassignment summary, reactivate, reset password, reset MFA, force sign-out, anonymise); Organisations tab (create, rename, suspend; portfolio manager column under "Coming") |
+| Admin audit log | Governance | Global event table with org / actor / type / date / text filters, auth-events view, CSV export |
+| Admin COI register | Impartiality evidence | Table of every declaration with status chips, filters, export |
+| Admin settings | Platform configuration | Flag defaults editor, announcement banner editor (live preview in the shell), maintenance mode, notification templates, branding, data operations (export, backup status, retention report) |
+| Manager override menu | Unblock a stuck engagement | "Override status" menu on the step detail (complete / reopen / skip) with a reason dialog; "Reassign" on the team panel; editable planned dates; override rows highlighted in the Service Log |
 
 ### 7.3 Interaction rules
 
@@ -321,7 +400,9 @@ Verifier portal (same app, verifier org context; optional Cloudflare Access in f
 - **Declared vs verified** side by side; verified values are read-only for clients.
 - **Empty states** explain what will appear and the action to make it appear.
 - **Preview states** are never dead links; they explain and collect interest.
-- **Destructive actions** (delete version, cancel service, revoke key) require typed confirmation and are logged.
+- **Destructive actions** (delete version, cancel service, revoke key, deactivate user, suspend organisation, anonymise) require typed confirmation and are logged.
+- **ADMIN is read-only on engagement data.** When the viewer is `platform_admin`, service, step, document, finding, opinion and record screens render without any action control (no upload, accept, approve, transition, respond, verify, issue, invoice buttons); a banner states "Platform administrator: read-only view". Evidence content needs break-glass (FR-70).
+- **Overrides are visibly different.** An override requires a reason dialog, is labelled "Override" in the Service Log with the reason, and the step shows "Completed by override" (or reopened / skipped) with the manager's name.
 - **Times** stored and shown in UTC with the user's local time on hover.
 - Desktop-first (1280+), usable on tablet (≥ 768), read-only on phones.
 - Accessibility: WCAG 2.1 AA; all status conveyed by text plus colour; keyboard-complete; focus visible.
@@ -500,9 +581,9 @@ Columns listed as `name type [constraints]`. Common audit columns omitted for br
 
 | Table | Columns |
 |---|---|
-| `organisations` | `id`, `type` (`verifier`\|`client`), `name`, `legal_name`, `country`, `registration_no`, `settings_json`, `status` (`active`\|`suspended`) |
-| `users` | `id`, `email` [unique], `name`, `email_verified` int, `mfa_enabled` int, `locale`, `timezone`, `status`. Better Auth owns `accounts`, `sessions`, `verifications`, `passkeys`, `two_factor` tables |
-| `memberships` | `id`, `org_id` FK, `user_id` FK, `role` (enum §3.2), `status` (`invited`\|`active`\|`disabled`); unique (`org_id`,`user_id`) |
+| `organisations` | `id`, `type` (`verifier`\|`client`), `name`, `legal_name`, `country`, `registration_no`, `settings_json`, `status` (`active`\|`suspended`), `suspended_at`, `suspended_reason`, `portfolio_manager_user_id` (R2, nullable, FK users) |
+| `users` | `id`, `email` [unique], `name`, `email_verified` int, `mfa_enabled` int, `locale`, `timezone`, `status` (`active`\|`disabled`), `job_title`, `last_sign_in_at`, `deactivated_at`, `deactivated_by`, `deactivation_reason`, `anonymised_at`. Better Auth owns `accounts`, `sessions`, `verifications`, `passkeys`, `two_factor` tables |
+| `memberships` | `id`, `org_id` FK, `user_id` FK, `role` (enum §3.2 incl. `platform_admin` on the verifier org), `status` (`invited`\|`active`\|`disabled`); unique (`org_id`,`user_id`) |
 | `invitations` | `id`, `org_id`, `email`, `role`, `token_hash`, `expires_at`, `accepted_at`, `invited_by` |
 | `api_clients` (R2) | `id`, `org_id`, `name`, `key_prefix`, `key_hash`, `scopes_json`, `last_used_at`, `revoked_at`, `created_by` |
 
@@ -555,7 +636,9 @@ Columns listed as `name type [constraints]`. Common audit columns omitted for br
 
 | Table | Columns |
 |---|---|
-| `audit_events` | `id`, `org_id`, `service_id` (nullable), `actor_user_id` (nullable), `actor_api_client_id` (nullable), `actor_type` (`user`\|`api`\|`mcp`\|`system`), `event_type` (e.g. `step.status_changed`), `entity_type`, `entity_id`, `before_json`, `after_json`, `ip`, `user_agent`, `occurred_at`. **Append-only**: no UPDATE/DELETE grants in the repository layer |
+| `audit_events` | `id`, `org_id`, `service_id` (nullable), `actor_user_id` (nullable), `actor_api_client_id` (nullable), `actor_type` (`user`\|`api`\|`mcp`\|`system`), `event_type` (e.g. `step.status_changed`, `step.overridden`, `service.overridden`, `team.reassigned`, `admin.user_deactivated`, `admin.break_glass`, `auth.signed_in`), `entity_type`, `entity_id`, `summary`, `reason` (nullable; mandatory for overrides and ADMIN actions that take one), `before_json`, `after_json`, `ip`, `user_agent`, `occurred_at`. **Append-only**: no UPDATE/DELETE grants in the repository layer |
+| `platform_settings` | single row `id = 'platform'`: `maintenance_mode` int, `maintenance_message`, `maintenance_from`, `maintenance_until`, `branding_json` (product_name, primary_colour, logo_r2_key), `notification_templates_json` ([{type, subject, body}]), `retention_years` int (default 10), `updated_by`, `updated_at` |
+| `announcements` | `id`, `title`, `body`, `tone` (`info`\|`warning`\|`success`), `audience` (`all`\|`clients`\|`staff`), `starts_at`, `ends_at` (nullable), `active` int, `created_by` |
 | `notifications` | `id`, `org_id`, `user_id`, `type`, `title`, `body`, `entity_type`, `entity_id`, `read_at`, `emailed_at`, `created_at` |
 | `notification_preferences` | `user_id`, `type`, `in_app` int, `email` (`immediate`\|`digest`\|`off`) |
 | `submissions` | `id`, `org_id`, `source`, `api_client_id`, `entity_type`, `entity_id`, `payload_sha256`, `received_at` |
@@ -602,7 +685,8 @@ Columns listed as `name type [constraints]`. Common audit columns omitted for br
 - `GET /services?status=&type=&project_id=&role=` · `POST /services` (creates draft request) · `GET /services/:id` (includes phases, steps, slots, team, next_action) · `PATCH /services/:id` (draft fields) · `POST /services/:id/submit` (draft → requested) · `POST /services/:id/renew` (new draft prefilled)
 - Verifier: `POST /services/:id/triage` (accept with template, or decline) · `POST /services/:id/hold` · `POST /services/:id/resume` · `POST /services/:id/cancel` · `POST /services/:id/close`
 - `GET /services/:id/next-action` · `GET /services/:id/timeline` · `GET /services/:id/log?type=&cursor=`
-- Steps: `POST /services/:id/steps/:stepId/transition` `{to, reason?, planned_start?, planned_end?}`
+- Steps: `POST /services/:id/steps/:stepId/transition` `{to, reason?, planned_start?, planned_end?}` · manager `POST /services/:id/steps/:stepId/override` `{action: complete|reopen|skip, reason}` · manager or team leader `PATCH /services/:id/steps/:stepId/plan` `{planned_start, planned_end, reason?}`
+- Manager: `POST /services/:id/override` `{action: hold|resume|cancel|close|return_to_execution, reason}` · `POST /services/:id/team/:memberId/reassign` `{to_user_id, reason}`
 - Approvals: `GET /services/:id/approvals` · `POST /services/:id/approvals/:approvalId/decide` `{decision, comment}` · `POST /services/:id/agreement/accept` (client click-to-accept)
 - Team: `GET|POST /services/:id/team` · `DELETE /services/:id/team/:memberId` · `POST /services/:id/team/:memberId/coi` (declare) · `POST /services/:id/team/:memberId/coi/decide`
 - Invoices: `GET /services/:id/invoices` · verifier finance `POST|PATCH /services/:id/invoices[/:invId]`
@@ -636,6 +720,14 @@ Columns listed as `name type [constraints]`. Common audit columns omitted for br
 **Flags**
 - `GET /features` (effective state for active org) · `POST /features/:key/interest` `{note?}`
 
+**Administration** (`platform_admin` only; every mutation requires recent re-authentication, §11.3)
+- Users: `GET /admin/users?org=&role=&status=&q=` · `POST /admin/users/invite` · `PATCH /admin/users/:id` (name, email, job_title) · `PATCH /admin/users/:id/role` `{org_id, role}` · `POST /admin/users/:id/deactivate` `{reason}` → reassignment summary · `POST /admin/users/:id/reactivate` · `POST /admin/users/:id/reset-password` · `POST /admin/users/:id/reset-mfa` · `POST /admin/users/:id/force-sign-out` · `POST /admin/users/:id/anonymise` `{reason}`
+- Organisations: `GET /admin/orgs` · `POST /admin/orgs` · `PATCH /admin/orgs/:id` · `POST /admin/orgs/:id/suspend` `{reason}` · `POST /admin/orgs/:id/unsuspend`
+- Settings: `GET|PATCH /admin/settings` · `GET|PUT /admin/flags/defaults` · `GET|POST /admin/announcements` · `PATCH|DELETE /admin/announcements/:id`
+- Governance: `GET /admin/audit?org=&actor=&type=&from=&to=&q=&cursor=` · `GET /admin/audit/export.csv` · `GET /admin/auth-events` · `GET /admin/coi-register?status=&user=&org=` · `POST /admin/break-glass` `{service_id, reason}`
+- Statistics: `GET /admin/stats?year=&org=&type=` (every KPI of FR-71, including money)
+- Data operations: `POST /admin/exports` `{scope: org|audit, org_id?}` → job · `GET /admin/backups` · `GET /admin/retention-report` · jobs via `GET /jobs/:id`
+
 **R2 machine access**
 - Same resources with API key; `POST /webhooks` subscriptions; MCP server at `mcp.verifassurx.com` with tools listed in FR-61, each tool input = the corresponding zod schema.
 
@@ -658,6 +750,11 @@ Columns listed as `name type [constraints]`. Common audit columns omitted for br
 | Org settings | members, invitations, (R2) api-clients |
 | Preview pages | `GET /features`, `POST /features/:key/interest` |
 | Verifier My Work / Triage | `GET /staff/my-work`, `GET /staff/triage`, `POST /services/:id/triage` |
+| Step detail (manager) | `POST …/steps/:stepId/override`, `PATCH …/steps/:stepId/plan`, `POST …/team/:memberId/reassign`, `POST /services/:id/override` |
+| Admin dashboard | `GET /admin/stats` |
+| Admin users and organisations | `GET /admin/users`, user mutations, `GET /admin/orgs`, org mutations |
+| Admin audit log / COI register | `GET /admin/audit`, `GET /admin/auth-events`, `GET /admin/coi-register`, CSV exports |
+| Admin settings | `GET|PATCH /admin/settings`, `PUT /admin/flags/defaults`, announcements, `POST /admin/exports`, `GET /admin/backups`, `GET /admin/retention-report` |
 
 ---
 
@@ -678,32 +775,41 @@ Columns listed as `name type [constraints]`. Common audit columns omitted for br
 
 ### 11.2 Authorisation
 
-- Central policy `can(ctx, action, resource)` in `packages/workflow/policy.ts`. Actions are explicit strings (`service.read`, `service.submit`, `step.transition`, `approval.decide:impartiality`, `iteration.ir_decide`, `document.check`, `record.verify`, …).
-- Resolution order: platform role → org role → service role → COI gate → resource state (e.g. cannot upload to a locked slot).
+- Central policy `can(ctx, action, resource)` in `packages/workflow/policy.ts`. Actions are explicit strings (`service.read`, `service.submit`, `step.transition`, `step.override`, `service.override`, `team.reassign`, `step.plan_dates`, `approval.decide:impartiality`, `iteration.ir_decide`, `document.check`, `record.verify`, `admin.users`, `admin.orgs`, `admin.settings`, `admin.audit`, `admin.coi_register`, `admin.stats`, `admin.break_glass`, …).
+- Resolution order: platform role (ADMIN: allow-list of read and `admin.*` actions, deny everything else, no org restriction) → org role → service role → COI gate → separation of duties → resource state (e.g. cannot upload to a locked slot).
 - **RBAC matrix (excerpt)**
 
-| Action | client_owner/admin | client_contributor | client_viewer | verifier_manager | team_leader | auditor/expert | independent_reviewer | coordinator | finance |
-|---|---|---|---|---|---|---|---|---|---|
-| Create/submit request | ✓ | | | | | | | | |
-| Upload to client slots | ✓ | ✓ (assigned) | | | | | | | |
-| Accept service agreement | ✓ | | | | | | | | |
-| Enter/submit records | ✓ | ✓ (assigned) | | | | | | | |
-| Respond to finding | ✓ | ✓ (assigned) | | | | | | | |
-| Read service, documents, opinion | ✓ | ✓ (assigned) | ✓ | ✓ | ✓ (team) | ✓ (team) | ✓ (team) | ✓ (team) | read only |
-| Triage, scope and impartiality approval | | | | ✓ | | | | | |
-| Nominate team, decide COI | | | | ✓ | | | | | |
-| Transition steps, request docs, raise findings | | | | ✓ | ✓ | ✓ (assigned steps) | | | |
-| Accept/reject document versions | | | | ✓ | ✓ | ✓ | | | |
-| Create iteration, submit for IR | | | | | ✓ | | | | |
-| IR decision | | | | | | | ✓ | | |
-| Manager decision, issue, close | | | | ✓ | | | | | |
-| Enter verified values | | | | ✓ | ✓ | ✓ (assigned) | | | |
-| Quotes/invoices | | | | ✓ | | | | ✓ (refs) | ✓ |
-| Manage members, API keys | ✓ | | | ✓ (verifier org) | | | | | |
-| Feature flags, templates | | | | ✓ | | | | | |
+| Action | client_owner/admin | client_contributor | client_viewer | verifier_manager | team_leader | auditor/expert | independent_reviewer | coordinator | finance | **ADMIN** |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Create/submit request | ✓ | | | | | | | | | |
+| Upload to client slots | ✓ | ✓ (assigned) | | | | | | | | |
+| Accept service agreement | ✓ | | | | | | | | | |
+| Enter/submit records | ✓ | ✓ (assigned) | | | | | | | | |
+| Respond to finding | ✓ | ✓ (assigned) | | | | | | | | |
+| Read service, documents, opinion | ✓ | ✓ (assigned) | ✓ | ✓ | ✓ (team) | ✓ (team) | ✓ (team) | ✓ (team) | read only | ✓ all orgs (evidence content: break-glass) |
+| Triage, scope and impartiality approval | | | | ✓ | | | | | | |
+| Nominate team, decide COI | | | | ✓ | | | | | | |
+| Transition steps, request docs, raise findings | | | | ✓ | ✓ | ✓ (assigned steps) | | | | |
+| **Override step / service status (reason)** | | | | ✓ | | | | | | |
+| **Reassign team role (reason)** | | | | ✓ | | | | | | |
+| **Change planned dates** | | | | ✓ | ✓ | | | | | |
+| Accept/reject document versions | | | | ✓ | ✓ | ✓ | | | | |
+| Create iteration, submit for IR | | | | | ✓ | | | | | |
+| IR decision | | | | | | | ✓ | | | |
+| Manager decision, issue, close | | | | ✓ | | | | | | |
+| Enter / edit verified values | | | | ✓ | ✓ | ✓ (assigned) | | | | |
+| Quotes/invoices | | | | ✓ | | | | ✓ (refs) | ✓ | read |
+| Money rollups across engagements | | | | | | | | | | ✓ |
+| Manage members, API keys | ✓ | | | ✓ (verifier org) | | | | | | ✓ all orgs (users, roles, deactivate, resets) |
+| Create / suspend organisations | | | | | | | | | | ✓ |
+| Feature flags, templates | | | | ✓ | | | | | | ✓ flags (defaults and per client); templates read |
+| Platform settings, announcements, maintenance | | | | | | | | | | ✓ |
+| Global audit log, auth log, COI register | | | | | | | | | | ✓ |
+| Any engagement or record mutation | | | | | | | | | | **never** |
 
 - **COI gate**: any verifier service role with `coi_declarations.status != approved` → all `service.*` actions denied except `coi.declare`.
-- **Separation of duties**: IR cannot be team leader/auditor on the same service (DB check + policy); the manager who approves an iteration cannot be its team leader.
+- **Separation of duties**: IR cannot be team leader/auditor on the same service (DB check + policy); the manager who approves an iteration cannot be its team leader; ADMIN holds no engagement power at all (a person who needs both roles uses two accounts).
+- **Overrides**: `step.override`, `service.override` and `team.reassign` require a non-empty reason at the API boundary (validation error otherwise) and are rejected for `team_nomination` → completed and `final_opinion` → completed.
 - **API keys (R2)**: scopes `read`, `write`, `submit`; keys act as a virtual member with `client_admin` powers limited by scope; never allowed to accept agreements or decide approvals.
 
 ### 11.3 Security and compliance
@@ -711,7 +817,8 @@ Columns listed as `name type [constraints]`. Common audit columns omitted for br
 - All data encrypted at rest (D1, R2, KV default) and in transit (TLS 1.3). Secrets in Worker secrets, never in code.
 - Signed URLs: upload 15 min, download 5 min, single object.
 - Document hashes stored at upload and recomputed at issuance; the statement page lists them for third-party verification.
-- GDPR: user data export and deletion requests handled by platform admin with audit; client data processor terms; EU region default.
+- GDPR: user data export and deletion requests handled by platform admin with audit; client data processor terms; EU region default. Users are deactivated, never deleted; anonymisation after the retention period (FR-65).
+- **ADMIN actions require recent re-authentication** (`requireRecentAuth(15)`): every `admin.*` mutation and every break-glass request. Break-glass access (FR-70) is logged with the reason and notifies the verifier managers; ADMIN sessions are limited to 4 h idle / 12 h absolute and ADMIN accounts must use a passkey or TOTP.
 - Logging excludes document content and personal data beyond user id and email.
 - Dependency scanning and secret scanning in CI; quarterly external penetration test before Release 2 (API exposure).
 - Accreditation support (ISO/IEC 17029, ISO 14065): impartiality records, competence (team roles), independent review, records retention, and traceability are all first-class records in the system.
@@ -736,11 +843,11 @@ Columns listed as `name type [constraints]`. Common audit columns omitted for br
 
 | Release | Content | Flags live | Flags preview |
 |---|---|---|---|
-| **R1 — Foundation** (target 2027 Q1) | §5.1 in full | engagements, evidence, findings, opinions, timeline, log, records, dashboard, invoices refs, public statement | spreadsheet_import, api, mcp, ai_assistant, esign, reports_export, registry_links, continuous_assurance, dmrv, verifiable_credentials, dpp_export, agent_verification, multi_verifier |
-| **R2 — Open platform** (2027 H2) | §5.2 | spreadsheet_import, api, mcp, ai_assistant, esign, reports_export, registry_links, sso | remaining |
+| **R1 — Foundation** (target 2027 Q1) | §5.1 in full, incl. the ADMIN console (§6.13) and manager overrides (§6.14) | engagements, evidence, findings, opinions, timeline, log, records, dashboard, invoices refs, public statement, administration console (not flagged) | spreadsheet_import, api, mcp, ai_assistant, esign, reports_export, registry_links, portfolios, continuous_assurance, dmrv, verifiable_credentials, dpp_export, agent_verification, multi_verifier |
+| **R2 — Open platform** (2027 H2) | §5.2 | spreadsheet_import, api, mcp, ai_assistant, esign, reports_export, registry_links, sso, portfolios | remaining |
 | **R3 — Continuous assurance** (2028+) | §5.3 | continuous_assurance, dmrv, verifiable_credentials, dpp_export | agent_verification, multi_verifier |
 
-R1 internal milestones: M1 auth + orgs + projects + request wizard; M2 workflow engine + step UI + evidence vault; M3 findings + opinion iterations + issuance workflow + statement page; M4 records (inventory, EF, decarb_units) + write-back; M5 timeline, log, dashboard, notifications, flags and previews; M6 hardening, pen test, pilot with two clients.
+R1 internal milestones: M1 auth + orgs + projects + request wizard; M2 workflow engine + step UI + evidence vault; M3 findings + opinion iterations + issuance workflow + statement page; M4 records (inventory, EF, decarb_units) + write-back; M5 timeline, log, dashboard, notifications, flags and previews; M6 hardening, pen test, pilot with two clients; **M6b Administration console** (users, organisations, settings, audit and COI register, break-glass, statistics and rollups, data operations) and manager overrides.
 
 ---
 
@@ -757,6 +864,9 @@ R1 internal milestones: M1 auth + orgs + projects + request wizard; M2 workflow 
 | Renewal requests created with "renew" | ≥ 50 % of eligible |
 | Preview "I'm interested" clicks | tracked per feature; used to order R2 |
 | Audit findings by the accreditation body against record-keeping | 0 |
+| Manager overrides per 100 engagements (each with a reason, reviewed quarterly) | ≤ 5; trend used to fix templates |
+| Support requests answered from the ADMIN console without engineering help | ≥ 90 % |
+| Break-glass accesses | all with reason; reviewed monthly by the impartiality committee |
 
 ---
 
@@ -767,7 +877,8 @@ R1 internal milestones: M1 auth + orgs + projects + request wizard; M2 workflow 
 | D1 limits (10 GB per database, batch-only transactions) | Volumes are far below; evidence lives in R2; Drizzle schema portable to Postgres via Hyperdrive; one-DB-per-large-client option |
 | Auditors keep working by email | Verifier portal is minimal but mandatory for approvals and issuance; findings only exist in the platform |
 | Clients find structured data entry heavy | Required fields minimal; spreadsheet import in R2; evidence can be attached at line level later; autosave everywhere |
-| Impartiality or review rules too rigid for edge cases | Manager override with mandatory reason, logged and reported |
+| Impartiality or review rules too rigid for edge cases | Manager override with mandatory reason (§6.14), logged as a distinct event and reported in the ADMIN statistics; team nomination and issuance cannot be overridden |
+| Platform administrator misuses global visibility | ADMIN holds no engagement power; evidence content needs break-glass with reason; every ADMIN action is logged and the log is reviewed |
 | Wrong units inflate `decarb_units` by 1000× | Explicit units with conversion table; mismatches are errors; computed values displayed with units |
 | Presigned upload complexity | Single helper in `packages/schema` client; fallback Worker-proxied upload for files < 100 MB |
 

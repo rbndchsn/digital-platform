@@ -40,6 +40,7 @@ Version 1.0 · 2026-10-05 · Repo: https://github.com/rbndchsn/digital-platform 
 | Phase | Deliverable | Status |
 |---|---|---|
 | **Phase I — Mock platform** | A static, clickable front end that looks and behaves like the Release 1 platform in the PRD. Every button does what the real one would (navigates, validates, changes state, shows toasts and notifications), driven by an in-browser mock backend seeded from JSON. Used to show investors the product. No persistence beyond the tab. | **This plan, now** |
+| **Phase I.5 — ADMIN, overrides, rollups** | PRD v0.2 and demo v0.2: platform administrator persona and Administration console, manager overrides with reason, money rollups, portfolios preview. Steps 15–20 in §3.1. | **In progress** |
 | **Phase II — Real platform** | The Cloudflare implementation described in the PRD and the task list (Workers, D1, R2, Better Auth…). Reuses Phase I's UI components, domain logic and schemas. | Later, see §4 |
 
 ---
@@ -243,6 +244,46 @@ Tick sub-items as you go; tick the step only when its "Done when" holds.
   - [x] `planning/phase2-handover.md`: what carries over unchanged, what is replaced, decisions to keep, gaps, first steps.
   - Done when: both files are committed and the tag is pushed. ✔
 
+### 3.1 Phase I.5 — ADMIN, manager overrides, rollups (v0.2-demo)
+
+Brief: `planning/next-session-prompt.md` (2026-10-06). Decisions taken while executing are in §8. Same bookkeeping as Phase I.
+
+- [x] **Step 15 — PRD v0.2 (before any demo code)**
+  - [x] `0001-prd-verifassurx-platform.md` bumped to Draft v0.2: §3.2 ADMIN as platform administrator with can / cannot lists and manager override powers; §4 stories 17–23; §5.1/5.2 scope; §6.13 Administration (FR-63–72, exact KPI list in FR-71), §6.14 Manager overrides (FR-73–77), §6.15 Portfolios (FR-78, R2, flag `portfolios`); §7.1 Administration portal `/admin/*`, §7.2 screens, §7.3 read-only ADMIN and override rules; §9.3 users / organisations / audit_events columns, `platform_settings`, `announcements`; §10.2 `/admin/*`, override, plan and reassign endpoints and the front-end mapping; §11.2 ADMIN column and override rows, §11.3 re-authentication and break-glass; §13 M6b, §14 metrics, §15 risks.
+  - [x] `tasks-0001-prd-verifassurx-platform.md`: sub-tasks 3.11–3.14, 5.11, 6.8, 11.8 and parent task 13.0 "M6b — Administration console"; relevant files for `routes/admin.ts`, `routes/overrides.ts`, `pages/admin/*`.
+  - Done when: both planning files are committed before any code changes. ✔
+
+- [ ] **Step 16 — Domain and policy**
+  - [ ] `enums.ts`: `platform_admin` added to `VERIFIER_ROLES` (org-level role, §8 D1); `ADMIN_ACTIONS`, `STEP_OVERRIDE_ACTIONS`, `SERVICE_OVERRIDE_ACTIONS`; `portfolios` flag.
+  - [ ] Schemas: `User` gains `last_sign_in_at`, `deactivated_at`, `deactivated_by`, `deactivation_reason`, `anonymised_at` and loses `platform_role`; `Organisation` gains `suspended_at`, `suspended_reason`, `portfolio_manager_user_id`; `AuditEvent` gains `reason`; new `PlatformSettings`, `Announcement`.
+  - [ ] `policy.ts`: ADMIN branch (allow-list, deny every mutation, no org restriction); manager gains `step.override`, `service.override`, `team.reassign`, `step.plan_dates` (team leader also `step.plan_dates`); tests: ADMIN cannot transition, approve, upload, verify, issue or manage invoices; ADMIN can deactivate users and nobody else can; manager override allowed.
+  - [ ] `machines.ts`: `stepOverrideMachine` / `applyStepOverride` (complete | reopen | skip from any state, distinct event `step.overridden`, same-state refused); `next-action.test.ts`: an override recomputes the next action.
+  - Done when: typecheck, lint, vitest pass.
+
+- [ ] **Step 17 — Mock api and fixtures**
+  - [ ] Fixtures: Sam Okafor (`usr_sam`, platform administrator, VERIFASSUR, role `platform_admin`); `last_sign_in_at` on every user; `portfolio_manager_user_id = usr_helena` on the three client orgs; `platformSettings` and one `announcements` row; store schema bumped to 2 so stale sessions reseed.
+  - [ ] `api/admin.ts`: users (list / update / changeRole / deactivate with reassignment summary / reactivate / resetPassword / resetMfa / forceSignOut / anonymise / invite), orgs (list / create / update / suspend / unsuspend), settings (get / update / setFlagDefault), announcements (list / create / update / remove / activeForViewer), audit (global list with filters, CSV), coiRegister, stats (every FR-71 KPI; money only for ADMIN), breakGlass.
+  - [ ] `api/services.ts`: `overrideStep`, `overrideService`, `replanStep`; `api/team.ts`: `reassign`; audit events `step.overridden`, `service.overridden`, `team.reassigned`, `step.replanned` with `reason`; notifications to the affected users; `api/auth.ts`: `auth.signed_in` audit event, `last_sign_in_at`, suspended org and disabled user cannot sign in.
+  - [ ] `api/records.ts`: `setVerifiedEmissionFactor`.
+  - [ ] `storyline.test.ts` chapters 11 (ADMIN) and 12 (manager override), incl. ADMIN `forbidden` on a mutating engagement api.
+  - Done when: all unit tests pass (≥ 69 + new).
+
+- [ ] **Step 18 — Administration UI**
+  - [ ] `nav.ts` `ADMIN_NAV`; ADMIN lands on `/admin`; shell shows the announcement banner and the "Platform administrator: read-only view" banner on engagement and record screens; `useServicePermissions` returns no powers for ADMIN; engagement Actions menu, finance and records hide their controls.
+  - [ ] `/admin` dashboard (KPI tiles, Recharts, filters, money tiles); `/admin/users` (users table, filters, row menu; Organisations tab with create / rename / suspend and the Portfolio manager column under `ComingBadge`); `/admin/audit`; `/admin/coi`; `/admin/settings` (flag defaults, announcement editor, maintenance / templates / branding / data operations as show-don't-do).
+  - [ ] Step detail: "Override status" menu with reason dialog (manager only), "Reassign" on the team panel, editable planned dates; verified-value dialogs on emission factors and decarb records for verifier roles; override rows highlighted in the Service Log.
+  - [ ] Sign-in grid and demo panel show Sam Okafor; chapters 11 and 12 in `demo.CHAPTERS`.
+  - Done when: typecheck, lint, vitest, build and the existing Playwright suite pass.
+
+- [ ] **Step 19 — Tests, screenshots, docs**
+  - [ ] `e2e/admin.spec.ts`, `e2e/override.spec.ts`; chapters 11–12 in `e2e/storyline.spec.ts`; `/admin/*` in `e2e/a11y.spec.ts`, axe clean.
+  - [ ] `scripts/screenshot.mjs` 28–31; two new screenshots embedded in README.
+  - [ ] `DEMO_SCRIPT.md` chapters 11 and 12; README ADMIN persona and overrides; `phase2-handover.md` admin api and override endpoints.
+  - Done when: every unit and Playwright test passes locally.
+
+- [ ] **Step 20 — Release v0.2-demo**
+  - [ ] All steps ticked, progress log rows with commit hashes, relevant files updated; tag `v0.2-demo` pushed; CI green including Playwright; live site shows Sam Okafor in the sign-in grid.
+
 ---
 
 ## 4. Phase II outline (not started; detailed in the PRD and the task list)
@@ -345,9 +386,23 @@ Tick sub-items as you go; tick the step only when its "Done when" holds.
 | 2026-10-06 | 10 | 95f643c | Opinion tab, review/approval dialogs, animated issuance, statement card, public verification page; opinion e2e test. | QR is a deterministic decorative pattern; Phase II renders a real QR |
 | 2026-10-06 | 11 | e22aa0e | Records: inventories (list, chart, editor with gas editor and evidence), product emission factors, decarb_units portfolio and editor with what-if; records e2e test. | — |
 | 2026-10-06 | 12 | 7826d53 | Preview pages for future features, staff Clients (flag matrix, interest signals) and Templates pages; previews e2e test. | — |
-| 2026-10-06 | 13–14 | (this commit, tag v0.1-demo) | Demo script, axe audit and fixes, full-storyline test, CI runs Playwright, screenshot set, README, Phase II handover. **Phase I complete.** | Cloudflare Pages deploy waits for the two repository secrets; GitHub Pages is live |
+| 2026-10-06 | 13–14 | 821b542 (tag v0.1-demo) | Demo script, axe audit and fixes, full-storyline test, CI runs Playwright, screenshot set, README, Phase II handover. **Phase I complete.** | Cloudflare Pages deploy waits for the two repository secrets; GitHub Pages is live |
+| 2026-10-06 | 15 | (next commit) | PRD v0.2: ADMIN platform administrator, manager overrides, Administration console, portfolios; task list 3.11–3.14, 5.11, 6.8, 11.8, 13.0. | Decisions D1–D8 in §8 |
 
 ---
+
+## 8. Decisions taken in Phase I.5 (2026-10-06, no questions asked per the brief)
+
+- **D1 — `platform_admin` is an org-level role on the verifier org**, stored in `memberships.role`; `users.platform_role` is removed. One source of truth; the persona grid, org switcher and role badge work unchanged; Better Auth's organization plugin stores roles on memberships in Phase II. `AuthContext.platformRole` is derived from that membership.
+- **D2 — ADMIN allow-list in policy**: `org.read`, `project.read`, `service.read`, `document.read`, `record.read`, `invoice.read`, `staff.clients`, `staff.templates`, `org.manage_flags`, `feature.interest`, `admin.users`, `admin.orgs`, `admin.settings`, `admin.audit`, `admin.coi_register`, `admin.stats`, `admin.break_glass`. Everything else is denied before any other rule runs, with no org restriction on reads. ADMIN does not get `staff.triage_queue` (the triage page is a work queue with accept / decline controls; the admin dashboard shows the count instead).
+- **D3 — Reads of evidence content by ADMIN** (preview / download dialogs) are gated by break-glass per service for the session; metadata, versions and hashes are always visible. The grant lives in the session state, not in a table.
+- **D4 — Step override** is a separate machine (`applyStepOverride`) so the audit event type `step.overridden` is distinguishable; `team_nomination` and `final_opinion` cannot be overridden to `completed` (G5). Reason minimum 10 characters, validated in the api. Override to `completed` bypasses required slots and approvals and then auto-starts the next step through the existing `startFirstStep`.
+- **D5 — Service override** reuses the service machine for `hold | resume | cancel | close | return_to_execution` and only differs by the mandatory reason, the `service.overridden` event and both-party notification. `step.plan_dates` is granted to the manager and the team leader (PRD FR-37 already lets the team leader plan).
+- **D6 — Deactivation** sets `users.status = disabled`, disables memberships, sets team rows to `removed`, returns the reassignment summary and notifies the verifier managers (and client admins for a client user). Reactivation restores memberships only. The signed-in ADMIN cannot deactivate themselves. Anonymisation, password / MFA resets, force sign-out, exports, backups and the retention report are show-don't-do dialogs whose Simulate writes the audit event.
+- **D7 — Money rollups** are computed in `admin.stats` and returned only when the caller is ADMIN; finance keeps the per-engagement Finance page; the staff Clients page keeps no money.
+- **D8 — Portfolios**: flag `portfolios` (preview, horizon next, area platform); `portfolio_manager_user_id = usr_helena` on the three client orgs; read-only column on the staff Clients page under `ComingBadge`; no scoping anywhere.
+- **D9 — Sign-in audit**: `auth.signed_in` events are written on every persona sign-in and `last_sign_in_at` is updated, so the ADMIN auth log and "last sign-in" column are live in the demo. Suspended organisations and disabled users cannot sign in (persona cards show them greyed).
+- **D10 — Store snapshot schema bumped to 2**: new tables (`platformSettings`, `announcements`) and user columns make old `sessionStorage` snapshots incompatible; a tab with a v1 snapshot silently reseeds.
 
 ## 7. Open questions and assumptions (answer, then start step 0)
 
