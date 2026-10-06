@@ -1,0 +1,119 @@
+/* Design tokens — PRD §7.4. Light values on :root, dark overrides below. */
+:root {
+  /* Brand */
+  --vx-primary: #0f766e; /* teal 700 */
+  --vx-primary-strong: #115e59;
+  --vx-primary-soft: #ccfbf1;
+  --vx-primary-fg: #ffffff;
+
+  /* Surfaces */
+  --vx-bg: #f4f7f7;
+  --vx-surface: #ffffff;
+  --vx-surface-muted: #eef2f2;
+  --vx-border: #dbe3e3;
+  --vx-fg: #0b1f1e;
+  --vx-fg-muted: #51605f;
+  --vx-fg-subtle: #7b8a89;
+
+  /* Semantic */
+  --vx-info: #2563eb;
+  --vx-info-soft: #dbeafe;
+  --vx-success: #15803d;
+  --vx-success-soft: #dcfce7;
+  --vx-warning: #b45309;
+  --vx-warning-soft: #fef3c7;
+  --vx-danger: #b91c1c;
+  --vx-danger-soft: #fee2e2;
+  --vx-blocking: #ea580c; /* orange: needs the viewer */
+  --vx-blocking-soft: #ffedd5;
+
+  /* Status chips (PRD §7.4) */
+  --vx-status-completed: #115e59;
+  --vx-status-in-progress: #0f766e;
+  --vx-status-pending: #6b7280;
+  --vx-status-on-hold: #d97706;
+  --vx-status-blocked: #ea580c;
+  --vx-status-rejected: #b91c1c;
+  --vx-status-planned: #a21caf;
+
+  /* Charts */
+  --vx-chart-1: #0f766e;
+  --vx-chart-2: #f59e0b;
+  --vx-chart-3: #1e3a5f;
+  --vx-chart-4: #2dd4bf;
+  --vx-chart-5: #64748b;
+
+  --vx-radius: 10px;
+  --vx-radius-sm: 6px;
+  --vx-shadow: 0 1px 2px rgb(11 31 30 / 0.06), 0 4px 16px rgb(11 31 30 / 0.05);
+
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --vx-primary: #2dd4bf;
+    --vx-primary-strong: #5eead4;
+    --vx-primary-soft: #134e4a;
+    --vx-primary-fg: #04201d;
+    --vx-bg: #0b1514;
+    --vx-surface: #122020;
+    --vx-surface-muted: #182a29;
+    --vx-border: #274140;
+    --vx-fg: #e6f0ef;
+    --vx-fg-muted: #a3b5b4;
+    --vx-fg-subtle: #7d908f;
+    --vx-info: #60a5fa;
+    --vx-info-soft: #1e3a5f;
+    --vx-success: #4ade80;
+    --vx-success-soft: #14532d;
+    --vx-warning: #fbbf24;
+    --vx-warning-soft: #78350f;
+    --vx-danger: #f87171;
+    --vx-danger-soft: #7f1d1d;
+    --vx-blocking: #fb923c;
+    --vx-blocking-soft: #7c2d12;
+    --vx-status-completed: #5eead4;
+    --vx-status-in-progress: #2dd4bf;
+    --vx-status-pending: #9ca3af;
+    --vx-status-on-hold: #fbbf24;
+    --vx-status-blocked: #fb923c;
+    --vx-status-rejected: #f87171;
+    --vx-status-planned: #e879f9;
+    --vx-shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 4px 16px rgb(0 0 0 / 0.35);
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme='dark'] {
+  --vx-primary: #2dd4bf;
+  --vx-primary-strong: #5eead4;
+  --vx-primary-soft: #134e4a;
+  --vx-primary-fg: #04201d;
+  --vx-bg: #0b1514;
+  --vx-surface: #122020;
+  --vx-surface-muted: #182a29;
+  --vx-border: #274140;
+  --vx-fg: #e6f0ef;
+  --vx-fg-muted: #a3b5b4;
+  --vx-fg-subtle: #7d908f;
+  --vx-info: #60a5fa;
+  --vx-info-soft: #1e3a5f;
+  --vx-success: #4ade80;
+  --vx-success-soft: #14532d;
+  --vx-warning: #fbbf24;
+  --vx-warning-soft: #78350f;
+  --vx-danger: #f87171;
+  --vx-danger-soft: #7f1d1d;
+  --vx-blocking: #fb923c;
+  --vx-blocking-soft: #7c2d12;
+  --vx-status-completed: #5eead4;
+  --vx-status-in-progress: #2dd4bf;
+  --vx-status-pending: #9ca3af;
+  --vx-status-on-hold: #fbbf24;
+  --vx-status-blocked: #fb923c;
+  --vx-status-rejected: #f87171;
+  --vx-status-planned: #e879f9;
+  --vx-shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 4px 16px rgb(0 0 0 / 0.35);
+  color-scheme: dark;
+}

@@ -118,24 +118,25 @@ demo/src/
 
 Tick sub-items as you go; tick the step only when its "Done when" holds.
 
-- [ ] **Step 0 — Repository bootstrap**
-  - [ ] `git init` at the repo root, default branch `main`; `.gitignore` with `node_modules/`, `dist/`, `.env*`, `assets/sourceimages/`, `*.local`, `.DS_Store`, `Thumbs.db`.
-  - [ ] Rename the empty `claude.md` to `CLAUDE.md` and write it: read `planning/plan_v1.md` first, the operating rules in §0.2, the Phase I constraints, and `cd demo` for all npm commands.
-  - [ ] `README.md`: one-paragraph description, Phase I / Phase II, links to the planning files, placeholder for the live URL, local run instructions.
-  - [ ] Add `LICENSE` decision: none for now (all rights reserved) — state it in README.
-  - [ ] First commit, `git remote add origin https://github.com/rbndchsn/digital-platform.git`, push `main`.
+- [x] **Step 0 — Repository bootstrap**
+  - [x] `git init` at the repo root, default branch `main`; `.gitignore` with `node_modules/`, `dist/`, `.env*`, `assets/sourceimages/`, `*.local`, `.DS_Store`, `Thumbs.db`.
+  - [x] Rename the empty `claude.md` to `CLAUDE.md` and write it: read `planning/plan_v1.md` first, the operating rules in §0.2, the Phase I constraints, and `cd demo` for all npm commands.
+  - [x] `README.md`: one-paragraph description, Phase I / Phase II, links to the planning files, placeholder for the live URL, local run instructions.
+  - [x] Add `LICENSE` decision: none for now (all rights reserved) — state it in README.
+  - [x] First commit, `git remote add origin https://github.com/rbndchsn/digital-platform.git`, push `main`.
   - Done when: the repo on GitHub shows `planning/`, `CLAUDE.md`, `README.md`, `.gitignore`, and `assets/sourceimages` is absent.
 
-- [ ] **Step 1 — Scaffold the demo app and the deploy pipeline**
-  - [ ] `npm create vite@latest demo -- --template react-ts`; set `"type": "module"`, strict TS, path alias `@/` → `src/`.
-  - [ ] Install and configure Tailwind, shadcn/ui (init with the teal primary), lucide-react, Inter via `@fontsource-variable/inter`, TanStack Router (file routes plugin), TanStack Query, react-hook-form, zod, sonner, Recharts, date-fns.
-  - [ ] Tooling: ESLint (typescript-eslint, react-hooks), Prettier, Vitest + @testing-library/react + jsdom, Playwright; scripts `dev`, `build`, `preview`, `lint`, `typecheck`, `test`, `test:e2e`.
-  - [ ] `public/_redirects` with `/* /index.html 200`; `vite.config.ts` base `/` (Cloudflare) with an env switch for GitHub Pages base path.
-  - [ ] `src/styles/tokens.css`: colour tokens from PRD §7.4 (primary teal, status colours, orange blocking, blue info), spacing, radius, dark-mode overrides under `[data-theme="dark"]` and `prefers-color-scheme`.
-  - [ ] Placeholder home route renders "VERIFASSUR_X demo" with the theme toggle.
-  - [ ] `.github/workflows/deploy.yml`: on push to `main` → install, lint, typecheck, test, build; job A deploys `demo/dist` to Cloudflare Pages if secrets exist; job B deploys to GitHub Pages (`actions/deploy-pages`) always. On pull requests → build only.
-  - [ ] Enable GitHub Pages (source: GitHub Actions) with `gh api`; record both URLs in README.
+- [x] **Step 1 — Scaffold the demo app and the deploy pipeline**
+  - [x] Scaffolded by hand (create-vite needs an interactive terminal): `"type": "module"`, strict TS, path alias `@/` → `src/`.
+  - [x] Installed Tailwind v4, Radix primitives (`radix-ui`), lucide-react, Inter via `@fontsource-variable/inter`, TanStack Router (file routes plugin + CLI), TanStack Query, react-hook-form, zod, sonner, Recharts, date-fns. shadcn-style components are hand-written in step 4 (the shadcn CLI is interactive).
+  - [x] Tooling: ESLint 10 (typescript-eslint, react-hooks, import restriction so pages never import the mock store), Prettier, Vitest 5 + Testing Library + jsdom, Playwright; scripts `dev`, `build`, `build:ghpages`, `preview`, `lint`, `typecheck`, `test`, `test:e2e`, `routes:gen`.
+  - [x] `public/_redirects` with `/* /index.html 200`; `vite.config.ts` base `/` with `VITE_BASE` switch for GitHub Pages; `scripts/gh-pages-404.mjs` for deep links.
+  - [x] `src/styles/tokens.css` with PRD §7.4 colours, status colours, dark mode via `prefers-color-scheme` and `[data-theme]`; `globals.css` maps them to Tailwind theme colours.
+  - [x] Placeholder home route renders "VERIFASSUR_X" with a session-scoped theme toggle; unit test and Playwright smoke test.
+  - [x] `.github/workflows/deploy.yml`: check job (lint, typecheck, test, build) → Cloudflare Pages job (only when secrets exist) and GitHub Pages job (always).
+  - [x] GitHub Pages enabled (build type: workflow) → https://rbndchsn.github.io/digital-platform/ recorded in README.
   - Done when: the placeholder page is reachable on a public URL from a push to `main`.
+  - Note: run npm commands from PowerShell; the Git Bash tool cannot spawn `node` from npm scripts on this machine. TypeScript 6 rejects `baseUrl`, so only `paths` is used.
 
 - [ ] **Step 2 — Domain layer (pure TypeScript, tested)**
   - [ ] `domain/enums.ts`: every enumeration from PRD §3.2, §8.5, §9.3 (roles, service types, service/step/finding/iteration/COI/document/record statuses, gases, scope categories, slot categories, approval kinds, opinion types, flag states).
@@ -251,9 +252,18 @@ Tick sub-items as you go; tick the step only when its "Done when" holds.
 | `planning/brainstorming.md` | Analysis of the reference platform and binding decisions |
 | `planning/0001-prd-verifassurx-platform.md` | Target product definition |
 | `planning/tasks-0001-prd-verifassurx-platform.md` | Phase II task list |
-| `CLAUDE.md` | Agent entry point (to be written in step 0) |
-| `README.md` | Repo overview and live URL (step 0) |
-| `demo/` | Phase I app (step 1 onward) |
+| `CLAUDE.md` | Agent entry point and operating rules summary |
+| `README.md` | Repo overview, live URLs, local run |
+| `.github/workflows/deploy.yml` | CI checks, Cloudflare Pages deploy (when secrets exist), GitHub Pages deploy |
+| `demo/package.json` | Scripts: dev, build, build:ghpages, lint, typecheck, test, test:e2e, routes:gen |
+| `demo/vite.config.ts` | Vite + React + Tailwind + TanStack Router plugin, `@/` alias, Vitest config, `VITE_BASE` |
+| `demo/eslint.config.js` | Lint rules incl. ban on importing `@/mock/*` from pages/components |
+| `demo/src/main.tsx` | App entry, router with base path |
+| `demo/src/routes/__root.tsx`, `index.tsx` | Root layout and placeholder home |
+| `demo/src/styles/tokens.css`, `globals.css` | Design tokens (light/dark) and Tailwind theme mapping |
+| `demo/src/lib/theme.ts` | Session-scoped theme hook |
+| `demo/scripts/gh-pages-404.mjs` | Copies index.html to 404.html for GitHub Pages deep links |
+| `demo/e2e/smoke.spec.ts` | Playwright smoke test |
 
 ---
 
@@ -261,7 +271,9 @@ Tick sub-items as you go; tick the step only when its "Done when" holds.
 
 | Date | Step | Commit | What changed | Deferred / notes |
 |---|---|---|---|---|
-| 2026-10-05 | — | — | Plan v1 written. Repo `rbndchsn/digital-platform` confirmed empty and public. Local folder not yet a git repo. | Awaiting answers to §7 before step 0 |
+| 2026-10-05 | — | — | Plan v1 written. Repo `rbndchsn/digital-platform` confirmed empty and public. Local folder not yet a git repo. | User answered "go, make all decisions"; §2.2 updated with the "show, don't do" dialog rule |
+| 2026-10-05 | 0 | 3d11574 | Repo initialised, planning docs, CLAUDE.md, README, .gitignore pushed to `main`. | — |
+| 2026-10-05 | 1 | (this commit) | `demo/` scaffolded: Vite 8, React 19, TS 6, Tailwind 4, TanStack Router, tokens, tests, Playwright, deploy workflow; GitHub Pages enabled. | Cloudflare Pages job waits for repo secrets `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID` |
 
 ---
 

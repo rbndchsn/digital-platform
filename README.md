@@ -13,8 +13,8 @@ This repository holds the product planning and, in `demo/`, a clickable front-en
 
 ## Live demo
 
-- Cloudflare Pages: _pending first deploy_
-- GitHub Pages (fallback): _pending first deploy_
+- GitHub Pages: https://rbndchsn.github.io/digital-platform/
+- Cloudflare Pages: _activates once the `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` repository secrets are set_
 
 ## Planning documents
 

@@ -1,0 +1,61 @@
+@import 'tailwindcss';
+@import './tokens.css';
+@import '@fontsource-variable/inter';
+
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
+@theme inline {
+  --font-sans: 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
+  --color-primary: var(--vx-primary);
+  --color-primary-strong: var(--vx-primary-strong);
+  --color-primary-soft: var(--vx-primary-soft);
+  --color-primary-fg: var(--vx-primary-fg);
+  --color-bg: var(--vx-bg);
+  --color-surface: var(--vx-surface);
+  --color-surface-muted: var(--vx-surface-muted);
+  --color-border: var(--vx-border);
+  --color-fg: var(--vx-fg);
+  --color-fg-muted: var(--vx-fg-muted);
+  --color-fg-subtle: var(--vx-fg-subtle);
+  --color-info: var(--vx-info);
+  --color-info-soft: var(--vx-info-soft);
+  --color-success: var(--vx-success);
+  --color-success-soft: var(--vx-success-soft);
+  --color-warning: var(--vx-warning);
+  --color-warning-soft: var(--vx-warning-soft);
+  --color-danger: var(--vx-danger);
+  --color-danger-soft: var(--vx-danger-soft);
+  --color-blocking: var(--vx-blocking);
+  --color-blocking-soft: var(--vx-blocking-soft);
+  --radius-card: var(--vx-radius);
+  --radius-sm: var(--vx-radius-sm);
+  --shadow-card: var(--vx-shadow);
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--vx-bg);
+  color: var(--vx-fg);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+* {
+  border-color: var(--vx-border);
+}
+
+:focus-visible {
+  outline: 2px solid var(--vx-primary);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: var(--vx-primary-soft);
+}
