@@ -127,11 +127,12 @@ export class Scenario {
   private findingNo = new Map<string, number>()
 
   // ---------------------------------------------------------------- audit and notifications
-  audit(e: Omit<AuditEvent, 'id' | 'actor_api_client_id' | 'ip' | 'user_agent' | 'actor_type'> & Partial<AuditEvent>): AuditEvent {
+  audit(e: Omit<AuditEvent, 'id' | 'actor_api_client_id' | 'ip' | 'user_agent' | 'actor_type' | 'reason'> & Partial<AuditEvent>): AuditEvent {
     const row: AuditEvent = {
       id: seedId('evt'),
       actor_api_client_id: null,
       actor_type: e.actor_user_id ? 'user' : 'system',
+      reason: null,
       ip: null,
       user_agent: null,
       ...e,

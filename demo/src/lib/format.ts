@@ -62,6 +62,7 @@ export function roleLabel(role: string): string {
     verifier_independent_reviewer: 'Independent reviewer',
     verifier_coordinator: 'Coordinator',
     verifier_finance: 'Finance',
+    platform_admin: 'Platform administrator',
   }
   return map[role] ?? titleCase(role)
 }

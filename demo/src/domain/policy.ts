@@ -1,6 +1,6 @@
 /**
  * Authorisation policy (PRD §11.2): `can(ctx, action, resource)`.
- * Resolution order: platform role → org role → service role → COI gate → separation of duties → resource state.
+ * Resolution order: platform role (ADMIN allow-list) → org role → service role → COI gate → separation of duties → resource state.
  * Identical in Phase II; only the AuthContext construction changes.
  */
 import type { OrgRole, OrgType, PlatformRole, ServiceRole } from './enums'
@@ -10,6 +10,7 @@ export interface AuthContext {
   orgId: string
   orgType: OrgType
   orgRole: OrgRole | null
+  /** `platform_admin` when the active membership is the ADMIN role on the verifier org (plan_v1 §8 D1). */
   platformRole: PlatformRole | null
   /** serviceId → roles this user holds on that service. */
   serviceRoles: Record<string, ServiceRole[]>
@@ -34,7 +35,10 @@ export type Action =
   | 'service.hold'
   | 'service.cancel'
   | 'service.close'
+  | 'service.override'
   | 'step.transition'
+  | 'step.override'
+  | 'step.plan_dates'
   | 'step.request_document'
   | 'approval.decide:technical_scope'
   | 'approval.decide:impartiality'
@@ -42,6 +46,7 @@ export type Action =
   | 'approval.decide:audit_plan'
   | 'approval.decide:agreement_acceptance'
   | 'team.nominate'
+  | 'team.reassign'
   | 'coi.declare'
   | 'coi.decide'
   | 'document.read'
@@ -67,6 +72,13 @@ export type Action =
   | 'staff.templates'
   | 'staff.clients'
   | 'feature.interest'
+  | 'admin.users'
+  | 'admin.orgs'
+  | 'admin.settings'
+  | 'admin.audit'
+  | 'admin.coi_register'
+  | 'admin.stats'
+  | 'admin.break_glass'
 
 export interface Resource {
   /** Owning client org of the resource. */
@@ -110,6 +122,30 @@ const CLIENT_ROLE_ACTIONS: Record<string, Action[]> = {
 
 const VERIFIER_COMMON: Action[] = ['org.read', 'service.read', 'project.read', 'document.read', 'record.read', 'invoice.read', 'coi.declare']
 
+/**
+ * ADMIN (platform administrator, PRD §3.2 v0.2): sees everything, administers users, organisations and
+ * settings, and never touches engagement or record data. This is the complete allow-list (plan_v1 §8 D2).
+ */
+export const ADMIN_ACTIONS: readonly Action[] = [
+  'org.read',
+  'project.read',
+  'service.read',
+  'document.read',
+  'record.read',
+  'invoice.read',
+  'staff.clients',
+  'staff.templates',
+  'org.manage_flags',
+  'feature.interest',
+  'admin.users',
+  'admin.orgs',
+  'admin.settings',
+  'admin.audit',
+  'admin.coi_register',
+  'admin.stats',
+  'admin.break_glass',
+]
+
 /** Actions granted by the verifier's org-level role regardless of service team membership. */
 const VERIFIER_ORG_ACTIONS: Record<string, Action[]> = {
   verifier_manager: [
@@ -119,12 +155,16 @@ const VERIFIER_ORG_ACTIONS: Record<string, Action[]> = {
     'service.hold',
     'service.cancel',
     'service.close',
+    'service.override',
     'approval.decide:technical_scope',
     'approval.decide:impartiality',
     'approval.decide:contract',
     'team.nominate',
+    'team.reassign',
     'coi.decide',
     'step.transition',
+    'step.override',
+    'step.plan_dates',
     'step.request_document',
     'document.upload:verifier',
     'document.check',
@@ -146,6 +186,8 @@ const VERIFIER_ORG_ACTIONS: Record<string, Action[]> = {
   verifier_auditor: VERIFIER_COMMON,
   verifier_technical_expert: VERIFIER_COMMON,
   verifier_independent_reviewer: VERIFIER_COMMON,
+  // ADMIN is resolved before org roles; listed here only so the table is total.
+  platform_admin: [],
 }
 
 /** Actions granted by a role held on the specific service. */
@@ -154,6 +196,7 @@ const SERVICE_ROLE_ACTIONS: Record<ServiceRole, Action[]> = {
   verifier_team_leader: [
     ...VERIFIER_COMMON,
     'step.transition',
+    'step.plan_dates',
     'step.request_document',
     'document.upload:verifier',
     'document.check',
@@ -178,7 +221,10 @@ const SERVICE_SCOPED = new Set<Action>([
   'service.hold',
   'service.cancel',
   'service.close',
+  'service.override',
   'step.transition',
+  'step.override',
+  'step.plan_dates',
   'step.request_document',
   'approval.decide:technical_scope',
   'approval.decide:impartiality',
@@ -186,6 +232,7 @@ const SERVICE_SCOPED = new Set<Action>([
   'approval.decide:audit_plan',
   'approval.decide:agreement_acceptance',
   'team.nominate',
+  'team.reassign',
   'coi.declare',
   'coi.decide',
   'document.read',
@@ -209,10 +256,13 @@ const SERVICE_SCOPED = new Set<Action>([
 const ORG_WIDE_VERIFIER_ROLES = new Set<string>(['verifier_manager', 'verifier_coordinator', 'verifier_finance'])
 
 export function decide(ctx: AuthContext, action: Action, resource: Resource = {}): Decision {
-  // Platform admin: tenant administration only.
-  if (ctx.platformRole === 'platform_admin') {
-    return { allowed: action === 'org.manage_flags' || action === 'staff.clients' || action === 'org.read', reason: 'platform admin scope' }
+  // ADMIN: platform administration and global read; every engagement or record mutation is denied here,
+  // before any org or service rule can grant it (PRD §3.2, §11.2).
+  if (ctx.platformRole === 'platform_admin' || ctx.orgRole === 'platform_admin') {
+    if (ADMIN_ACTIONS.includes(action)) return { allowed: true }
+    return { allowed: false, reason: 'the platform administrator cannot change engagement or record data' }
   }
+  if (action.startsWith('admin.')) return { allowed: false, reason: 'platform administration is reserved to the platform administrator' }
 
   if (ctx.orgType === 'client') {
     const allowedActions = ctx.orgRole ? (CLIENT_ROLE_ACTIONS[ctx.orgRole] ?? []) : []
@@ -263,6 +313,11 @@ export function decide(ctx: AuthContext, action: Action, resource: Resource = {}
 
 export function can(ctx: AuthContext, action: Action, resource: Resource = {}): boolean {
   return decide(ctx, action, resource).allowed
+}
+
+/** True when the context is the platform administrator (read-only on engagement data). */
+export function isPlatformAdmin(ctx: Pick<AuthContext, 'platformRole' | 'orgRole'>): boolean {
+  return ctx.platformRole === 'platform_admin' || ctx.orgRole === 'platform_admin'
 }
 
 export class ForbiddenError extends Error {

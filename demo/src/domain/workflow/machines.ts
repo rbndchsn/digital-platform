@@ -9,6 +9,7 @@ import type {
   IterationStatus,
   RecordStatus,
   ServiceStatus,
+  StepOverrideAction,
   StepStatus,
 } from '../enums'
 
@@ -108,6 +109,24 @@ export const stepMachine = createMachine<StepStatus, StepAction>(
   },
   [],
 )
+
+/**
+ * Manager step override (PRD FR-73): forces a step to a state from any state, bypassing the normal machine,
+ * so the audit event (`step.overridden`) is distinguishable from a normal transition. The api layer enforces
+ * the mandatory reason and the notifications.
+ */
+const STEP_OVERRIDE_TARGET: Record<StepOverrideAction, StepStatus> = { complete: 'completed', reopen: 'in_progress', skip: 'skipped' }
+
+/** Steps whose completion can never be forced: impartiality and issuance are not skippable (PRD G5). */
+export const NON_OVERRIDABLE_COMPLETION_STEPS: readonly string[] = ['team_nomination', 'final_opinion']
+
+export function applyStepOverride(step: { key: string; status: StepStatus }, action: StepOverrideAction): { state: StepStatus; event: 'step.overridden' } {
+  const target = STEP_OVERRIDE_TARGET[action]
+  if (!target) throw new TransitionError('step_override', step.status, action)
+  if (step.status === target) throw new TransitionError('step_override', step.status, action)
+  if (action === 'complete' && NON_OVERRIDABLE_COMPLETION_STEPS.includes(step.key)) throw new TransitionError('step_override', step.status, action)
+  return { state: target, event: 'step.overridden' }
+}
 
 /**
  * Phase gating (PRD FR-12): a step may start only when every step in earlier phases is completed or skipped,

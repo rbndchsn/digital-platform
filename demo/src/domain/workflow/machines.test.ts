@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   TransitionError,
+  applyStepOverride,
   canStartStep,
   coiMachine,
   derivePhaseStatus,
@@ -11,6 +12,24 @@ import {
   serviceMachine,
   stepMachine,
 } from './machines'
+
+describe('manager step override', () => {
+  it('forces a step from any state with a distinct event', () => {
+    expect(applyStepOverride({ key: 'desk_review', status: 'not_started' }, 'complete')).toEqual({ state: 'completed', event: 'step.overridden' })
+    expect(applyStepOverride({ key: 'desk_review', status: 'blocked' }, 'complete').state).toBe('completed')
+    expect(applyStepOverride({ key: 'desk_review', status: 'in_progress' }, 'skip').state).toBe('skipped')
+    expect(applyStepOverride({ key: 'desk_review', status: 'skipped' }, 'reopen').state).toBe('in_progress')
+    // The normal machine would refuse these.
+    expect(() => stepMachine.apply('not_started', 'complete')).toThrow(TransitionError)
+    expect(() => stepMachine.apply('in_progress', 'skip')).toThrow(TransitionError)
+  })
+  it('refuses a no-op and never forces impartiality or issuance to completed', () => {
+    expect(() => applyStepOverride({ key: 'desk_review', status: 'completed' }, 'complete')).toThrow(TransitionError)
+    expect(() => applyStepOverride({ key: 'team_nomination', status: 'in_progress' }, 'complete')).toThrow(TransitionError)
+    expect(() => applyStepOverride({ key: 'final_opinion', status: 'in_progress' }, 'complete')).toThrow(TransitionError)
+    expect(applyStepOverride({ key: 'team_nomination', status: 'completed' }, 'reopen').state).toBe('in_progress')
+  })
+})
 
 describe('service machine', () => {
   it('follows the happy path', () => {

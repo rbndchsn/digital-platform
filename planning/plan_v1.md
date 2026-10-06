@@ -253,12 +253,13 @@ Brief: `planning/next-session-prompt.md` (2026-10-06). Decisions taken while exe
   - [x] `tasks-0001-prd-verifassurx-platform.md`: sub-tasks 3.11–3.14, 5.11, 6.8, 11.8 and parent task 13.0 "M6b — Administration console"; relevant files for `routes/admin.ts`, `routes/overrides.ts`, `pages/admin/*`.
   - Done when: both planning files are committed before any code changes. ✔
 
-- [ ] **Step 16 — Domain and policy**
-  - [ ] `enums.ts`: `platform_admin` added to `VERIFIER_ROLES` (org-level role, §8 D1); `ADMIN_ACTIONS`, `STEP_OVERRIDE_ACTIONS`, `SERVICE_OVERRIDE_ACTIONS`; `portfolios` flag.
-  - [ ] Schemas: `User` gains `last_sign_in_at`, `deactivated_at`, `deactivated_by`, `deactivation_reason`, `anonymised_at` and loses `platform_role`; `Organisation` gains `suspended_at`, `suspended_reason`, `portfolio_manager_user_id`; `AuditEvent` gains `reason`; new `PlatformSettings`, `Announcement`.
-  - [ ] `policy.ts`: ADMIN branch (allow-list, deny every mutation, no org restriction); manager gains `step.override`, `service.override`, `team.reassign`, `step.plan_dates` (team leader also `step.plan_dates`); tests: ADMIN cannot transition, approve, upload, verify, issue or manage invoices; ADMIN can deactivate users and nobody else can; manager override allowed.
-  - [ ] `machines.ts`: `stepOverrideMachine` / `applyStepOverride` (complete | reopen | skip from any state, distinct event `step.overridden`, same-state refused); `next-action.test.ts`: an override recomputes the next action.
-  - Done when: typecheck, lint, vitest pass.
+- [x] **Step 16 — Domain and policy**
+  - [x] `enums.ts`: `platform_admin` added to `VERIFIER_ROLES` (org-level role, §8 D1); `STEP_OVERRIDE_ACTIONS`, `SERVICE_OVERRIDE_ACTIONS`, `OVERRIDE_REASON_MIN_LENGTH`, announcement enums, new notification types (`ADMIN_ACTIONS` lives in `policy.ts` because it is typed against `Action`; the `portfolios` flag is a fixture row, step 17).
+  - [x] Schemas: `User` gains `last_sign_in_at`, `deactivated_at`, `deactivated_by`, `deactivation_reason`, `anonymised_at` and loses `platform_role`; `Organisation` gains `suspended_at`, `suspended_reason`, `portfolio_manager_user_id`; `AuditEvent` gains `reason`; new `PlatformSettings`, `Announcement`.
+  - [x] `policy.ts`: ADMIN branch first (allow-list `ADMIN_ACTIONS`, every other action denied with a "platform administrator" reason, no org restriction on reads); `admin.*` denied to everyone else; manager gains `step.override`, `service.override`, `team.reassign`, `step.plan_dates` (team leader also `step.plan_dates`); `isPlatformAdmin`. Tests: 37 denied actions for ADMIN, allow-list, membership-only recognition, nobody else gets `admin.*`, override grants per role.
+  - [x] `machines.ts`: `applyStepOverride` (complete | reopen | skip from any state, event `step.overridden`, same-state refused, `team_nomination` / `final_opinion` never forced to completed); tests. `next-action.test.ts`: an override of the desk-review step moves the next action off the rejected client slot and reopening brings it back.
+  - [x] `api/core.ts` derives `platformRole` from the membership and refuses deactivated users; `audit()` writes `reason`; fixtures carry the new columns.
+  - Done when: typecheck, lint, vitest pass. ✔ 77 tests.
 
 - [ ] **Step 17 — Mock api and fixtures**
   - [ ] Fixtures: Sam Okafor (`usr_sam`, platform administrator, VERIFASSUR, role `platform_admin`); `last_sign_in_at` on every user; `portfolio_manager_user_id = usr_helena` on the three client orgs; `platformSettings` and one `announcements` row; store schema bumped to 2 so stale sessions reseed.
@@ -387,7 +388,8 @@ Brief: `planning/next-session-prompt.md` (2026-10-06). Decisions taken while exe
 | 2026-10-06 | 11 | e22aa0e | Records: inventories (list, chart, editor with gas editor and evidence), product emission factors, decarb_units portfolio and editor with what-if; records e2e test. | — |
 | 2026-10-06 | 12 | 7826d53 | Preview pages for future features, staff Clients (flag matrix, interest signals) and Templates pages; previews e2e test. | — |
 | 2026-10-06 | 13–14 | 821b542 (tag v0.1-demo) | Demo script, axe audit and fixes, full-storyline test, CI runs Playwright, screenshot set, README, Phase II handover. **Phase I complete.** | Cloudflare Pages deploy waits for the two repository secrets; GitHub Pages is live |
-| 2026-10-06 | 15 | (next commit) | PRD v0.2: ADMIN platform administrator, manager overrides, Administration console, portfolios; task list 3.11–3.14, 5.11, 6.8, 11.8, 13.0. | Decisions D1–D8 in §8 |
+| 2026-10-06 | 15 | 28044ce | PRD v0.2: ADMIN platform administrator, manager overrides, Administration console, portfolios; task list 3.11–3.14, 5.11, 6.8, 11.8, 13.0. | Decisions D1–D10 in §8 |
+| 2026-10-06 | 16 | (next commit) | Domain: `platform_admin` org role, user / org / audit columns, `PlatformSettings` and `Announcement` schemas, ADMIN allow-list and override actions in policy, `applyStepOverride`, tests (77). | — |
 
 ---
 

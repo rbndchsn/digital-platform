@@ -39,10 +39,10 @@ export function auditAt(at: string, by: string | null = null): AuditColumns {
 export function organisations(): Organisation[] {
   const a = auditAt(daysAgo(400))
   return [
-    { ...a, id: ORG.verifassur, type: 'verifier', name: 'VERIFASSUR', legal_name: 'VERIFASSUR Assurance S.A.', country: 'LU', registration_no: 'B-284110', settings_json: {}, status: 'active', initials: 'VX' },
-    { ...a, id: ORG.northwind, type: 'client', name: 'Northwind Dairy Cooperative', legal_name: 'Northwind Zuivelcoöperatie U.A.', country: 'NL', registration_no: 'KvK 58213907', settings_json: {}, status: 'active', initials: 'ND' },
-    { ...a, id: ORG.solstice, type: 'client', name: 'Solstice Renewables Ltd', legal_name: 'Solstice Renewables Limited', country: 'KE', registration_no: 'PVT-9QU4E2', settings_json: {}, status: 'active', initials: 'SR' },
-    { ...a, id: ORG.atlas, type: 'client', name: 'Atlas Foods Group', legal_name: 'Atlas Foods Group SAS', country: 'FR', registration_no: 'RCS 812 445 661', settings_json: {}, status: 'active', initials: 'AF' },
+    { ...a, id: ORG.verifassur, type: 'verifier', name: 'VERIFASSUR', legal_name: 'VERIFASSUR Assurance S.A.', country: 'LU', registration_no: 'B-284110', settings_json: {}, status: 'active', suspended_at: null, suspended_reason: null, portfolio_manager_user_id: null, initials: 'VX' },
+    { ...a, id: ORG.northwind, type: 'client', name: 'Northwind Dairy Cooperative', legal_name: 'Northwind Zuivelcoöperatie U.A.', country: 'NL', registration_no: 'KvK 58213907', settings_json: {}, status: 'active', suspended_at: null, suspended_reason: null, portfolio_manager_user_id: USR.mgr, initials: 'ND' },
+    { ...a, id: ORG.solstice, type: 'client', name: 'Solstice Renewables Ltd', legal_name: 'Solstice Renewables Limited', country: 'KE', registration_no: 'PVT-9QU4E2', settings_json: {}, status: 'active', suspended_at: null, suspended_reason: null, portfolio_manager_user_id: USR.mgr, initials: 'SR' },
+    { ...a, id: ORG.atlas, type: 'client', name: 'Atlas Foods Group', legal_name: 'Atlas Foods Group SAS', country: 'FR', registration_no: 'RCS 812 445 661', settings_json: {}, status: 'active', suspended_at: null, suspended_reason: null, portfolio_manager_user_id: USR.mgr, initials: 'AF' },
   ]
 }
 
@@ -82,7 +82,11 @@ export function users(): User[] {
     timezone: p.org === ORG.solstice ? 'Africa/Nairobi' : 'Europe/Amsterdam',
     status: 'active',
     job_title: p.title,
-    platform_role: null,
+    last_sign_in_at: null,
+    deactivated_at: null,
+    deactivated_by: null,
+    deactivation_reason: null,
+    anonymised_at: null,
   }))
 }
 

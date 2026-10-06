@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { CLIENT_ROLES, ORG_ROLES, ORG_TYPES, PLATFORM_ROLES, VERIFIER_ROLES } from '../enums'
+import { CLIENT_ROLES, ORG_ROLES, ORG_TYPES, VERIFIER_ROLES } from '../enums'
 import { AuditColumns, Id, IsoDateTime } from './common'
 
 export const Organisation = AuditColumns.extend({
@@ -11,11 +11,19 @@ export const Organisation = AuditColumns.extend({
   registration_no: z.string().nullable(),
   settings_json: z.record(z.string(), z.unknown()).default({}),
   status: z.enum(['active', 'suspended']),
+  suspended_at: IsoDateTime.nullable().default(null),
+  suspended_reason: z.string().nullable().default(null),
+  /** R2 portfolios (PRD FR-78): the verifier manager who owns this client. No effect on access in R1. */
+  portfolio_manager_user_id: Id.nullable().default(null),
   /** Demo-only: short initials for avatars. */
   initials: z.string().min(1).max(3).optional(),
 })
 export type Organisation = z.infer<typeof Organisation>
 
+/**
+ * Users are deactivated, never deleted (PRD FR-63/64). The ADMIN capability is the org role
+ * `platform_admin` on the verifier org (memberships.role), not a per-user flag (plan_v1 §8 D1).
+ */
 export const User = AuditColumns.extend({
   id: Id,
   email: z.string().email(),
@@ -26,7 +34,11 @@ export const User = AuditColumns.extend({
   timezone: z.string().default('UTC'),
   status: z.enum(['active', 'disabled']),
   job_title: z.string().optional(),
-  platform_role: z.enum(PLATFORM_ROLES).nullable().default(null),
+  last_sign_in_at: IsoDateTime.nullable().default(null),
+  deactivated_at: IsoDateTime.nullable().default(null),
+  deactivated_by: Id.nullable().default(null),
+  deactivation_reason: z.string().nullable().default(null),
+  anonymised_at: IsoDateTime.nullable().default(null),
 })
 export type User = z.infer<typeof User>
 

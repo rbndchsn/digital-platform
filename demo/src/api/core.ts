@@ -75,12 +75,15 @@ export function authContext(): AuthContext {
     const ok = m.service_role === 'client_contact' ? true : coi?.status === 'approved'
     coiApproved[m.service_id] = (coiApproved[m.service_id] ?? true) && ok
   }
+  const orgRole = (membership?.role as OrgRole | undefined) ?? null
+  if (user.status !== 'active') throw new ApiError('unauthenticated', 'This account is deactivated.')
   return {
     userId,
     orgId,
     orgType: org.type,
-    orgRole: (membership?.role as OrgRole | undefined) ?? null,
-    platformRole: user.platform_role,
+    orgRole,
+    // ADMIN is the org-level role `platform_admin` on the verifier org (plan_v1 §8 D1).
+    platformRole: orgRole === 'platform_admin' && org.type === 'verifier' ? 'platform_admin' : null,
     serviceRoles,
     coiApproved,
   }
@@ -126,6 +129,8 @@ export interface AuditInput {
   entityType: string
   entityId: string
   summary: string
+  /** Mandatory for overrides and ADMIN actions that take one (PRD §6.13/6.14). */
+  reason?: string | null
   before?: unknown
   after?: unknown
 }
@@ -142,6 +147,7 @@ export function audit(ctx: AuthContext | null, input: AuditInput): AuditEvent {
     entity_type: input.entityType,
     entity_id: input.entityId,
     summary: input.summary,
+    reason: input.reason ?? null,
     before_json: input.before ?? null,
     after_json: input.after ?? null,
     ip: '192.0.2.10',

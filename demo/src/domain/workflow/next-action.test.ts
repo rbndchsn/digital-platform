@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Service } from '../schemas'
 import { instantiateTemplate } from './instantiate'
+import { applyStepOverride } from './machines'
 import type { ServiceSnapshot } from './next-action'
 import { computeNextAction, isActionForViewer } from './next-action'
 import { templateFor } from './templates'
@@ -106,6 +107,27 @@ describe('computeNextAction', () => {
     const held = makeSnapshot('on_hold')
     held.service.on_hold_reason = 'Client merger'
     expect(computeNextAction(held)!.label).toMatch(/Client merger/)
+  })
+
+  it('recomputes after a manager override of a step (PRD FR-73)', () => {
+    const snap = makeSnapshot('execution')
+    complete(snap, 'pre_engagement', 'desk_review_cpf', 'team_nomination', 'contract_review', 'service_agreement', 'audit_plan')
+    const desk = snap.steps.find((s) => s.key === 'desk_review')!
+    desk.status = 'in_progress'
+    const sample = snap.slots.find((s) => s.step_id === desk.id && s.required && s.uploader_party === 'client')!
+    sample.status = 'rejected'
+    const before = computeNextAction(snap)!
+    expect(before.action).toBe('upload_document')
+    expect(before.party).toBe('client')
+    expect(before.step_id).toBe(desk.id)
+    // The manager forces the step closed although the client never re-uploaded.
+    desk.status = applyStepOverride(desk, 'complete').state
+    const after = computeNextAction(snap)!
+    expect(after.step_id).not.toBe(desk.id)
+    expect(after.entity_id).not.toBe(sample.id)
+    // Reopening by override brings the client action back.
+    desk.status = applyStepOverride(desk, 'reopen').state
+    expect(computeNextAction(snap)!.step_id).toBe(desk.id)
   })
 
   it('addresses actions to the right viewer', () => {

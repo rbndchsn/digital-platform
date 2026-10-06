@@ -9,6 +9,10 @@ export type OrgType = (typeof ORG_TYPES)[number]
 export const CLIENT_ROLES = ['client_owner', 'client_admin', 'client_contributor', 'client_viewer'] as const
 export type ClientRole = (typeof CLIENT_ROLES)[number]
 
+/**
+ * Verifier org roles. `platform_admin` (ADMIN, PRD §3.2 v0.2) is an org-level role on the verifier org:
+ * it administers the platform and holds no engagement power (plan_v1 §8 D1).
+ */
 export const VERIFIER_ROLES = [
   'verifier_manager',
   'verifier_team_leader',
@@ -17,6 +21,7 @@ export const VERIFIER_ROLES = [
   'verifier_independent_reviewer',
   'verifier_coordinator',
   'verifier_finance',
+  'platform_admin',
 ] as const
 export type VerifierRole = (typeof VERIFIER_ROLES)[number]
 
@@ -26,8 +31,25 @@ export type PlatformRole = (typeof PLATFORM_ROLES)[number]
 export const ORG_ROLES = [...CLIENT_ROLES, ...VERIFIER_ROLES] as const
 export type OrgRole = (typeof ORG_ROLES)[number]
 
-export const SERVICE_ROLES = [...VERIFIER_ROLES, 'client_contact'] as const
+/** Roles a person can hold on a service team. ADMIN is never on a team. */
+export const SERVICE_ROLES = ['verifier_manager', 'verifier_team_leader', 'verifier_auditor', 'verifier_technical_expert', 'verifier_independent_reviewer', 'verifier_coordinator', 'verifier_finance', 'client_contact'] as const
 export type ServiceRole = (typeof SERVICE_ROLES)[number]
+
+/** Manager overrides (PRD §6.14). */
+export const STEP_OVERRIDE_ACTIONS = ['complete', 'reopen', 'skip'] as const
+export type StepOverrideAction = (typeof STEP_OVERRIDE_ACTIONS)[number]
+
+export const SERVICE_OVERRIDE_ACTIONS = ['hold', 'resume', 'cancel', 'close', 'return_to_execution'] as const
+export type ServiceOverrideAction = (typeof SERVICE_OVERRIDE_ACTIONS)[number]
+
+/** Minimum length of the mandatory reason on overrides and ADMIN actions. */
+export const OVERRIDE_REASON_MIN_LENGTH = 10
+
+export const ANNOUNCEMENT_TONES = ['info', 'warning', 'success'] as const
+export type AnnouncementTone = (typeof ANNOUNCEMENT_TONES)[number]
+
+export const ANNOUNCEMENT_AUDIENCES = ['all', 'clients', 'staff'] as const
+export type AnnouncementAudience = (typeof ANNOUNCEMENT_AUDIENCES)[number]
 
 export const SERVICE_TYPES = [
   'vcs_validation',
@@ -324,6 +346,10 @@ export const NOTIFICATION_TYPES = [
   'record_submitted',
   'record_verified',
   'service_on_hold',
+  'step_overridden',
+  'service_overridden',
+  'team_reassigned',
+  'account_changed',
   'generic',
 ] as const
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number]
