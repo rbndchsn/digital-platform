@@ -149,16 +149,16 @@ Tick sub-items as you go; tick the step only when its "Done when" holds.
   - [x] `domain/workflow/machines.ts`: service, step (+ phase gating, derived phase status), finding, iteration, COI, document version, record machines with `TransitionError`. Test matrix.
   - [x] `domain/workflow/next-action.ts`: single next action per service state, with `isActionForViewer`. Tests across contracting, COI, agreement, findings, iterations.
   - [x] `domain/policy.ts`: `decide/can/assertCan` with PRD §11.2 matrix, cross-org isolation, COI gate, separation of duties, locked documents. Tests per role.
-  - Done when: `npm run test` passes with ≥ 90 % line coverage on `src/domain`. **Result:** 46 tests pass; coverage is 95 % on `domain/`, 96 % on `compute/`, 82 % on `workflow/`, and 0 % on `schemas/` (pure zod definitions, exercised by the fixture validation test in step 3). Revisit the figure after step 3.
+  - Done when: `npm run test` passes with ≥ 90 % line coverage on `src/domain`. **Result:** 46 tests at step 2; after step 3's fixture validation, `src/domain` line coverage is 98.5 % (compute 96 %, workflow 90 %, policy 96 %).
 
-- [ ] **Step 3 — Mock backend and fixtures**
-  - [ ] `mock/fixtures/` JSON authored to support the storyline in §2.4: orgs (VERIFASSUR, Northwind Dairy Cooperative, Solstice Renewables Ltd, one more), users for every persona, 3 projects, 8 services across statuses (requested, contracting, planning, execution, opinion_review, issued ×2, closed), instantiated phases/steps/slots, ~40 documents with versions and fake hashes, 6 findings in mixed states, iterations (one with changes requested), 1 issued statement, inventories 2024 (verified) and 2025 (submitted), 3 emission factors, 2 `decarb_unit` records (milk example and one wheat intervention), invoices, notifications, feature flags per PRD §13, audit events for history. Validate every fixture against the zod schemas in a test.
-  - [ ] `mock/store.ts`: typed in-memory tables, `load(fixtures)`, `snapshot()` → sessionStorage on every write, `hydrate()` on boot, `reset()`.
-  - [ ] `mock/latency.ts` and a "slow network" and "fail next call" toggle for the Demo panel.
-  - [ ] `api/*.ts`: one module per PRD resource with the PRD operation names (`services.create`, `services.submit`, `services.triage`, `steps.transition`, `approvals.decide`, `team.nominate`, `coi.declare`, `documents.startUpload/completeUpload/check`, `findings.create/respond/transition`, `iterations.create/submitForIr/irDecide/managerDecide/issue`, `inventories.*`, `emissionFactors.*`, `decarbUnits.*`, `dashboard.get`, `notifications.*`, `features.*`, `invoices.*`, `staff.*`). Each mutation: policy check → domain transition → store write → audit event → notifications. Return shapes = zod read schemas.
-  - [ ] `api/issuance.ts`: step-by-step issuance sequence emitting progress events (for the animation) and performing the record write-back and supersession.
-  - [ ] Tests: storyline-critical flows run end to end through `api/*` (request → triage → approvals → COI → agreement → execution → finding → iteration → issue → records verified).
-  - Done when: the full storyline can be executed in tests with no UI, and a reload within the same tab preserves state while a new tab starts from fixtures.
+- [x] **Step 3 — Mock backend and fixtures**
+  - [x] Seed built programmatically from the real templates (`mock/fixtures/base.ts`, `scenario.ts`, `records.ts`, `index.ts`) rather than hand-written JSON, so every service has consistent phases, steps, slots, documents, approvals, team, COI, findings, iterations, invoices, notifications and ~600 audit events. Decision: TS builders, deterministic ids, dates relative to "today" so the demo always looks current. Contents: 4 orgs (VERIFASSUR, Northwind Dairy Cooperative, Solstice Renewables Ltd, Atlas Foods Group), 11 personas, 6 projects, 10 services (4 closed and paid, 1 execution with a rejected upload and an open CAR, 1 opinion review with iteration 1 returned, 1 planning awaiting audit-plan acceptance, 1 contracting with a COI pending, 1 requested, 1 for the wizard), inventories 2023/2024/2025 with per-gas lines, 4 product EFs, 3 `decarb_unit` records (milk 2024 verified, milk 2025 = 400,000 units, Atlas wheat with removals), 16 feature flags. `fixtures.test.ts` validates every row against the zod schemas, checks referential integrity and asserts each storyline precondition.
+  - [x] `mock/store.ts`: typed tables, sessionStorage snapshot on every write (microtask-batched), hydrate on boot, `reset()`; `mock/clock.ts`, `mock/ids.ts`, `mock/snapshot.ts`.
+  - [x] `mock/latency.ts` with slow-network and fail-next-call toggles.
+  - [x] `api/*`: `auth`, `services` (list/get/createDraft/updateDraft/submit/renew/triage/hold/resume/cancel/close/transitionStep/timeline/log), `projects`, `approvals` (decide, acceptAgreement with typed name + hash, auto-complete of satisfied steps), `team` (candidates, nominate with IR exclusivity, declareCoi, decideCoi), `documents` (simulateUpload, check, removeVersion, evidence links, downloadAll manifest), `findings`, `iterations` (create with suggested figures, attach, submitForIr, irDecide, managerDecide, issue with progress callback, statements, public lookup), `records` (inventories, lines, submit → attach or create request, verified values, YoY compare; emission factors; decarb records, profiles, preview compute, portfolio; write-back on issuance), `notifications`, `features`, `invoices`, `dashboard` (client and staff), `staff`, `demo`. Every mutation: policy → machine → store → audit → notifications.
+  - [x] Issuance sequence lives in `api/iterations.ts` (`issue` + `ISSUANCE_STEPS`) and performs write-back and supersession via `records.writeBackVerifiedRecords`.
+  - [x] `api/storyline.test.ts` runs all ten chapters end to end through the api with no UI, including the negative cases (IR cannot approve without the checklist, team leader cannot approve their own opinion, wrong typed name rejected, kg/L mismatch rejected, auditor locked out until COI declared).
+  - Done when: the full storyline can be executed in tests with no UI (✔ 69 tests), and a reload within the same tab preserves state while a new tab starts from fixtures (✔ by construction of `Store`; verified in the browser in step 4).
 
 - [ ] **Step 4 — App shell, mock auth, demo panel, flags**
   - [ ] `/sign-in` persona picker, fake MFA screen, sign-out, org switcher for multi-org users; `AuthContext` provider; route guards (client vs `/staff`).
@@ -276,6 +276,16 @@ Tick sub-items as you go; tick the step only when its "Done when" holds.
 | `demo/src/domain/workflow/next-action.ts` | Single next action per service |
 | `demo/src/domain/policy.ts` | RBAC policy `decide/can/assertCan` |
 | `demo/src/domain/index.ts` | Domain barrel export |
+| `demo/src/mock/store.ts` | In-memory tables, sessionStorage snapshot, reset |
+| `demo/src/mock/clock.ts`, `ids.ts`, `latency.ts`, `snapshot.ts` | Time helpers, deterministic ids and fake hashes, simulated network, snapshot builder |
+| `demo/src/mock/fixtures/base.ts` | Orgs, personas, memberships, projects, feature flags |
+| `demo/src/mock/fixtures/scenario.ts` | Scenario builder: create/advance services, documents, team, COI, findings, iterations, issuance, invoices |
+| `demo/src/mock/fixtures/records.ts` | Inventories, emission factors, decarb_unit records with evidence |
+| `demo/src/mock/fixtures/index.ts` | `buildSeed()` assembling the storyline; `SVC` ids |
+| `demo/src/mock/fixtures/fixtures.test.ts` | Schema validation, integrity and storyline preconditions |
+| `demo/src/api/core.ts` | Auth context, authorize, call wrapper, audit, notify, ids, errors |
+| `demo/src/api/*.ts` | One module per resource (see step 3); `index.ts` barrel |
+| `demo/src/api/storyline.test.ts` | End-to-end storyline through the api |
 
 ---
 
@@ -286,7 +296,8 @@ Tick sub-items as you go; tick the step only when its "Done when" holds.
 | 2026-10-05 | — | — | Plan v1 written. Repo `rbndchsn/digital-platform` confirmed empty and public. Local folder not yet a git repo. | User answered "go, make all decisions"; §2.2 updated with the "show, don't do" dialog rule |
 | 2026-10-05 | 0 | 3d11574 | Repo initialised, planning docs, CLAUDE.md, README, .gitignore pushed to `main`. | — |
 | 2026-10-05 | 1 | a3134a2 | `demo/` scaffolded: Vite 8, React 19, TS 6, Tailwind 4, TanStack Router, tokens, tests, Playwright, deploy workflow; GitHub Pages enabled. CI run 37409270913 green; https://rbndchsn.github.io/digital-platform/ returns 200. | Cloudflare Pages job skipped until repo secrets `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID` exist |
-| 2026-10-05 | 2 | (this commit) | Domain layer: enums, zod schemas, units + GWP, inventory and decarb compute, 8 workflow templates, instantiate, 7 state machines, next-action, policy. 46 unit tests. | Schema coverage counted in step 3 via fixture validation |
+| 2026-10-05 | 2 | 21ad0c7 | Domain layer: enums, zod schemas, units + GWP, inventory and decarb compute, 8 workflow templates, instantiate, 7 state machines, next-action, policy. 46 unit tests. | Schema coverage counted in step 3 via fixture validation |
+| 2026-10-06 | 3 | (this commit) | Mock backend: store with sessionStorage snapshot, latency toggles, programmatic seed for the whole storyline, 15 api modules, fixture validation and end-to-end storyline tests. 69 tests. | Storyline §2.4 adjusted: the opinion chapter (8) runs on the insetting service `svc_nw_decarb_2025`, the evidence and findings chapters (5, 6) on the inventory service `svc_nw_inv_2025` |
 
 ---
 
