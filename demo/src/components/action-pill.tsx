@@ -25,7 +25,7 @@ export function ActionPill({ action, forMe, className, onClick, compact }: { act
     >
       <span className="truncate">{compact ? shorten(action.label) : action.label}</span>
       {action.due && !compact ? (
-        <span className="inline-flex items-center gap-0.5 opacity-80">
+        <span className="inline-flex items-center gap-0.5 font-medium">
           <Clock className="size-3" /> {fmtDate(action.due)}
         </span>
       ) : null}

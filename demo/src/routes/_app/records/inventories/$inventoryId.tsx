@@ -20,7 +20,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogFooter } from '@/components/ui/dialog'
 import { Field, Input, NativeSelect, Textarea } from '@/components/ui/input'
 import { Alert, Progress, Skeleton } from '@/components/ui/misc'
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { NavTabs } from '@/components/nav-tabs'
 import { GasEditor } from '@/features/records/gas-editor'
 import { SubmitForVerificationDialog } from '@/features/records/submit-dialog'
 import { useMe } from '@/lib/auth'
@@ -99,29 +99,33 @@ function InventoryEditor() {
         <Card>
           <CardContent className="pt-4">
             <div className="text-fg text-sm font-semibold">Evidence completeness</div>
-            <Progress value={completeness} tone={completeness === 100 ? 'success' : 'warning'} className="mt-2" />
+            <Progress value={completeness} tone={completeness === 100 ? 'success' : 'warning'} className="mt-2" label="Evidence completeness" />
             <div className="text-fg-subtle mt-1 text-xs">
               {inv.completeness.withEvidence} of {inv.completeness.total} lines evidenced
             </div>
           </CardContent>
         </Card>
       </div>
-      <Tabs value={scope} onValueChange={(v) => setScope(v as '1' | '2' | '3')}>
-        <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
-          <TabsList>
-            {(['1', '2', '3'] as const).map((s) => (
-              <TabsTrigger key={s} value={s}>
+      <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
+        <NavTabs
+          value={scope}
+          onChange={setScope}
+          label="Scopes"
+          items={(['1', '2', '3'] as const).map((s) => ({
+            value: s,
+            label: (
+              <>
                 Scope {s} <span className="text-fg-subtle ml-1.5 text-xs tabular-nums">{fmtNumber(scopeTotal(s))}{verifiedScope(s) != null ? ` / ${fmtNumber(verifiedScope(s))}` : ''}</span>
-              </TabsTrigger>
-            ))}
-          </TabsList>
-          {canEdit ? (
-            <Button variant="secondary" size="sm" onClick={() => setEdit('new')}>
-              <Plus /> Add line
-            </Button>
-          ) : null}
-        </div>
-      </Tabs>
+              </>
+            ),
+          }))}
+        />
+        {canEdit ? (
+          <Button variant="secondary" size="sm" onClick={() => setEdit('new')}>
+            <Plus /> Add line
+          </Button>
+        ) : null}
+      </div>
       <Card>
         {lines.length === 0 ? (
           <p className="text-fg-muted p-6 text-center text-sm">No lines in scope {scope}.</p>

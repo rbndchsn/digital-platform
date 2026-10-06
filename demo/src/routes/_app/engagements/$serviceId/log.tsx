@@ -59,9 +59,9 @@ function ServiceLog() {
         <div className="flex flex-wrap gap-2">
           <div className="relative">
             <Search className="text-fg-subtle pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2" />
-            <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search the log" className="w-56 pl-8" />
+            <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search the log" aria-label="Search the log" className="w-56 pl-8" />
           </div>
-          <NativeSelect value={type} onChange={(e) => setType(e.target.value)} className="w-48">
+          <NativeSelect value={type} onChange={(e) => setType(e.target.value)} className="w-48" aria-label="Filter by event type">
             {TYPES.map(([v, l]) => (
               <option key={v} value={v}>
                 {l}

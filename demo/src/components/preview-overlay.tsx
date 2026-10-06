@@ -61,7 +61,7 @@ export function PreviewOverlay({ flagKey, children, className, horizonLabel }: {
   if (state === 'hidden') return null
   return (
     <div className={cn('relative flex min-h-80 flex-col', className)}>
-      <div className="pointer-events-none flex-1 select-none opacity-45 grayscale-[35%]" aria-hidden>
+      <div className="pointer-events-none flex-1 select-none opacity-45 grayscale-[35%]" aria-hidden inert>
         {children}
       </div>
       <div className="absolute inset-0 flex items-center justify-center p-6">

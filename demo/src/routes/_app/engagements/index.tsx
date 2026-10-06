@@ -7,13 +7,13 @@ import { z } from 'zod'
 import { services } from '@/api'
 import type { ServiceType } from '@/domain/enums'
 import { SERVICE_TYPES, SERVICE_TYPE_LABELS } from '@/domain/enums'
+import { NavTabs } from '@/components/nav-tabs'
 import { PageHeader } from '@/components/page-header'
 import { ServiceTable } from '@/components/service-table'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input, NativeSelect } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/misc'
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useAppMutation } from '@/lib/query'
 
 const TABS = ['ongoing', 'past', 'drafts'] as const
@@ -43,19 +43,14 @@ function Engagements() {
           </Button>
         }
       />
-      <Tabs value={tab} onValueChange={(v) => navigate({ to: '/engagements', search: { tab: v as (typeof TABS)[number] } })}>
-        <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
-          <TabsList>
-            <TabsTrigger value="ongoing">Ongoing</TabsTrigger>
-            <TabsTrigger value="past">Past</TabsTrigger>
-            <TabsTrigger value="drafts">Drafts</TabsTrigger>
-          </TabsList>
+      <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+          <NavTabs value={tab} onChange={(v) => navigate({ to: '/engagements', search: { tab: v } })} items={[{ value: 'ongoing', label: 'Ongoing' }, { value: 'past', label: 'Past' }, { value: 'drafts', label: 'Drafts' }]} label="Engagement lists" />
           <div className="flex flex-wrap gap-2">
             <div className="relative">
               <Search className="text-fg-subtle pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2" />
-              <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search reference or name" className="w-64 pl-8" />
+              <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search reference or name" aria-label="Search engagements" className="w-64 pl-8" />
             </div>
-            <NativeSelect value={type} onChange={(e) => setType(e.target.value as ServiceType | '')} className="w-64">
+            <NativeSelect value={type} onChange={(e) => setType(e.target.value as ServiceType | '')} className="w-64" aria-label="Filter by service type">
               <option value="">All service types</option>
               {SERVICE_TYPES.map((t) => (
                 <option key={t} value={t}>
@@ -64,8 +59,7 @@ function Engagements() {
               ))}
             </NativeSelect>
           </div>
-        </div>
-      </Tabs>
+      </div>
       <Card>
         {q.isLoading ? (
           <div className="space-y-2 p-5">
@@ -94,7 +88,7 @@ function Engagements() {
             <div className="flex-1 text-sm">
               <span className="font-medium">Renew for the next period.</span> <span className="text-fg-muted">Scope, sites and the evidence list are pre-filled from the closed engagement.</span>
             </div>
-            <NativeSelect className="w-80" onChange={(e) => e.target.value && renew.mutate(e.target.value)} defaultValue="">
+            <NativeSelect className="w-80" onChange={(e) => e.target.value && renew.mutate(e.target.value)} defaultValue="" aria-label="Choose an engagement to renew">
               <option value="">Choose an engagement to renew…</option>
               {renewable.map((s) => (
                 <option key={s.id} value={s.id}>

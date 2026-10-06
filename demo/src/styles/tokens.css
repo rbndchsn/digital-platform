@@ -12,27 +12,27 @@
   --vx-surface-muted: #eef2f2;
   --vx-border: #dbe3e3;
   --vx-fg: #0b1f1e;
-  --vx-fg-muted: #51605f;
-  --vx-fg-subtle: #7b8a89;
+  --vx-fg-muted: #4f5f5e;
+  --vx-fg-subtle: #5e6f6e; /* ≥ 4.5:1 on white and on surface-muted (WCAG AA for small text) */
 
-  /* Semantic */
-  --vx-info: #2563eb;
+  /* Semantic (all ≥ 4.5:1 on their soft backgrounds and as white-on-colour fills) */
+  --vx-info: #1d4ed8;
   --vx-info-soft: #dbeafe;
-  --vx-success: #15803d;
+  --vx-success: #166534;
   --vx-success-soft: #dcfce7;
-  --vx-warning: #b45309;
+  --vx-warning: #92400e;
   --vx-warning-soft: #fef3c7;
   --vx-danger: #b91c1c;
   --vx-danger-soft: #fee2e2;
-  --vx-blocking: #ea580c; /* orange: needs the viewer */
+  --vx-blocking: #9a3412; /* orange: needs the viewer (6.4:1 on its soft background) */
   --vx-blocking-soft: #ffedd5;
 
   /* Status chips (PRD §7.4) */
   --vx-status-completed: #115e59;
   --vx-status-in-progress: #0f766e;
   --vx-status-pending: #6b7280;
-  --vx-status-on-hold: #d97706;
-  --vx-status-blocked: #ea580c;
+  --vx-status-on-hold: #b45309;
+  --vx-status-blocked: #9a3412;
   --vx-status-rejected: #b91c1c;
   --vx-status-planned: #a21caf;
 

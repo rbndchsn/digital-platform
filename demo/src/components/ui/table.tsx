@@ -1,9 +1,10 @@
 import type { HTMLAttributes, TdHTMLAttributes, ThHTMLAttributes } from 'react'
 import { cn } from '@/lib/cn'
 
-export function Table({ className, ...props }: HTMLAttributes<HTMLTableElement>) {
+export function Table({ className, label = 'Table', ...props }: HTMLAttributes<HTMLTableElement> & { label?: string }) {
+  // The wrapper can scroll horizontally, so it must be reachable by keyboard (axe: scrollable-region-focusable).
   return (
-    <div className="w-full overflow-x-auto">
+    <div className="w-full overflow-x-auto focus-visible:outline-primary" tabIndex={0} role="region" aria-label={label}>
       <table className={cn('w-full border-collapse text-sm', className)} {...props} />
     </div>
   )

@@ -95,7 +95,7 @@ function Clients() {
                           return (
                             <TD key={c.orgId}>
                               {canFlag ? (
-                                <NativeSelect value={cf.state} onChange={(e) => setFlag.mutate({ orgId: c.orgId, key: f.key, state: e.target.value as FlagState })} className="h-8 w-28 text-xs">
+                                <NativeSelect value={cf.state} onChange={(e) => setFlag.mutate({ orgId: c.orgId, key: f.key, state: e.target.value as FlagState })} className="h-8 w-28 text-xs" aria-label={`${f.title} for ${c.name}`}>
                                   <option value="hidden">Hidden</option>
                                   <option value="preview">Preview</option>
                                   <option value="enabled">Enabled</option>

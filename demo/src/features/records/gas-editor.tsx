@@ -54,7 +54,7 @@ export function GasEditor({ set, gases, onChange, readOnly }: { set: GwpSet; gas
                   {readOnly ? (
                     <span>{GAS_LABELS[g.gas]}</span>
                   ) : (
-                    <NativeSelect value={g.gas} onChange={(e) => update(i, { gas: e.target.value as Gas, gas_detail: null, custom_gwp: null })} className="h-8 w-44">
+                    <NativeSelect value={g.gas} onChange={(e) => update(i, { gas: e.target.value as Gas, gas_detail: null, custom_gwp: null })} className="h-8 w-44" aria-label={`Gas, row ${i + 1}`}>
                       {GASES.map((x) => (
                         <option key={x} value={x}>
                           {GAS_LABELS[x]}
@@ -72,7 +72,7 @@ export function GasEditor({ set, gases, onChange, readOnly }: { set: GwpSet; gas
                       <Input className="h-8 w-20" type="number" placeholder="GWP" value={g.custom_gwp ?? ''} onChange={(e) => update(i, { custom_gwp: e.target.value === '' ? null : Number(e.target.value) })} />
                     </div>
                   ) : options ? (
-                    <NativeSelect value={g.gas_detail ?? options[0]} onChange={(e) => update(i, { gas_detail: e.target.value })} className="h-8 w-36">
+                    <NativeSelect value={g.gas_detail ?? options[0]} onChange={(e) => update(i, { gas_detail: e.target.value })} className="h-8 w-36" aria-label={`Species, row ${i + 1}`}>
                       {options.map((o) => (
                         <option key={o} value={o}>
                           {o}
@@ -83,7 +83,7 @@ export function GasEditor({ set, gases, onChange, readOnly }: { set: GwpSet; gas
                     <span className="text-fg-subtle text-xs">—</span>
                   )}
                 </td>
-                <td className="px-2 py-1 text-right">{readOnly ? <span className="tabular-nums">{fmtNumber(g.tonnes_gas, 3)}</span> : <Input className="h-8 w-32 text-right tabular-nums" type="number" min={0} step="any" value={g.tonnes_gas} onChange={(e) => update(i, { tonnes_gas: Number(e.target.value) })} />}</td>
+                <td className="px-2 py-1 text-right">{readOnly ? <span className="tabular-nums">{fmtNumber(g.tonnes_gas, 3)}</span> : <Input className="h-8 w-32 text-right tabular-nums" type="number" min={0} step="any" value={g.tonnes_gas} onChange={(e) => update(i, { tonnes_gas: Number(e.target.value) })} aria-label={`Tonnes of gas, row ${i + 1}`} />}</td>
                 <td className="text-fg-muted px-2 py-1 text-right tabular-nums">{gwp == null ? <span className="text-danger text-xs">GWP?</span> : fmtNumber(gwp, gwp < 10 ? 1 : 0)}</td>
                 <td className="text-fg px-2 py-1 text-right font-semibold tabular-nums">{t == null ? '—' : fmtNumber(t, 2)}</td>
                 {!readOnly ? (

@@ -132,7 +132,7 @@ function Inventories() {
                       <TD className="tabular-nums">{fmtNumber(t.by_scope['3'])}</TD>
                       <TD>
                         <div className="w-28">
-                          <Progress value={inv.completeness.total ? (inv.completeness.withEvidence / inv.completeness.total) * 100 : 0} tone={inv.completeness.withEvidence === inv.completeness.total ? 'success' : 'warning'} />
+                          <Progress value={inv.completeness.total ? (inv.completeness.withEvidence / inv.completeness.total) * 100 : 0} tone={inv.completeness.withEvidence === inv.completeness.total ? 'success' : 'warning'} label={`Evidence completeness ${inv.year}`} />
                           <div className="text-fg-subtle mt-0.5 text-[11px]">
                             {inv.completeness.withEvidence}/{inv.completeness.total} lines
                           </div>

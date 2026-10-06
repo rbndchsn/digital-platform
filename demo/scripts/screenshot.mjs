@@ -10,8 +10,12 @@ mkdirSync(out, { recursive: true })
 
 const server = await preview({ preview: { port: 4174, strictPort: true }, logLevel: 'silent' })
 const base = `http://localhost:4174`
+// SHOT_THEME=dark and SHOT_WIDTH=820 produce dark-mode and tablet variants (files prefixed accordingly).
+const theme = process.env.SHOT_THEME === 'dark' ? 'dark' : 'light'
+const width = Number(process.env.SHOT_WIDTH ?? 1440)
+const prefix = `${theme === 'dark' ? 'dark-' : ''}${width !== 1440 ? `w${width}-` : ''}`
 const browser = await chromium.launch()
-const page = await browser.newPage({ viewport: { width: 1440, height: 900 }, colorScheme: 'light' })
+const page = await browser.newPage({ viewport: { width, height: 900 }, colorScheme: theme })
 
 /** Reads the seeded public code of an issued service from its opinion tab. */
 async function statementCode(serviceId) {
@@ -64,8 +68,8 @@ for (const s of shots) {
   await page.goto(`${base}${path}`)
   // Mock latency is up to ~400 ms per call and pages chain two or three calls.
   await page.waitForTimeout(1800)
-  await page.screenshot({ path: resolve(out, `${s.name}.png`), fullPage: false })
-  console.log('saved', s.name)
+  await page.screenshot({ path: resolve(out, `${prefix}${s.name}.png`), fullPage: false })
+  console.log('saved', `${prefix}${s.name}`)
 }
 
 await browser.close()

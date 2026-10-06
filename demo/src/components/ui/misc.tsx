@@ -22,10 +22,10 @@ export function Checkbox({ className, ...props }: ComponentProps<typeof RC.Root>
   )
 }
 
-export function Progress({ value, className, tone = 'primary' }: { value: number; className?: string; tone?: 'primary' | 'success' | 'warning' | 'blocking' | 'info' }) {
+export function Progress({ value, className, tone = 'primary', label = 'Progress' }: { value: number; className?: string; tone?: 'primary' | 'success' | 'warning' | 'blocking' | 'info'; label?: string }) {
   const bg = { primary: 'bg-primary', success: 'bg-success', warning: 'bg-warning', blocking: 'bg-blocking', info: 'bg-info' }[tone]
   return (
-    <RP.Root className={cn('bg-surface-muted h-2 w-full overflow-hidden rounded-full', className)} value={value}>
+    <RP.Root className={cn('bg-surface-muted h-2 w-full overflow-hidden rounded-full', className)} value={value} aria-label={label}>
       <RP.Indicator className={cn('h-full rounded-full transition-[width]', bg)} style={{ width: `${Math.max(0, Math.min(100, value))}%` }} />
     </RP.Root>
   )
