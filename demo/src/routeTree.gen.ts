@@ -35,7 +35,9 @@ import { Route as AppEngagementsServiceIdOpinionRouteImport } from './routes/_ap
 import { Route as AppEngagementsServiceIdPhasesRouteImport } from './routes/_app/engagements/$serviceId/phases'
 import { Route as AppEngagementsServiceIdTimelineRouteImport } from './routes/_app/engagements/$serviceId/timeline'
 import { Route as AppRecordsDecarbUnitsIndexRouteImport } from './routes/_app/records/decarb-units/index'
+import { Route as AppRecordsDecarbUnitsRecordIdRouteImport } from './routes/_app/records/decarb-units/$recordId'
 import { Route as AppRecordsInventoriesIndexRouteImport } from './routes/_app/records/inventories/index'
+import { Route as AppRecordsInventoriesInventoryIdRouteImport } from './routes/_app/records/inventories/$inventoryId'
 import { Route as AppEngagementsServiceIdFindingsIndexRouteImport } from './routes/_app/engagements/$serviceId/findings/index'
 import { Route as AppEngagementsServiceIdFindingsFindingIdRouteImport } from './routes/_app/engagements/$serviceId/findings/$findingId'
 
@@ -176,10 +178,22 @@ const AppRecordsDecarbUnitsIndexRoute =
     path: '/records/decarb-units/',
     getParentRoute: () => AppRoute,
   } as any)
+const AppRecordsDecarbUnitsRecordIdRoute =
+  AppRecordsDecarbUnitsRecordIdRouteImport.update({
+    id: '/records/decarb-units/$recordId',
+    path: '/records/decarb-units/$recordId',
+    getParentRoute: () => AppRoute,
+  } as any)
 const AppRecordsInventoriesIndexRoute =
   AppRecordsInventoriesIndexRouteImport.update({
     id: '/records/inventories/',
     path: '/records/inventories/',
+    getParentRoute: () => AppRoute,
+  } as any)
+const AppRecordsInventoriesInventoryIdRoute =
+  AppRecordsInventoriesInventoryIdRouteImport.update({
+    id: '/records/inventories/$inventoryId',
+    path: '/records/inventories/$inventoryId',
     getParentRoute: () => AppRoute,
   } as any)
 const AppEngagementsServiceIdFindingsIndexRoute =
@@ -219,6 +233,8 @@ export interface FileRoutesByFullPath {
   '/engagements/$serviceId/opinion': typeof AppEngagementsServiceIdOpinionRoute
   '/engagements/$serviceId/phases': typeof AppEngagementsServiceIdPhasesRoute
   '/engagements/$serviceId/timeline': typeof AppEngagementsServiceIdTimelineRoute
+  '/records/decarb-units/$recordId': typeof AppRecordsDecarbUnitsRecordIdRoute
+  '/records/inventories/$inventoryId': typeof AppRecordsInventoriesInventoryIdRoute
   '/engagements/$serviceId/': typeof AppEngagementsServiceIdIndexRoute
   '/records/decarb-units/': typeof AppRecordsDecarbUnitsIndexRoute
   '/records/inventories/': typeof AppRecordsInventoriesIndexRoute
@@ -248,6 +264,8 @@ export interface FileRoutesByTo {
   '/engagements/$serviceId/opinion': typeof AppEngagementsServiceIdOpinionRoute
   '/engagements/$serviceId/phases': typeof AppEngagementsServiceIdPhasesRoute
   '/engagements/$serviceId/timeline': typeof AppEngagementsServiceIdTimelineRoute
+  '/records/decarb-units/$recordId': typeof AppRecordsDecarbUnitsRecordIdRoute
+  '/records/inventories/$inventoryId': typeof AppRecordsInventoriesInventoryIdRoute
   '/engagements/$serviceId': typeof AppEngagementsServiceIdIndexRoute
   '/records/decarb-units': typeof AppRecordsDecarbUnitsIndexRoute
   '/records/inventories': typeof AppRecordsInventoriesIndexRoute
@@ -280,6 +298,8 @@ export interface FileRoutesById {
   '/_app/engagements/$serviceId/opinion': typeof AppEngagementsServiceIdOpinionRoute
   '/_app/engagements/$serviceId/phases': typeof AppEngagementsServiceIdPhasesRoute
   '/_app/engagements/$serviceId/timeline': typeof AppEngagementsServiceIdTimelineRoute
+  '/_app/records/decarb-units/$recordId': typeof AppRecordsDecarbUnitsRecordIdRoute
+  '/_app/records/inventories/$inventoryId': typeof AppRecordsInventoriesInventoryIdRoute
   '/_app/engagements/$serviceId/': typeof AppEngagementsServiceIdIndexRoute
   '/_app/records/decarb-units/': typeof AppRecordsDecarbUnitsIndexRoute
   '/_app/records/inventories/': typeof AppRecordsInventoriesIndexRoute
@@ -312,6 +332,8 @@ export interface FileRouteTypes {
     | '/engagements/$serviceId/opinion'
     | '/engagements/$serviceId/phases'
     | '/engagements/$serviceId/timeline'
+    | '/records/decarb-units/$recordId'
+    | '/records/inventories/$inventoryId'
     | '/engagements/$serviceId/'
     | '/records/decarb-units/'
     | '/records/inventories/'
@@ -341,6 +363,8 @@ export interface FileRouteTypes {
     | '/engagements/$serviceId/opinion'
     | '/engagements/$serviceId/phases'
     | '/engagements/$serviceId/timeline'
+    | '/records/decarb-units/$recordId'
+    | '/records/inventories/$inventoryId'
     | '/engagements/$serviceId'
     | '/records/decarb-units'
     | '/records/inventories'
@@ -372,6 +396,8 @@ export interface FileRouteTypes {
     | '/_app/engagements/$serviceId/opinion'
     | '/_app/engagements/$serviceId/phases'
     | '/_app/engagements/$serviceId/timeline'
+    | '/_app/records/decarb-units/$recordId'
+    | '/_app/records/inventories/$inventoryId'
     | '/_app/engagements/$serviceId/'
     | '/_app/records/decarb-units/'
     | '/_app/records/inventories/'
@@ -569,11 +595,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRecordsDecarbUnitsIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/records/decarb-units/$recordId': {
+      id: '/_app/records/decarb-units/$recordId'
+      path: '/records/decarb-units/$recordId'
+      fullPath: '/records/decarb-units/$recordId'
+      preLoaderRoute: typeof AppRecordsDecarbUnitsRecordIdRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/records/inventories/': {
       id: '/_app/records/inventories/'
       path: '/records/inventories'
       fullPath: '/records/inventories/'
       preLoaderRoute: typeof AppRecordsInventoriesIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/records/inventories/$inventoryId': {
+      id: '/_app/records/inventories/$inventoryId'
+      path: '/records/inventories/$inventoryId'
+      fullPath: '/records/inventories/$inventoryId'
+      preLoaderRoute: typeof AppRecordsInventoriesInventoryIdRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/engagements/$serviceId/findings/': {
@@ -641,6 +681,8 @@ interface AppRouteChildren {
   AppEngagementsIndexRoute: typeof AppEngagementsIndexRoute
   AppProjectsIndexRoute: typeof AppProjectsIndexRoute
   AppStaffIndexRoute: typeof AppStaffIndexRoute
+  AppRecordsDecarbUnitsRecordIdRoute: typeof AppRecordsDecarbUnitsRecordIdRoute
+  AppRecordsInventoriesInventoryIdRoute: typeof AppRecordsInventoriesInventoryIdRoute
   AppRecordsDecarbUnitsIndexRoute: typeof AppRecordsDecarbUnitsIndexRoute
   AppRecordsInventoriesIndexRoute: typeof AppRecordsInventoriesIndexRoute
 }
@@ -662,6 +704,8 @@ const AppRouteChildren: AppRouteChildren = {
   AppEngagementsIndexRoute: AppEngagementsIndexRoute,
   AppProjectsIndexRoute: AppProjectsIndexRoute,
   AppStaffIndexRoute: AppStaffIndexRoute,
+  AppRecordsDecarbUnitsRecordIdRoute: AppRecordsDecarbUnitsRecordIdRoute,
+  AppRecordsInventoriesInventoryIdRoute: AppRecordsInventoriesInventoryIdRoute,
   AppRecordsDecarbUnitsIndexRoute: AppRecordsDecarbUnitsIndexRoute,
   AppRecordsInventoriesIndexRoute: AppRecordsInventoriesIndexRoute,
 }

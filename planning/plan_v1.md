@@ -216,11 +216,12 @@ Tick sub-items as you go; tick the step only when its "Done when" holds.
   - [x] Playwright `opinion.spec.ts` runs chapter 8 across three personas and checks the public page.
   - Done when: chapter 8 runs; a new tab on `/verify/{code}` works from the seeded issued statement. ✔
 
-- [ ] **Step 11 — Records: inventory, product emission factors, decarb_unit records**
-  - [ ] Inventory editor: year header (GWP set, consolidation), Scope 1 / 2 / 3 tabs, line table with gas sub-rows, computed tCO2e, biogenic and removals columns, evidence chips (link to a document), completeness bar, declared vs verified columns (staff can enter verified), submit for verification (attach to service or create request), revision notice after edits. YoY chart by scope.
-  - [ ] Product emission factors: list, editor, history by year, submit.
-  - [ ] `decarb_unit` record editor: baseline / project profiles side by side (gas rows, biogenic, removals, reference volume and unit), baseline method, intervention, attributed volume and unit, computed panel (factors, reduction units, removal units, biogenic delta) with diagnostics, negative-reduction justification, evidence per figure, submit; portfolio page by year and good with status chips and assurance links.
-  - Done when: chapter 7 runs, including the deliberate unit-mismatch error and its fix.
+- [x] **Step 11 — Records: inventory, product emission factors, decarb_unit records**
+  - [x] Inventories list with stacked year chart by scope, change versus previous verified year, evidence completeness, assurance links, "New inventory" (copy last year's lines). Editor: KPI tiles (gross, biogenic separate, removals separate, completeness), Scope 1/2/3 tabs with declared/verified subtotals, lines with per-gas detail, evidence chips (link existing document or upload), declared vs verified pair, add/edit line dialog with the shared `GasEditor` (live tCO2e, GWP shown, species selection, custom GWP for "other"), verifier "Verified value" dialog, submit (attach to engagement or create a request), reopen as new revision.
+  - [x] Product emission factors: cards with declared vs verified, evidence, history, assurance link; editor; submit.
+  - [x] `decarb_unit` portfolio: KPI totals, declared vs verified by year chart, table with factor, attributed volume, units, status and assurance; "New record" dialog (good, supply shed, intervention, layer, baseline method, attributed volume and unit, period). Editor: baseline and project profile cards (read-only gas table, gross, biogenic, removals, reference volume, EF gross/removal) with profile dialog; computed panel (factor, reduction units with formula, removal units, biogenic delta, diagnostics, declared vs verified, negative-reduction justification); evidence; "What if…" recompute that refuses a unit mismatch; submit with blockers.
+  - [x] Playwright `records.spec.ts` runs chapter 7 including the L-vs-t refusal and the kg recompute (= 400 units).
+  - Done when: chapter 7 runs, including the deliberate unit-mismatch error and its fix. ✔
 
 - [ ] **Step 12 — Future features in preview**
   - [ ] Integrations: API keys, MCP server (sample tool list and a sample call transcript), webhooks, spreadsheet import — all in `PreviewOverlay` with "I'm interested".
@@ -332,7 +333,8 @@ Tick sub-items as you go; tick the step only when its "Done when" holds.
 | 2026-10-06 | 7 | e3ca156 | Service workspace: layout, overview, step detail with slots/approvals/team/COI, documents, Gantt, Service Log; document and approval rows; COI gate; workspace e2e tests. | Step 8 items already present where natural (step transitions, approvals, team nomination, agreement acceptance); step 8 adds the staff pages |
 | 2026-10-06 | 8 | 08dd57d | Staff pages: My Work, triage queue, all services, finance; staff e2e tests. | — |
 | 2026-10-06 | 9 | 9b1eda5 | Findings list and thread with attachments and transitions; findings e2e test. | — |
-| 2026-10-06 | 10 | (this commit) | Opinion tab, review/approval dialogs, animated issuance, statement card, public verification page; opinion e2e test. | QR is a deterministic decorative pattern; Phase II renders a real QR |
+| 2026-10-06 | 10 | 95f643c | Opinion tab, review/approval dialogs, animated issuance, statement card, public verification page; opinion e2e test. | QR is a deterministic decorative pattern; Phase II renders a real QR |
+| 2026-10-06 | 11 | (this commit) | Records: inventories (list, chart, editor with gas editor and evidence), product emission factors, decarb_units portfolio and editor with what-if; records e2e test. | — |
 
 ---
 
