@@ -2,10 +2,12 @@ import { z } from 'zod'
 import {
   APPROVAL_KINDS,
   APPROVAL_STATUSES,
+  CHECK_RESULTS,
   COI_DECLARATIONS,
   COI_STATUSES,
   INVOICE_KINDS,
   INVOICE_STATUSES,
+  LEVELS_OF_ASSURANCE,
   PARTIES,
   PHASE_KEYS,
   PROGRAMMES,
@@ -38,7 +40,11 @@ export const ServiceScope = z.object({
   boundary: z.string().default(''),
   products: z.array(z.string()).default([]),
   interventions: z.array(z.string()).default([]),
+  /** Requested threshold from the wizard; the approved materiality setting (FR-84) is the authoritative value. */
   materiality_pct: z.number().min(0).max(100).nullable().default(null),
+  /** PRD v0.3 FR-95: what the team as a whole must cover. */
+  sector_scopes: z.array(z.string()).default([]),
+  technical_areas: z.array(z.string()).default([]),
 })
 export type ServiceScope = z.infer<typeof ServiceScope>
 
@@ -69,6 +75,11 @@ export const Service = AuditColumns.extend({
   client_contact_user_id: Id.nullable(),
   team_leader_user_id: Id.nullable(),
   target_opinion_date: IsoDate.nullable().default(null),
+  /** PRD v0.3 FR-81: fixed at contracting; `not_applicable` for validation templates. */
+  level_of_assurance: z.enum(LEVELS_OF_ASSURANCE),
+  assurance_level_locked_at: IsoDateTime.nullable().default(null),
+  /** PRD v0.3 FR-98: the VVB-level rotation check recorded at triage. */
+  triage_check_json: z.unknown().nullable().default(null),
 })
 export type Service = z.infer<typeof Service>
 
@@ -108,6 +119,8 @@ export const Step = AuditColumns.extend({
   actual_start: IsoDateTime.nullable(),
   actual_end: IsoDateTime.nullable(),
   parallel_allowed: z.boolean().default(false),
+  /** PRD v0.3 FR-80: copied from the template; the step cannot be forced to completed or skipped. */
+  non_overridable: z.boolean().default(false),
   checklist_json: z.array(ChecklistItem).default([]),
   closed_by: Id.nullable(),
   closed_at: IsoDateTime.nullable(),
@@ -151,6 +164,8 @@ export const ServiceTeamMember = AuditColumns.extend({
   status: z.enum(['nominated', 'active', 'removed']),
   nominated_by: Id.nullable(),
   nominated_at: IsoDateTime.nullable(),
+  /** Kept so the involved set (PRD FR-79) still counts people who left the team. */
+  removed_at: IsoDateTime.nullable().default(null),
 })
 export type ServiceTeamMember = z.infer<typeof ServiceTeamMember>
 
@@ -163,8 +178,50 @@ export const CoiDeclaration = AuditColumns.extend({
   status: z.enum(COI_STATUSES),
   decided_by: Id.nullable(),
   decided_at: IsoDateTime.nullable(),
+  /** PRD v0.3 FR-89: set when the declaration was re-confirmed for a revision iteration. */
+  reconfirmed_for_iteration_id: Id.nullable().default(null),
 })
 export type CoiDeclaration = z.infer<typeof CoiDeclaration>
+
+export const CheckItem = z.object({
+  key: z.string(),
+  requirement: z.string(),
+  result: z.enum(CHECK_RESULTS),
+  detail: z.string(),
+})
+export type CheckItem = z.infer<typeof CheckItem>
+
+/** PRD v0.3 FR-96, FR-98: the competence and rotation check recorded on a nomination or reassignment. */
+export const NominationCheck = AuditColumns.extend({
+  id: Id,
+  service_team_id: Id,
+  kind: z.enum(['nomination', 'reassignment']),
+  competence_json: z.array(CheckItem),
+  rotation_json: z.array(CheckItem),
+  overridden: z.boolean(),
+  override_reason: z.string().nullable(),
+  checked_by: Id,
+  checked_at: IsoDateTime,
+})
+export type NominationCheck = z.infer<typeof NominationCheck>
+
+/** PRD v0.3 FR-98: pre-platform engagements so rotation counts are complete. Entered by managers, audited. */
+export const LegacyEngagement = AuditColumns.extend({
+  id: Id,
+  verifier_org_id: Id,
+  client_org_id: Id,
+  project_id: Id.nullable(),
+  /** Null for a VVB-level row (the body did the engagement; nobody specific is counted). */
+  user_id: Id.nullable(),
+  service_role: z.enum(SERVICE_ROLES).nullable(),
+  service_type: z.enum(SERVICE_TYPES),
+  reference: z.string().min(1),
+  period_start: IsoDate,
+  period_end: IsoDate,
+  entered_by: Id,
+  note: z.string().nullable(),
+})
+export type LegacyEngagement = z.infer<typeof LegacyEngagement>
 
 export const Invoice = AuditColumns.extend({
   id: Id,

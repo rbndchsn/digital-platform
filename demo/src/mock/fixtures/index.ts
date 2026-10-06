@@ -118,10 +118,11 @@ export function buildSeed(): Tables {
 
   // ---------------------------------------------------------------- records
   const records = buildRecords({ nwInv2023: SVC.nwInv2023, nwInv2024: SVC.nwInv2024, nwInv2025: SVC.nwInv2025, nwDecarb2024: SVC.nwDecarb2024, nwDecarb2025: SVC.nwDecarb2025, atlasDecarb2025: SVC.atlasDecarb2025, atlasPcf2025: SVC.atlasPcf2025, nwPcf2024: SVC.nwPcf2024 })
-  const issuedIterationFor = (serviceId: string | null) => sc.t.statements.find((s) => s.service_id === serviceId)?.iteration_id ?? null
-  for (const inv of records.inventories) if (inv.assurance_ref) inv.assurance_ref = issuedIterationFor(inv.service_id)
-  for (const ef of records.emissionFactors) if (ef.assurance_ref) ef.assurance_ref = issuedIterationFor(ef.service_id)
-  for (const d of records.decarbRecords) if (d.assurance_ref) d.assurance_ref = issuedIterationFor(d.service_id)
+  // PRD v0.3 FR-83: `assurance_ref` is the statement id; records carry the level of assurance and the assurance status.
+  const statementFor = (serviceId: string | null) => sc.t.statements.find((s) => s.service_id === serviceId && s.status !== 'superseded') ?? sc.t.statements.find((s) => s.service_id === serviceId) ?? null
+  for (const inv of records.inventories) if (inv.assurance_ref) { const st = statementFor(inv.service_id); inv.assurance_ref = st?.id ?? null; inv.level_of_assurance = st?.level_of_assurance ?? null; inv.assurance_status = inv.status === 'superseded' ? 'superseded' : 'verified' }
+  for (const ef of records.emissionFactors) if (ef.assurance_ref) { const st = statementFor(ef.service_id); ef.assurance_ref = st?.id ?? null; ef.level_of_assurance = st?.level_of_assurance ?? null; ef.assurance_status = 'verified' }
+  for (const d of records.decarbRecords) if (d.assurance_ref) { const st = statementFor(d.service_id); d.assurance_ref = st?.id ?? null; d.level_of_assurance = st?.level_of_assurance ?? null; d.assurance_status = 'verified' }
   const inv2023 = records.inventories.find((i) => i.year === 2023)
   const inv2024 = records.inventories.find((i) => i.year === 2024)
   if (inv2023 && inv2024) inv2023.superseded_by_id = inv2024.id
@@ -177,5 +178,15 @@ export function buildSeed(): Tables {
     templates: WORKFLOW_TEMPLATES,
     platformSettings: platformSettings(),
     announcements: announcements(),
+    materialitySettings: [],
+    misstatements: [],
+    postIssuanceEvents: [],
+    recordAssuranceHistory: [],
+    cases: [],
+    caseNotes: [],
+    competenceProfiles: [],
+    competenceQualifications: [],
+    nominationChecks: [],
+    legacyEngagements: [],
   }
 }

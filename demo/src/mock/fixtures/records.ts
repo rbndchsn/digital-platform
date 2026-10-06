@@ -89,15 +89,20 @@ export function buildRecords(serviceIds: { nwInv2023: string; nwInv2024: string;
   // ---------------------------------------------------------------- inventories
   const inventory = (opts: { year: number; scale: number; status: Inventory['status']; serviceId: string; createdDaysAgo: number; gwp: GwpSet; verifiedDaysAgo?: number; assuranceRef?: string | null; superseded?: boolean; evidenceCoverage: number; revision?: number }): Inventory => {
     const at = daysAgo(opts.createdDaysAgo)
-    const inv: Inventory = { ...auditAt(at, USR.nwAdmin), id: seedId('inv'), org_id: ORG.northwind, year: opts.year, boundary_name: 'Northwind Dairy Cooperative — operational control', consolidation: 'operational_control', gwp_set: opts.gwp, status: opts.status, revision: opts.revision ?? 1, service_id: opts.serviceId, declared_totals_json: null, verified_totals_json: null, assurance_ref: opts.assuranceRef ?? null, superseded_by_id: null, submitted_at: opts.status === 'draft' ? null : daysAgo(opts.createdDaysAgo - 6), verified_at: opts.verifiedDaysAgo != null ? daysAgo(opts.verifiedDaysAgo) : null }
+    const inv: Inventory = { ...auditAt(at, USR.nwAdmin), id: seedId('inv'), org_id: ORG.northwind, year: opts.year, boundary_name: 'Northwind Dairy Cooperative — operational control', consolidation: 'operational_control', gwp_set: opts.gwp, status: opts.status, revision: opts.revision ?? 1, service_id: opts.serviceId, declared_totals_json: null, verified_totals_json: null, assurance_ref: opts.assuranceRef ?? null, level_of_assurance: null, assurance_status: null, superseded_by_id: null, submitted_at: opts.status === 'draft' ? null : daysAgo(opts.createdDaysAgo - 6), verified_at: opts.verifiedDaysAgo != null ? daysAgo(opts.verifiedDaysAgo) : null }
     const specs = northwindLines(opts.scale, opts.year)
     const forTotals: { category: ScopeCategory; gross_tco2e: number; biogenic_co2_t: number; removals_tco2e: number }[] = []
     const forVerified: typeof forTotals = []
+    const reviewed = opts.status === 'verified' || opts.status === 'superseded'
+    const reviewedAt = opts.verifiedDaysAgo != null ? daysAgo(opts.verifiedDaysAgo + 12, 14, 0) : null
     specs.forEach((spec, i) => {
       const gases = computeGases(opts.gwp, spec.gases)
       const gross = Math.round(gases.reduce((a, x) => a + x.tco2e, 0) * 100) / 100
-      const verified = opts.status === 'verified' || opts.status === 'superseded' ? (spec.verifiedGross ?? gross) : null
-      const line: InventoryLine = { ...auditAt(at, USR.nwAdmin), id: seedId('lin'), inventory_id: inv.id, org_id: ORG.northwind, scope: scopeOfCategory(spec.category), category: spec.category, site: spec.site, activity: spec.activity, quantity: spec.quantity, unit: spec.unit, declared_gross_tco2e: gross, declared_biogenic_co2_t: spec.biogenic ?? 0, declared_removals_tco2e: spec.removals ?? 0, verified_gross_tco2e: verified, verified_biogenic_co2_t: verified != null ? (spec.biogenic ?? 0) : null, verified_removals_tco2e: verified != null ? (spec.removals ?? 0) : null, verifier_comment: verified != null ? (spec.comment ?? null) : null, source: i % 5 === 4 ? 'import' : 'manual', order_no: i }
+      const verified = reviewed ? (spec.verifiedGross ?? gross) : null
+      // PRD v0.3 FR-82: lines carry a review status; large Scope 3 categories were sampled, not individually tested.
+      const adjusted = reviewed && spec.verifiedGross != null && spec.verifiedGross !== gross
+      const reviewStatus = !reviewed ? 'not_reviewed' : adjusted ? 'adjusted' : i % 7 === 6 ? 'not_individually_tested' : 'accepted'
+      const line: InventoryLine = { ...auditAt(at, USR.nwAdmin), id: seedId('lin'), inventory_id: inv.id, org_id: ORG.northwind, scope: scopeOfCategory(spec.category), category: spec.category, site: spec.site, activity: spec.activity, quantity: spec.quantity, unit: spec.unit, declared_gross_tco2e: gross, declared_biogenic_co2_t: spec.biogenic ?? 0, declared_removals_tco2e: spec.removals ?? 0, review_status: reviewStatus, adjusted_gross_tco2e: adjusted ? verified : null, adjusted_biogenic_co2_t: adjusted ? (spec.biogenic ?? 0) : null, adjusted_removals_tco2e: adjusted ? (spec.removals ?? 0) : null, verifier_comment: reviewed ? (spec.comment ?? null) : null, reviewed_by: reviewed ? (i % 2 === 0 ? USR.aud : USR.tl) : null, reviewed_at: reviewedAt, source: i % 5 === 4 ? 'import' : 'manual', order_no: i }
       t.inventoryLines.push(line)
       for (const gr of gases) t.inventoryLineGases.push({ ...auditAt(at, USR.nwAdmin), id: seedId('lgs'), line_id: line.id, gas: gr.gas, gas_detail: gr.gas_detail, tonnes_gas: gr.tonnes_gas, custom_gwp: gr.custom_gwp, gwp: gr.gwp, tco2e: gr.tco2e })
       forTotals.push({ category: spec.category, gross_tco2e: gross, biogenic_co2_t: spec.biogenic ?? 0, removals_tco2e: spec.removals ?? 0 })
@@ -119,8 +124,8 @@ export function buildRecords(serviceIds: { nwInv2023: string; nwInv2024: string;
   void inv2024
 
   // ---------------------------------------------------------------- product emission factors
-  const ef = (e: Omit<EmissionFactor, keyof ReturnType<typeof auditAt> | 'id'>, createdDaysAgo: number, by: string): EmissionFactor => {
-    const row: EmissionFactor = { ...auditAt(daysAgo(createdDaysAgo), by), id: seedId('ef'), ...e }
+  const ef = (e: Omit<EmissionFactor, keyof ReturnType<typeof auditAt> | 'id' | 'level_of_assurance' | 'assurance_status'>, createdDaysAgo: number, by: string): EmissionFactor => {
+    const row: EmissionFactor = { ...auditAt(daysAgo(createdDaysAgo), by), id: seedId('ef'), level_of_assurance: null, assurance_status: null, ...e }
     t.emissionFactors.push(row)
     return row
   }
@@ -197,6 +202,8 @@ export function buildRecords(serviceIds: { nwInv2023: string; nwInv2024: string;
       status: d.status,
       service_id: d.serviceId,
       assurance_ref: d.assuranceRef ?? null,
+      level_of_assurance: null,
+      assurance_status: null,
       superseded_by_id: null,
       period_start: d.project.period[0],
       period_end: d.project.period[1],

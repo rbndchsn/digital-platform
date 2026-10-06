@@ -107,6 +107,15 @@ export function computeNextAction(snap: ServiceSnapshot): NextAction | null {
       })
     case 'issued':
       return act({ party: 'verifier', role: 'verifier_coordinator', action: 'close', label: 'Close the service', entity_type: 'service', entity_id: service.id, blocking: false })
+    case 'in_revision': {
+      // PRD v0.3 FR-89: the revision runs the opinion chain again on a fresh iteration.
+      const latest = [...snap.iterations].sort((a, b) => b.iteration_no - a.iteration_no)[0]
+      const opinionStep = snap.steps.find((s) => s.key === 'final_opinion') ?? null
+      if (!latest || latest.status === 'issued' || latest.status === 'changes_requested') {
+        return act({ party: 'verifier', role: 'verifier_team_leader', action: 'create_iteration', label: `Prepare the revision (iteration ${(latest?.iteration_no ?? 0) + 1})`, entity_type: 'step', entity_id: opinionStep?.id ?? service.id, step_id: opinionStep?.id ?? null })
+      }
+      break
+    }
     default:
       break
   }
@@ -235,7 +244,7 @@ export function computeNextAction(snap: ServiceSnapshot): NextAction | null {
     })
   }
 
-  if (step.key === 'final_opinion') {
+  if (step.key === 'final_opinion' || service.status === 'in_revision') {
     const latest = [...snap.iterations].sort((a, b) => b.iteration_no - a.iteration_no)[0]
     const blockingOpen = snap.findings.some((f) => f.blocking && !['closed', 'withdrawn'].includes(f.status))
     if (!latest || latest.status === 'changes_requested') {
@@ -247,7 +256,8 @@ export function computeNextAction(snap: ServiceSnapshot): NextAction | null {
       case 'independent_review':
         return act({ party: 'verifier', role: 'verifier_independent_reviewer', actor_user_id: latest.ir_user_id, action: 'ir_decide', label: `Independent review of iteration ${latest.iteration_no}`, entity_type: 'iteration', entity_id: latest.id, step_id: step.id, due })
       case 'manager_review':
-        return act({ party: 'verifier', role: 'verifier_manager', action: 'manager_decide', label: blockingOpen ? 'Blocking findings must close before approval' : `Manager approval of iteration ${latest.iteration_no}`, entity_type: 'iteration', entity_id: latest.id, step_id: step.id, due })
+        // PRD v0.3 FR-79: the decision belongs to a manager outside the involved set; the UI shows eligibility.
+        return act({ party: 'verifier', role: 'verifier_manager', action: 'manager_decide', label: blockingOpen ? 'Blocking findings must close before approval' : `Manager decision on iteration ${latest.iteration_no} (outside the involved set)`, entity_type: 'iteration', entity_id: latest.id, step_id: step.id, due })
       case 'approved':
         return act({ party: 'verifier', role: 'verifier_manager', action: 'issue', label: 'Issue the opinion', entity_type: 'iteration', entity_id: latest.id, step_id: step.id, due })
       default:

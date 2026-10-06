@@ -28,7 +28,7 @@ function makeSnapshot(status: Service['status'] = 'contracting'): ServiceSnapsho
     resume_status: null,
     period_start: '2025-01-01',
     period_end: '2025-12-31',
-    scope_json: { summary: '', sites: [], boundary: '', products: [], interventions: [], materiality_pct: null },
+    scope_json: { summary: '', sites: [], boundary: '', products: [], interventions: [], materiality_pct: null, sector_scopes: [], technical_areas: [] },
     requested_at: null,
     contracted_at: null,
     issued_at: null,
@@ -38,6 +38,9 @@ function makeSnapshot(status: Service['status'] = 'contracting'): ServiceSnapsho
     client_contact_user_id: null,
     team_leader_user_id: null,
     target_opinion_date: null,
+    level_of_assurance: 'reasonable',
+    assurance_level_locked_at: null,
+    triage_check_json: null,
   }
   return { service, ...inst, team: [], findings: [], iterations: [] }
 }
@@ -94,7 +97,7 @@ describe('computeNextAction', () => {
     snap.findings[0].status = 'responded'
     expect(computeNextAction(snap)!.action).toBe('review_finding')
     snap.findings[0].status = 'closed'
-    snap.iterations.push({ ...audit, id: 'it1', service_id: 'svc', iteration_no: 1, status: 'independent_review', summary_json: { opinion_type: null, level_of_assurance: null, figures: [], narrative: '' }, submitted_for_ir_at: now, ir_user_id: 'u_ir', ir_decision: null, ir_comment: null, ir_decided_at: null, manager_user_id: null, manager_decision: null, manager_comment: null, manager_decided_at: null, checklist_ir_json: [], checklist_manager_json: [] })
+    snap.iterations.push({ ...audit, id: 'it1', service_id: 'svc', iteration_no: 1, status: 'independent_review', summary_json: { opinion_type: null, level_of_assurance: null, figures: [], narrative: '' }, submitted_for_ir_at: now, ir_user_id: 'u_ir', ir_decision: null, ir_comment: null, ir_decided_at: null, manager_user_id: null, manager_decision: null, manager_comment: null, manager_decided_at: null, checklist_ir_json: [], checklist_manager_json: [], aggregation_json: null, materiality_warning: false, materiality_ack_ir_json: null, materiality_ack_manager_json: null, revision_of_statement_id: null, returned_to_ir_count: 0 })
     const ir = computeNextAction(snap)!
     expect(ir.action).toBe('ir_decide')
     expect(ir.actor_user_id).toBe('u_ir')
@@ -128,6 +131,15 @@ describe('computeNextAction', () => {
     // Reopening by override brings the client action back.
     desk.status = applyStepOverride(desk, 'reopen').state
     expect(computeNextAction(snap)!.step_id).toBe(desk.id)
+  })
+
+  it('a service in revision asks the team leader for the revision iteration (PRD v0.3 FR-89)', () => {
+    const snap = makeSnapshot('in_revision')
+    complete(snap, 'pre_engagement', 'desk_review_cpf', 'team_nomination', 'contract_review', 'service_agreement', 'audit_plan', 'desk_review', 'data_review', 'remote_onsite_audit', 'reporting', 'final_opinion', 'final_submission')
+    const a = computeNextAction(snap)!
+    expect(a.action).toBe('create_iteration')
+    expect(a.label).toMatch(/revision/)
+    expect(a.party).toBe('verifier')
   })
 
   it('addresses actions to the right viewer', () => {

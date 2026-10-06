@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import {
+  ASSURANCE_STATUSES,
   BASELINE_METHODS,
   CONSOLIDATION_APPROACHES,
   DOCUMENT_SOURCES,
@@ -8,12 +9,21 @@ import {
   GASES,
   GWP_SETS,
   INTERVENTION_LAYERS,
+  LEVELS_OF_ASSURANCE,
   PROFILE_KINDS,
   RECORD_STATUSES,
+  REVIEW_STATUSES,
   SCOPES,
   SCOPE_CATEGORIES,
 } from '../enums'
 import { AuditColumns, Id, IsoDate, IsoDateTime } from './common'
+
+/** PRD v0.3 FR-83: assurance columns shared by every record type. `assurance_ref` is the opinion statement id. */
+const AssuranceColumns = {
+  assurance_ref: Id.nullable(),
+  level_of_assurance: z.enum(LEVELS_OF_ASSURANCE).nullable().default(null),
+  assurance_status: z.enum(ASSURANCE_STATUSES).nullable().default(null),
+}
 
 export const GasEntry = z.object({
   gas: z.enum(GASES),
@@ -52,8 +62,9 @@ export const Inventory = AuditColumns.extend({
   revision: z.number().int().nonnegative(),
   service_id: Id.nullable(),
   declared_totals_json: ScopeTotals.nullable(),
+  /** Assertion-level verified figures (PRD v0.3 FR-82). */
   verified_totals_json: ScopeTotals.nullable(),
-  assurance_ref: Id.nullable(),
+  ...AssuranceColumns,
   superseded_by_id: Id.nullable(),
   submitted_at: IsoDateTime.nullable(),
   verified_at: IsoDateTime.nullable(),
@@ -73,10 +84,14 @@ export const InventoryLine = AuditColumns.extend({
   declared_gross_tco2e: z.number().nonnegative(),
   declared_biogenic_co2_t: z.number().nonnegative().default(0),
   declared_removals_tco2e: z.number().nonnegative().default(0),
-  verified_gross_tco2e: z.number().nonnegative().nullable(),
-  verified_biogenic_co2_t: z.number().nonnegative().nullable(),
-  verified_removals_tco2e: z.number().nonnegative().nullable(),
+  /** PRD v0.3 FR-82: lines carry a review status and, when adjusted, the adjusted values; never a per-line verified value. */
+  review_status: z.enum(REVIEW_STATUSES).default('not_reviewed'),
+  adjusted_gross_tco2e: z.number().nonnegative().nullable().default(null),
+  adjusted_biogenic_co2_t: z.number().nonnegative().nullable().default(null),
+  adjusted_removals_tco2e: z.number().nonnegative().nullable().default(null),
   verifier_comment: z.string().nullable(),
+  reviewed_by: Id.nullable().default(null),
+  reviewed_at: IsoDateTime.nullable().default(null),
   source: z.enum(DOCUMENT_SOURCES),
   order_no: z.number().int(),
 })
@@ -96,7 +111,7 @@ export const EmissionFactor = AuditColumns.extend({
   verified_value: z.number().nonnegative().nullable(),
   status: z.enum(RECORD_STATUSES),
   service_id: Id.nullable(),
-  assurance_ref: Id.nullable(),
+  ...AssuranceColumns,
   superseded_by_id: Id.nullable(),
   notes: z.string().nullable(),
 })
@@ -170,7 +185,7 @@ export const DecarbUnitRecord = AuditColumns.extend({
   justification: z.string().nullable(),
   status: z.enum(RECORD_STATUSES),
   service_id: Id.nullable(),
-  assurance_ref: Id.nullable(),
+  ...AssuranceColumns,
   superseded_by_id: Id.nullable(),
   period_start: IsoDate,
   period_end: IsoDate,

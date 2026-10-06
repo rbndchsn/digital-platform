@@ -11,6 +11,8 @@ export const ORG = {
 
 export const USR = {
   mgr: 'usr_helena',
+  /** Second decision-capable manager (PRD v0.3 §16 assumption 7, plan_v1 §8 D13). */
+  mgr2: 'usr_marc',
   tl: 'usr_marcus',
   aud: 'usr_priya',
   ir: 'usr_tomas',
@@ -58,6 +60,7 @@ interface Person {
 
 const PEOPLE: Person[] = [
   { id: USR.mgr, name: 'Helena Brandt', email: 'helena.brandt@verifassur.example', title: 'Scheme manager', org: ORG.verifassur, role: 'verifier_manager' },
+  { id: USR.mgr2, name: 'Marc Lefèvre', email: 'marc.lefevre@verifassur.example', title: 'Technical manager', org: ORG.verifassur, role: 'verifier_manager' },
   { id: USR.tl, name: 'Marcus Oyelaran', email: 'marcus.oyelaran@verifassur.example', title: 'Lead verifier', org: ORG.verifassur, role: 'verifier_team_leader' },
   { id: USR.aud, name: 'Priya Natarajan', email: 'priya.natarajan@verifassur.example', title: 'GHG auditor', org: ORG.verifassur, role: 'verifier_auditor' },
   { id: USR.ir, name: 'Tomas Lindqvist', email: 'tomas.lindqvist@verifassur.example', title: 'Independent reviewer', org: ORG.verifassur, role: 'verifier_independent_reviewer' },
@@ -72,7 +75,7 @@ const PEOPLE: Person[] = [
 ]
 
 /** Deterministic "last sign-in" per persona: staff daily, client admins weekly, viewers rarely. */
-const LAST_SIGN_IN_DAYS: Record<string, number> = { usr_helena: 0, usr_marcus: 0, usr_priya: 1, usr_tomas: 2, usr_ana: 0, usr_jonas: 3, usr_sam: 0, usr_ingrid: 1, usr_pieter: 4, usr_claire: 23, usr_amina: 2, usr_luc: 6 }
+const LAST_SIGN_IN_DAYS: Record<string, number> = { usr_helena: 0, usr_marc: 1, usr_marcus: 0, usr_priya: 1, usr_tomas: 2, usr_ana: 0, usr_jonas: 3, usr_sam: 0, usr_ingrid: 1, usr_pieter: 4, usr_claire: 23, usr_amina: 2, usr_luc: 6 }
 
 export function users(): User[] {
   const a = auditAt(daysAgo(380))
@@ -156,6 +159,7 @@ export function platformSettings(): PlatformSettings[] {
         { type: 'step_overridden', subject: '[VERIFASSUR_X] {{service_reference}}: {{step_name}} {{override_action}} by the manager', body: 'Hello {{first_name}},\n\n{{manager}} set "{{step_name}}" to {{new_status}} on {{service_name}}.\nReason: {{reason}}\n\nWhat happens next: {{next_action}}' },
       ],
       retention_years: 10,
+      complaint_targets_json: { acknowledge_days: 5, decide_days: 30 },
       updated_by: USR.admin,
       updated_at: daysAgo(30, 10, 0),
     },

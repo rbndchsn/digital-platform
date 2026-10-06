@@ -198,7 +198,11 @@ describe('storyline', () => {
     const rec = await records.getDecarbRecord('dcu_nw_milk_2025')
     expect(rec.status).toBe('verified')
     expect(rec.verified_reduction_units).toBe(400_000)
-    expect(rec.assurance_ref).toBe(it2.id)
+    // PRD v0.3 FR-83: the record points to the statement and carries the level of assurance.
+    expect(rec.assurance_ref).toBe(statement.id)
+    expect(rec.level_of_assurance).toBe('reasonable')
+    expect(rec.assurance_status).toBe('verified')
+    expect(rec.assurance.history[0]?.event).toBe('written_back')
     await auth.signOut()
     const pub = await iterations.getPublicStatement(statement.public_code)
     expect(pub?.clientName).toBe('Northwind Dairy Cooperative')

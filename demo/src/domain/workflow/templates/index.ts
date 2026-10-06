@@ -1,12 +1,13 @@
 /**
  * Service-type workflow templates (PRD FR-10, FR-11). Templates are data: the common Contracting and Planning
  * phases are shared, and Execution differs per service type (document slots and step names).
- * Phase II stores these as JSON rows in `workflow_templates`.
+ * PRD v0.3: every protected step is `non_overridable`; assurance, materiality, competence and rotation rules are
+ * template data. Phase II stores these as JSON rows in `workflow_templates`.
  */
 import type { ServiceType } from '../../enums'
 import { SERVICE_TYPE_LABELS } from '../../enums'
-import type { PhaseTemplate, SlotTemplate, StepTemplate, WorkflowTemplate } from '../template.schema'
-import { WorkflowTemplate as WorkflowTemplateSchema } from '../template.schema'
+import type { AssuranceTemplate, CompetenceRequirements, MaterialityDefaults, PhaseTemplate, RotationRule, SlotTemplate, StepTemplate, WorkflowTemplate } from '../template.schema'
+import { WorkflowTemplate as WorkflowTemplateSchema, validateTemplate } from '../template.schema'
 
 const VERIFIER_ORG_ID = 'org_verifassur'
 
@@ -26,7 +27,7 @@ const contracting: PhaseTemplate = {
     {
       key: 'pre_engagement',
       name: 'Pre-engagement form',
-      description: 'The client describes scope, boundary, period and sites so VERIFASSUR can assess the engagement.',
+      description: 'The client describes scope, boundary, period, sites and the requested level of assurance so VERIFASSUR can assess the engagement.',
       owner_role: 'client_contact',
       planned_duration_days: 5,
       parallel_allowed: false,
@@ -34,6 +35,7 @@ const contracting: PhaseTemplate = {
       approvals: [],
       checklist: [],
       is_opinion_step: false,
+      non_overridable: false,
     },
     {
       key: 'desk_review_cpf',
@@ -49,11 +51,12 @@ const contracting: PhaseTemplate = {
       ],
       checklist: [],
       is_opinion_step: false,
+      non_overridable: true,
     },
     {
       key: 'team_nomination',
       name: 'Team nomination',
-      description: 'Team members are nominated and each declares conflicts of interest.',
+      description: 'Team members are nominated with competence and rotation checks, and each declares conflicts of interest.',
       owner_role: 'verifier_manager',
       planned_duration_days: 3,
       parallel_allowed: false,
@@ -61,11 +64,12 @@ const contracting: PhaseTemplate = {
       approvals: [],
       checklist: [],
       is_opinion_step: false,
+      non_overridable: true,
     },
     {
       key: 'contract_review',
       name: 'Contract review',
-      description: 'Quote and contract are prepared and reviewed.',
+      description: 'Quote and contract are prepared and reviewed; the agreed level of assurance is printed in the contract.',
       owner_role: 'verifier_coordinator',
       planned_duration_days: 5,
       parallel_allowed: false,
@@ -76,11 +80,12 @@ const contracting: PhaseTemplate = {
       approvals: [{ kind: 'contract', label: 'Contract review' }],
       checklist: [],
       is_opinion_step: false,
+      non_overridable: true,
     },
     {
       key: 'service_agreement',
       name: 'V&V service agreement',
-      description: 'The client accepts the service agreement in the platform.',
+      description: 'The client accepts the service agreement in the platform; acceptance locks the level of assurance.',
       owner_role: 'client_contact',
       planned_duration_days: 5,
       parallel_allowed: false,
@@ -88,6 +93,7 @@ const contracting: PhaseTemplate = {
       approvals: [{ kind: 'agreement_acceptance', label: 'Service agreement acceptance' }],
       checklist: [],
       is_opinion_step: false,
+      non_overridable: true,
     },
   ],
 }
@@ -99,7 +105,7 @@ const planning: PhaseTemplate = {
     {
       key: 'audit_plan',
       name: 'Audit plan',
-      description: 'Risk and materiality assessment, sampling approach, sites and schedule.',
+      description: 'Risk assessment, materiality setting, sampling approach, sites and schedule.',
       owner_role: 'verifier_team_leader',
       planned_duration_days: 7,
       parallel_allowed: false,
@@ -107,6 +113,7 @@ const planning: PhaseTemplate = {
       approvals: [{ kind: 'audit_plan', label: 'Audit plan acceptance' }],
       checklist: [],
       is_opinion_step: false,
+      non_overridable: false,
     },
   ],
 }
@@ -124,6 +131,7 @@ function executionPhase(deskSlots: SlotTemplate[], dataStep: { key: string; name
       approvals: [],
       checklist: [],
       is_opinion_step: false,
+      non_overridable: false,
     },
     {
       key: dataStep.key,
@@ -136,6 +144,7 @@ function executionPhase(deskSlots: SlotTemplate[], dataStep: { key: string; name
       approvals: [],
       checklist: [],
       is_opinion_step: false,
+      non_overridable: false,
     },
     {
       key: 'remote_onsite_audit',
@@ -151,11 +160,12 @@ function executionPhase(deskSlots: SlotTemplate[], dataStep: { key: string; name
       approvals: [],
       checklist: [],
       is_opinion_step: false,
+      non_overridable: false,
     },
     {
       key: 'reporting',
       name: 'Reporting',
-      description: 'Findings are resolved and the verification report is drafted.',
+      description: 'Findings are resolved, misstatements registered and the verification report is drafted.',
       owner_role: 'verifier_team_leader',
       planned_duration_days: 10,
       parallel_allowed: false,
@@ -163,11 +173,12 @@ function executionPhase(deskSlots: SlotTemplate[], dataStep: { key: string; name
       approvals: [],
       checklist: [],
       is_opinion_step: false,
+      non_overridable: false,
     },
     {
       key: 'final_opinion',
       name: 'Final opinion',
-      description: 'Opinion iterations: team leader draft, independent review, manager approval.',
+      description: 'Opinion iterations: team leader draft, independent review, decision by a manager outside the involved set.',
       owner_role: 'verifier_team_leader',
       planned_duration_days: 7,
       parallel_allowed: false,
@@ -175,6 +186,7 @@ function executionPhase(deskSlots: SlotTemplate[], dataStep: { key: string; name
       approvals: [],
       checklist: [],
       is_opinion_step: true,
+      non_overridable: true,
     },
     {
       key: 'final_submission',
@@ -187,6 +199,7 @@ function executionPhase(deskSlots: SlotTemplate[], dataStep: { key: string; name
       approvals: [],
       checklist: [],
       is_opinion_step: false,
+      non_overridable: false,
     },
   ]
   return { key: 'execution', name: 'Execution', steps }
@@ -231,7 +244,7 @@ const monitoringStep = {
 const inventoryDataStep = {
   key: 'data_review',
   name: 'Data review',
-  description: 'Declared inventory lines are traced to activity data and emission factors.',
+  description: 'Declared inventory lines are traced to activity data and emission factors; each line gets a review status.',
   slots: [slot('ef_sources', 'Emission factor sources', 'phase', 'client', false)],
 }
 const productDataStep = {
@@ -253,10 +266,14 @@ const designChangeDataStep = {
   slots: [slot('change_description', 'Description of the design change', 'phase', 'client')],
 }
 
+/** Checklist item key shared by the IR and manager checklists for the materiality consistency check (PRD FR-87). */
+export const MATERIALITY_CHECKLIST_KEY = 'materiality'
+
 const IR_CHECKLIST = [
   { key: 'scope', label: 'Scope and boundary of the opinion match the agreement' },
   { key: 'evidence', label: 'Evidence supports every verified figure' },
   { key: 'findings', label: 'All blocking findings closed' },
+  { key: MATERIALITY_CHECKLIST_KEY, label: 'Aggregated uncorrected misstatements are consistent with the draft opinion type' },
   { key: 'calc', label: 'Calculation checks reperformed on a sample' },
   { key: 'wording', label: 'Opinion wording follows the standard template' },
 ]
@@ -264,29 +281,55 @@ const MANAGER_CHECKLIST = [
   { key: 'ir', label: 'Independent review completed and approved' },
   { key: 'impartiality', label: 'No impartiality threats arose during the engagement' },
   { key: 'competence', label: 'Team competence covered the technical scope' },
+  { key: MATERIALITY_CHECKLIST_KEY, label: 'Aggregated uncorrected misstatements are consistent with the draft opinion type' },
   { key: 'sign', label: 'Ready to sign and issue' },
 ]
+
+const VERIFICATION_ROLES: CompetenceRequirements['roles'] = {
+  verifier_team_leader: { qualification: 'lead_verifier', programme: null },
+  verifier_auditor: { qualification: 'verifier', programme: null },
+  verifier_technical_expert: { qualification: 'technical_expert', programme: null },
+  verifier_independent_reviewer: { qualification: 'independent_reviewer', programme: null },
+}
+const VALIDATION_ROLES: CompetenceRequirements['roles'] = {
+  verifier_team_leader: { qualification: 'lead_validator', programme: null },
+  verifier_auditor: { qualification: 'validator', programme: null },
+  verifier_technical_expert: { qualification: 'technical_expert', programme: null },
+  verifier_independent_reviewer: { qualification: 'independent_reviewer', programme: null },
+}
+
+const PROJECT_ROTATION: RotationRule[] = [
+  { role: 'verifier_team_leader', scope: 'same_project', max_consecutive: 3, cooling_off_periods: 1, on_breach: 'warn' },
+  { role: 'vvb', scope: 'same_project', max_consecutive: 6, cooling_off_periods: 1, on_breach: 'warn' },
+]
+const CLIENT_ROTATION: RotationRule[] = [{ role: 'verifier_team_leader', scope: 'same_client', max_consecutive: 3, cooling_off_periods: 1, on_breach: 'warn' }]
 
 interface TypeConfig {
   standard: string
   desk: SlotTemplate[]
   data: { key: string; name: string; description: string; slots: SlotTemplate[] }
+  assurance: AssuranceTemplate
+  materiality: MaterialityDefaults | null
+  roles: CompetenceRequirements['roles']
+  rotation: RotationRule[]
 }
 
+const tco2eDefaults = (note: string): MaterialityDefaults => ({ assertion_base: 'total_gross_tco2e', threshold_pct: 5, basis: 'programme_rule', basis_note: note, qualitative: ['Omission of a source, sink or reservoir within the boundary', 'Misapplied GWP set or allocation method', 'Inconsistent application of the methodology between periods'] })
+
 const CONFIG: Record<ServiceType, TypeConfig> = {
-  vcs_validation: { standard: 'Verra VCS Standard v4.x', desk: projectDeskSlots, data: monitoringStep },
-  vcs_verification: { standard: 'Verra VCS Standard v4.x', desk: projectDeskSlots, data: monitoringStep },
-  gs_validation: { standard: 'Gold Standard for the Global Goals', desk: projectDeskSlots, data: monitoringStep },
-  gs_verification: { standard: 'Gold Standard for the Global Goals', desk: projectDeskSlots, data: monitoringStep },
-  iso14064_1_inventory_verification: { standard: 'ISO 14064-1:2018 / ISO 14064-3:2019', desk: inventoryDeskSlots, data: inventoryDataStep },
-  iso14067_product_verification: { standard: 'ISO 14067:2018 / ISO 14064-3:2019', desk: productDeskSlots, data: productDataStep },
-  decarb_units_verification: { standard: 'ISO 14064-2:2019 / ISO 14064-3:2019', desk: decarbDeskSlots, data: decarbDataStep },
-  design_change: { standard: 'Verra VCS Standard v4.x', desk: projectDeskSlots.slice(0, 2), data: designChangeDataStep },
+  vcs_validation: { standard: 'Verra VCS Standard v4.x', desk: projectDeskSlots, data: monitoringStep, assurance: { applies: false, default: 'not_applicable' }, materiality: null, roles: VALIDATION_ROLES, rotation: PROJECT_ROTATION },
+  vcs_verification: { standard: 'Verra VCS Standard v4.x', desk: projectDeskSlots, data: monitoringStep, assurance: { applies: true, default: 'reasonable' }, materiality: tco2eDefaults('VCS Standard v4: 5 % of the emission reductions claimed (large projects).'), roles: VERIFICATION_ROLES, rotation: PROJECT_ROTATION },
+  gs_validation: { standard: 'Gold Standard for the Global Goals', desk: projectDeskSlots, data: monitoringStep, assurance: { applies: false, default: 'not_applicable' }, materiality: null, roles: VALIDATION_ROLES, rotation: PROJECT_ROTATION },
+  gs_verification: { standard: 'Gold Standard for the Global Goals', desk: projectDeskSlots, data: monitoringStep, assurance: { applies: true, default: 'reasonable' }, materiality: tco2eDefaults('Gold Standard: 5 % of the emission reductions claimed.'), roles: VERIFICATION_ROLES, rotation: PROJECT_ROTATION },
+  iso14064_1_inventory_verification: { standard: 'ISO 14064-1:2018 / ISO 14064-3:2019', desk: inventoryDeskSlots, data: inventoryDataStep, assurance: { applies: true, default: 'reasonable' }, materiality: tco2eDefaults('ISO 14064-3:2019 §6.1.4: verifier judgement; VERIFASSUR default 5 % of total gross emissions.'), roles: VERIFICATION_ROLES, rotation: CLIENT_ROTATION },
+  iso14067_product_verification: { standard: 'ISO 14067:2018 / ISO 14064-3:2019', desk: productDeskSlots, data: productDataStep, assurance: { applies: true, default: 'limited' }, materiality: { assertion_base: 'ef_value', threshold_pct: 5, basis: 'verifier_judgement', basis_note: 'ISO 14067: 5 % of the declared product emission factor per functional unit.', qualitative: ['Boundary omission (cradle-to-gate processes left out)', 'Allocation method not consistent with ISO 14067 §6.4', 'Secondary data used where primary data was available'] }, roles: VERIFICATION_ROLES, rotation: CLIENT_ROTATION },
+  decarb_units_verification: { standard: 'ISO 14064-2:2019 / ISO 14064-3:2019', desk: decarbDeskSlots, data: decarbDataStep, assurance: { applies: true, default: 'reasonable' }, materiality: { assertion_base: 'reduction_units', threshold_pct: 5, basis: 'verifier_judgement', basis_note: 'ISO 14064-2 projects: 5 % of the reduction units claimed on the attributed volume.', qualitative: ['Baseline method changed without disclosure', 'Attributed volume not traceable to purchase records', 'Biogenic CO2 netted into the units'] }, roles: VERIFICATION_ROLES, rotation: CLIENT_ROTATION },
+  design_change: { standard: 'Verra VCS Standard v4.x', desk: projectDeskSlots.slice(0, 2), data: designChangeDataStep, assurance: { applies: false, default: 'not_applicable' }, materiality: null, roles: VALIDATION_ROLES, rotation: [] },
 }
 
 export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = (Object.keys(CONFIG) as ServiceType[]).map((type) => {
   const cfg = CONFIG[type]
-  return WorkflowTemplateSchema.parse({
+  const t = WorkflowTemplateSchema.parse({
     id: `tpl_${type}`,
     verifier_org_id: VERIFIER_ORG_ID,
     service_type: type,
@@ -297,7 +340,18 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = (Object.keys(CONFIG) as Se
     phases: [contracting, planning, executionPhase(cfg.desk, cfg.data)],
     ir_checklist: IR_CHECKLIST,
     manager_checklist: MANAGER_CHECKLIST,
+    assurance: cfg.assurance,
+    materiality_defaults: cfg.materiality,
+    competence_requirements: { roles: cfg.roles, team_coverage: true },
+    rotation_rules: cfg.rotation,
+    complaint_targets: { acknowledge_days: 5, decide_days: 30 },
+    blocking_finding_types: ['CAR'],
+    retention_years: null,
+    last_edit_reason: null,
   })
+  const errors = validateTemplate(t)
+  if (errors.length) throw new Error(`Template ${t.id} is invalid: ${errors.join(' ')}`)
+  return t
 })
 
 export function templateFor(type: ServiceType): WorkflowTemplate {

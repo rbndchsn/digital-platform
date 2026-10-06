@@ -1,5 +1,5 @@
 /** Services (engagements): list, detail aggregate, request lifecycle, triage, hold/cancel/close, timeline, log. */
-import type { PHASE_KEYS, ServiceOverrideAction, ServiceStatus, ServiceType, StepOverrideAction } from '@/domain/enums'
+import type { LevelOfAssurance, PHASE_KEYS, ServiceOverrideAction, ServiceStatus, ServiceType, StepOverrideAction } from '@/domain/enums'
 import { SERVICE_TYPE_LABELS } from '@/domain/enums'
 import { isPlatformAdmin } from '@/domain/policy'
 import type { Approval, AuditEvent, DocumentSlot, DocumentVersion, Invoice, Phase, Project, Service, ServiceScope, Step } from '@/domain/schemas'
@@ -80,6 +80,9 @@ export interface ServiceDetail {
   actionForMe: boolean
   counts: { findingsOpen: number; findingsTotal: number; documents: number; iterations: number }
   statementCode: string | null
+  /** PRD v0.3: status of the current statement (`issued | superseded | withdrawn`) and whether a level of assurance applies. */
+  statementStatus: string | null
+  assuranceApplies: boolean
   myRoles: string[]
   canEdit: boolean
   clientContactName: string | null
@@ -258,11 +261,19 @@ export function getSync(serviceId: string): ServiceDetail {
       documents: s.where('documents', (d) => d.service_id === serviceId && !d.deleted_at).length,
       iterations: s.where('iterations', (i) => i.service_id === serviceId).length,
     },
-    statementCode: s.where('statements', (st) => st.service_id === serviceId)[0]?.public_code ?? null,
+    statementCode: currentStatement(serviceId)?.public_code ?? null,
+    statementStatus: currentStatement(serviceId)?.status ?? null,
+    assuranceApplies: templateFor(service.service_type).assurance.applies,
     myRoles,
     canEdit: ctx.orgType === 'client' ? service.status === 'draft' : false,
     clientContactName: service.client_contact_user_id ? userName(service.client_contact_user_id) : null,
   }
+}
+
+/** The issued statement of a service, else its most recent one (superseded or withdrawn). */
+function currentStatement(serviceId: string) {
+  const all = getStore().where('statements', (st) => st.service_id === serviceId).sort((a, b) => (a.issued_at < b.issued_at ? 1 : -1))
+  return all.find((x) => x.status === 'issued') ?? all[0] ?? null
 }
 
 export async function get(serviceId: string): Promise<ServiceDetail> {
@@ -278,7 +289,11 @@ export interface DraftInput {
   periodEnd: string
   scope: Partial<ServiceScope>
   targetOpinionDate?: string | null
+  /** PRD v0.3 FR-81: requested level of assurance; defaults from the template, `not_applicable` for validation types. */
+  levelOfAssurance?: LevelOfAssurance
 }
+
+const EMPTY_SCOPE: ServiceScope = { summary: '', sites: [], boundary: '', products: [], interventions: [], materiality_pct: 5, sector_scopes: [], technical_areas: [] }
 
 function nextReference(): string {
   const year = todayIso().slice(0, 4)
@@ -309,7 +324,7 @@ export async function createDraft(input: DraftInput): Promise<Service> {
       resume_status: null,
       period_start: input.periodStart,
       period_end: input.periodEnd,
-      scope_json: { summary: '', sites: [], boundary: '', products: [], interventions: [], materiality_pct: 5, ...input.scope },
+      scope_json: { ...EMPTY_SCOPE, ...input.scope },
       requested_at: null,
       contracted_at: null,
       issued_at: null,
@@ -319,6 +334,9 @@ export async function createDraft(input: DraftInput): Promise<Service> {
       client_contact_user_id: ctx.userId,
       team_leader_user_id: null,
       target_opinion_date: input.targetOpinionDate ?? null,
+      level_of_assurance: template.assurance.applies ? (input.levelOfAssurance && input.levelOfAssurance !== 'not_applicable' ? input.levelOfAssurance : template.assurance.default) : 'not_applicable',
+      assurance_level_locked_at: null,
+      triage_check_json: null,
     }
     s.insert('services', svc)
     audit(ctx, { orgId: ctx.orgId, serviceId: svc.id, eventType: 'service.created', entityType: 'service', entityId: svc.id, summary: `Request drafted: ${svc.name}`, after: { status: 'draft' } })
@@ -343,6 +361,11 @@ export async function updateDraft(serviceId: string, patch: Partial<DraftInput>)
       next.template_id = template.id
       next.template_version = template.version
       next.standard = template.standard
+      next.level_of_assurance = template.assurance.applies ? (svc.level_of_assurance === 'not_applicable' ? template.assurance.default : svc.level_of_assurance) : 'not_applicable'
+    }
+    if (patch.levelOfAssurance) {
+      const template = templateFor(patch.serviceType ?? svc.service_type)
+      if (template.assurance.applies && patch.levelOfAssurance !== 'not_applicable') next.level_of_assurance = patch.levelOfAssurance
     }
     if (patch.projectId) next.project_id = patch.projectId
     if (patch.scope) next.scope_json = { ...svc.scope_json, ...patch.scope }
@@ -397,6 +420,8 @@ export async function renew(serviceId: string): Promise<Service> {
       client_contact_user_id: ctx.userId,
       team_leader_user_id: null,
       target_opinion_date: null,
+      assurance_level_locked_at: null,
+      triage_check_json: null,
     }
     s.insert('services', svc)
     audit(ctx, { orgId: svc.org_id, serviceId: svc.id, eventType: 'service.renewed', entityType: 'service', entityId: svc.id, summary: `Renewal drafted from ${src.reference}`, after: { renewed_from: src.id } })
@@ -486,13 +511,37 @@ export async function overrideStep(serviceId: string, stepId: string, action: St
   })
 }
 
-/** Force a service status change with a mandatory reason (FR-74); both parties are notified. */
-export async function overrideService(serviceId: string, action: ServiceOverrideAction, reason: string): Promise<Service> {
+/**
+ * Force a service status change with a mandatory reason (FR-74); both parties are notified.
+ * PRD v0.3 FR-81: `change_assurance_level` unlocks the level of assurance after contracting; the agreement must be
+ * accepted again and the materiality setting returns to draft.
+ */
+export async function overrideService(serviceId: string, action: ServiceOverrideAction, reason: string, extra: { levelOfAssurance?: LevelOfAssurance } = {}): Promise<Service> {
   return call(() => {
     const ctx = authorize('service.override', serviceResource(serviceId))
     const r = requireReason(reason)
     const s = getStore()
     const svc = s.get('services', serviceId)
+    if (action === 'change_assurance_level') {
+      const template = templateFor(svc.service_type)
+      const level = extra.levelOfAssurance
+      if (!template.assurance.applies) throw new ApiError('validation', 'A level of assurance does not apply to this service type.')
+      if (!level || level === 'not_applicable' || level === svc.level_of_assurance) throw new ApiError('validation', 'Choose a different level of assurance (limited or reasonable).')
+      if (s.where('statements', (st) => st.service_id === serviceId && st.status === 'issued').length) throw new ApiError('conflict', 'The opinion is issued; the level of assurance can no longer change.', { code: 'issued_immutable' })
+      const updated = s.update('services', serviceId, { level_of_assurance: level, assurance_level_locked_at: null }, ctx.userId)
+      // The agreement-acceptance step is not overridden: it reopens so the client accepts the amended agreement.
+      const agreement = s.where('approvals', (a) => a.service_id === serviceId && a.kind === 'agreement_acceptance')[0]
+      if (agreement && agreement.status === 'approved') {
+        s.update('approvals', agreement.id, { status: 'pending', decided_by: null, decided_at: null, comment: `Amendment: level of assurance changed to ${level}`, evidence_json: null }, ctx.userId)
+        const step = agreement.step_id ? s.get('steps', agreement.step_id) : null
+        if (step && step.status === 'completed') s.update('steps', step.id, { status: 'in_progress', actual_end: null, closed_at: null, closed_by: null }, ctx.userId)
+      }
+      const materiality = s.where('materialitySettings', (m) => m.service_id === serviceId)[0]
+      if (materiality) s.update('materialitySettings', materiality.id, { status: 'draft', level_of_assurance: level, approved_by: null, approved_at: null }, ctx.userId)
+      audit(ctx, { orgId: svc.org_id, serviceId, eventType: 'service.assurance_level_changed', entityType: 'service', entityId: serviceId, summary: `Override: level of assurance changed from ${svc.level_of_assurance} to ${level} by ${userName(ctx.userId)} — ${r}. The amended agreement must be accepted again${materiality ? ' and materiality re-approved' : ''}.`, reason: r, before: { level_of_assurance: svc.level_of_assurance }, after: { level_of_assurance: level, action } })
+      notify(serviceAudience(serviceId, 'both').filter((u) => u !== ctx.userId), svc.org_id, 'service_overridden', `${svc.reference}: level of assurance changed to ${level}`, `${userName(ctx.userId)} changed the level of assurance to ${level}. Reason: ${r}. The amended service agreement must be accepted again.`, serviceId)
+      return updated
+    }
     let next: Partial<Service>
     if (action === 'resume') {
       serviceMachine.apply(svc.status, 'resume')

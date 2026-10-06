@@ -36,9 +36,11 @@ export async function acceptAgreement(serviceId: string, approvalId: string, typ
     const ver = doc?.current_version_id ? s.find('documentVersions', doc.current_version_id) : null
     if (!ver) throw new ApiError('conflict', 'The service agreement has not been uploaded yet.')
     const at = nowIsoString()
-    const updated = s.update('approvals', approvalId, { status: 'approved', decided_by: ctx.userId, decided_at: at, comment: null, evidence_json: { name: user.name, accepted_at: at, ip: '192.0.2.10', document_sha256: ver.sha256, filename: ver.filename } }, ctx.userId)
     const svc = s.get('services', serviceId)
-    audit(ctx, { orgId: svc.org_id, serviceId, eventType: 'agreement.accepted', entityType: 'approval', entityId: approvalId, summary: `Service agreement accepted by ${user.name} (hash ${ver.sha256.slice(0, 12)}…)`, before: { status: 'pending' }, after: { status: 'approved', document_sha256: ver.sha256 } })
+    const updated = s.update('approvals', approvalId, { status: 'approved', decided_by: ctx.userId, decided_at: at, comment: null, evidence_json: { name: user.name, accepted_at: at, ip: '192.0.2.10', document_sha256: ver.sha256, filename: ver.filename, level_of_assurance: svc.level_of_assurance } }, ctx.userId)
+    // PRD v0.3 FR-18, FR-81: acceptance locks the level of assurance printed in the agreement.
+    s.update('services', serviceId, { assurance_level_locked_at: at }, ctx.userId)
+    audit(ctx, { orgId: svc.org_id, serviceId, eventType: 'agreement.accepted', entityType: 'approval', entityId: approvalId, summary: `Service agreement accepted by ${user.name} (hash ${ver.sha256.slice(0, 12)}…); level of assurance locked: ${svc.level_of_assurance}`, before: { status: 'pending' }, after: { status: 'approved', document_sha256: ver.sha256, level_of_assurance: svc.level_of_assurance } })
     notify(serviceAudience(serviceId, 'verifier'), 'org_verifassur', 'agreement_accepted', 'Service agreement accepted', `${user.name} accepted the service agreement for ${svc.reference}.`, serviceId)
     autoCompleteStep(serviceId, ap.step_id, ctx.userId)
     return updated

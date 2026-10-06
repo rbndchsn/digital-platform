@@ -1,13 +1,14 @@
-/** Inventory editor: scope tabs, per-gas lines, evidence, declared vs verified, submit (PRD FR-40..FR-43). */
+/** Inventory editor: scope tabs, per-gas lines, evidence, line review status and assertion-level verified totals, submit (PRD FR-40..FR-43, v0.3 FR-82). */
 import { useQuery } from '@tanstack/react-query'
 import { Link, createFileRoute } from '@tanstack/react-router'
-import { Pencil, Plus, RotateCcw, Send, Trash2 } from 'lucide-react'
+import { BadgeCheck, Pencil, Plus, RotateCcw, Send, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { records } from '@/api'
 import type { InventoryView, LineView } from '@/api/records'
-import type { ScopeCategory } from '@/domain/enums'
-import { SCOPE_CATEGORIES, SCOPE_CATEGORY_LABELS, scopeOfCategory } from '@/domain/enums'
+import type { ReviewStatus, ScopeCategory } from '@/domain/enums'
+import { REVIEW_STATUSES, REVIEW_STATUS_LABELS, SCOPE_CATEGORIES, SCOPE_CATEGORY_LABELS, scopeOfCategory } from '@/domain/enums'
 import type { GasEntry } from '@/domain/schemas'
+import { AssuranceBadge, AssuranceHistory } from '@/components/assurance-badge'
 import { ConfirmTyped } from '@/components/confirm-typed'
 import { DeclaredVerifiedPair } from '@/components/declared-verified'
 import { EvidenceChips } from '@/components/evidence-chips'
@@ -31,13 +32,16 @@ export const Route = createFileRoute('/_app/records/inventories/$inventoryId')({
   component: InventoryEditor,
 })
 
+const REVIEW_TONE: Record<ReviewStatus, 'neutral' | 'success' | 'warning' | 'info'> = { not_reviewed: 'neutral', accepted: 'success', adjusted: 'warning', not_individually_tested: 'info' }
+
 function InventoryEditor() {
   const { inventoryId } = Route.useParams()
   const me = useMe()
   const q = useQuery({ queryKey: ['inventory', inventoryId], queryFn: () => records.getInventory(inventoryId) })
   const [scope, setScope] = useState<'1' | '2' | '3'>('3')
   const [edit, setEdit] = useState<LineView | 'new' | null>(null)
-  const [verify, setVerify] = useState<LineView | null>(null)
+  const [review, setReview] = useState<LineView | null>(null)
+  const [totals, setTotals] = useState(false)
   const [submit, setSubmit] = useState(false)
   const [reopen, setReopen] = useState(false)
   const [del, setDel] = useState<LineView | null>(null)
@@ -49,12 +53,13 @@ function InventoryEditor() {
   const isClient = me.org.type === 'client'
   const canEdit = isClient && me.role !== 'client_viewer' && inv.status === 'draft'
   const canReopen = isClient && me.role !== 'client_viewer' && inv.status === 'submitted'
-  // Verifier roles and the manager (PRD FR-77) enter verified values; the platform administrator never does.
+  // Verifier roles and the manager (PRD FR-77) review lines and enter verified totals before issuance; the platform administrator never does.
   const canVerify = !isClient && !me.isAdmin && ['submitted', 'under_verification'].includes(inv.status)
   const lines = inv.lines.filter((l) => String(l.scope) === scope)
   const scopeTotal = (s: string) => inv.totals.by_scope[s] ?? 0
   const verifiedScope = (s: string) => inv.verifiedTotals?.by_scope[s] ?? null
   const completeness = inv.completeness.total ? Math.round((inv.completeness.withEvidence / inv.completeness.total) * 100) : 0
+  const reviewPct = inv.review.total ? Math.round((inv.review.reviewed / inv.review.total) * 100) : 0
   return (
     <>
       <PageHeader
@@ -64,6 +69,7 @@ function InventoryEditor() {
         meta={
           <>
             <StatusChip status={inv.status} />
+            <AssuranceBadge level={inv.level_of_assurance} status={inv.assurance_status} />
             {inv.serviceReference ? (
               <Link to="/engagements/$serviceId" params={{ serviceId: inv.service_id! }} className="text-primary text-xs font-semibold hover:underline">
                 Engagement {inv.serviceReference}
@@ -88,13 +94,27 @@ function InventoryEditor() {
                 <RotateCcw /> Reopen to edit
               </Button>
             ) : null}
+            {canVerify ? (
+              <Button variant="secondary" onClick={() => setTotals(true)}>
+                <BadgeCheck /> Verified totals
+              </Button>
+            ) : null}
           </>
         }
       />
-      {inv.status === 'verified' ? <Alert tone="success" className="mb-5" title="Verified">Verified values below carry the assurance reference of the issued opinion. Later edits create a new revision that supersedes this one once verified.</Alert> : null}
-      {inv.status === 'submitted' || inv.status === 'under_verification' ? <Alert tone="info" className="mb-5" title="Under verification">Declared values are frozen. VERIFASSUR enters verified values line by line; differences are highlighted.</Alert> : null}
+      {inv.status === 'verified' ? (
+        <Alert tone="success" className="mb-5" title={`Verified · ${inv.level_of_assurance === 'limited' ? 'limited' : 'reasonable'} assurance`}>
+          The opinion covers the inventory totals as a whole. Each line shows how it was reviewed (accepted, adjusted or not individually tested); no line is individually assured. Later edits create a new revision that supersedes this one once verified.
+        </Alert>
+      ) : null}
+      {inv.status === 'withdrawn' ? (
+        <Alert tone="danger" className="mb-5" title="Assurance withdrawn">
+          The statement this inventory relied on was withdrawn. The figures below are declared only; the former verified figures remain in the assurance history.
+        </Alert>
+      ) : null}
+      {inv.status === 'submitted' || inv.status === 'under_verification' ? <Alert tone="info" className="mb-5" title="Under verification">Declared values are frozen. VERIFASSUR reviews each line (accepted, adjusted or not individually tested) and enters the verified totals at assertion level; adjusted lines propose misstatements to the register.</Alert> : null}
       <div className="mb-5 grid gap-4 md:grid-cols-4">
-        <KpiNumber value={inv.totals.gross_tco2e} unit="tCO2e" label="Gross total (declared)" hint={inv.verifiedTotals ? `Verified ${fmtNumber(inv.verifiedTotals.gross_tco2e)}` : undefined} />
+        <KpiNumber value={inv.totals.gross_tco2e} unit="tCO2e" label="Gross total (declared)" hint={inv.verifiedTotals ? `Verified ${fmtNumber(inv.verifiedTotals.gross_tco2e)} tCO2e` : inv.review.adjusted ? `With adjustments ${fmtNumber(inv.adjustedTotals.gross_tco2e)} tCO2e` : undefined} />
         <KpiNumber value={inv.totals.biogenic_co2_t} unit="t" label="Biogenic CO2 (reported separately)" tone="fg" />
         <KpiNumber value={inv.totals.removals_tco2e} unit="tCO2e" label="Removals (reported separately)" tone="success" />
         <Card>
@@ -104,9 +124,19 @@ function InventoryEditor() {
             <div className="text-fg-subtle mt-1 text-xs">
               {inv.completeness.withEvidence} of {inv.completeness.total} lines evidenced
             </div>
+            {inv.review.reviewed ? (
+              <>
+                <div className="text-fg mt-3 text-sm font-semibold">Line review</div>
+                <Progress value={reviewPct} tone="info" className="mt-2" label="Lines reviewed" />
+                <div className="text-fg-subtle mt-1 text-xs">
+                  {inv.review.reviewed} of {inv.review.total} lines reviewed · {inv.review.adjusted} adjusted
+                </div>
+              </>
+            ) : null}
           </CardContent>
         </Card>
       </div>
+      {inv.assurance.history.length ? <AssuranceHistory history={inv.assurance.history} className="mb-5" /> : null}
       <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
         <NavTabs
           value={scope}
@@ -140,6 +170,7 @@ function InventoryEditor() {
                       <Badge tone="outline">{SCOPE_CATEGORY_LABELS[l.category]}</Badge>
                       {l.site ? <span className="text-fg-subtle text-xs">{l.site}</span> : null}
                       {l.source !== 'manual' ? <Badge tone="info">via {l.source}</Badge> : null}
+                      {l.review_status !== 'not_reviewed' || inv.status !== 'draft' ? <Badge tone={REVIEW_TONE[l.review_status]} data-review={l.review_status}>{REVIEW_STATUS_LABELS[l.review_status]}</Badge> : null}
                     </div>
                     <div className="text-fg mt-1 text-sm font-medium">{l.activity}</div>
                     <div className="text-fg-subtle text-xs">
@@ -151,7 +182,7 @@ function InventoryEditor() {
                     <EvidenceChips evidence={l.evidence} entityType="inventory_line" entityId={l.id} canEdit={isClient && me.role !== 'client_viewer' && inv.status !== 'verified'} serviceId={inv.service_id} className="mt-1.5" compact />
                     {l.verifier_comment ? <div className="text-warning mt-1 text-xs">Verifier: {l.verifier_comment}</div> : null}
                   </div>
-                  <DeclaredVerifiedPair declared={l.declared_gross_tco2e} verified={l.verified_gross_tco2e} unit="tCO2e" className="w-56 shrink-0" />
+                  <DeclaredVerifiedPair declared={l.declared_gross_tco2e} verified={l.review_status === 'adjusted' ? l.adjusted_gross_tco2e : null} unit="tCO2e" className="w-56 shrink-0" verifiedLabel="Adjusted" />
                   <div className="flex shrink-0 gap-1">
                     {canEdit ? (
                       <>
@@ -164,8 +195,8 @@ function InventoryEditor() {
                       </>
                     ) : null}
                     {canVerify ? (
-                      <Button size="sm" variant="outline" onClick={() => setVerify(l)}>
-                        Verified value
+                      <Button size="sm" variant="outline" onClick={() => setReview(l)}>
+                        Review line
                       </Button>
                     ) : null}
                   </div>
@@ -176,7 +207,8 @@ function InventoryEditor() {
         )}
       </Card>
       {edit ? <LineDialog inv={inv} line={edit === 'new' ? null : edit} defaultScope={scope} onClose={() => setEdit(null)} /> : null}
-      {verify ? <VerifyLineDialog inv={inv} line={verify} onClose={() => setVerify(null)} /> : null}
+      {review ? <ReviewLineDialog inv={inv} line={review} onClose={() => setReview(null)} /> : null}
+      {totals ? <VerifiedTotalsDialog inv={inv} onClose={() => setTotals(false)} /> : null}
       <SubmitForVerificationDialog open={submit} onOpenChange={setSubmit} serviceType="iso14064_1_inventory_verification" defaultName={`Corporate GHG inventory FY${inv.year} — verification`} onSubmit={(t) => submitM.mutateAsync(t)} pending={submitM.isPending} blockers={inv.lines.length === 0 ? ['Add at least one line.'] : []} />
       <ConfirmTyped open={reopen} onOpenChange={setReopen} title="Reopen this inventory?" description="A new revision is created and declared values can be edited again. The engagement keeps the submitted revision until you resubmit." phrase="reopen" confirmLabel="Reopen" danger={false} onConfirm={() => reopenM.mutateAsync()} />
       <ConfirmTyped open={del !== null} onOpenChange={(o) => !o && setDel(null)} title={`Delete line "${del?.activity}"?`} phrase="delete" confirmLabel="Delete line" onConfirm={() => delM.mutateAsync(del!.id)} />
@@ -244,17 +276,77 @@ function LineDialog({ inv, line, defaultScope, onClose }: { inv: InventoryView; 
   )
 }
 
-function VerifyLineDialog({ inv, line, onClose }: { inv: InventoryView; line: LineView; onClose: () => void }) {
-  const [gross, setGross] = useState(String(line.verified_gross_tco2e ?? line.declared_gross_tco2e))
+/** PRD v0.3 FR-82: review status per line; an adjusted value proposes a misstatement and places the editor in the involved set. */
+function ReviewLineDialog({ inv, line, onClose }: { inv: InventoryView; line: LineView; onClose: () => void }) {
+  const [status, setStatus] = useState<ReviewStatus>(line.review_status === 'not_reviewed' ? 'accepted' : line.review_status)
+  const [gross, setGross] = useState(String(line.adjusted_gross_tco2e ?? line.declared_gross_tco2e))
   const [comment, setComment] = useState(line.verifier_comment ?? '')
-  const m = useAppMutation(() => records.setVerifiedLine(inv.id, line.id, { gross: Number(gross), biogenic: line.verified_biogenic_co2_t ?? line.declared_biogenic_co2_t, removals: line.verified_removals_tco2e ?? line.declared_removals_tco2e, comment: comment || null }), { successMessage: 'Verified value recorded.', onSuccess: onClose })
+  const m = useAppMutation(() => records.reviewLine(inv.id, line.id, { review_status: status, adjusted_gross_tco2e: status === 'adjusted' ? Number(gross) : null, comment: comment || null }), {
+    successMessage: (r) => `Line reviewed: ${REVIEW_STATUS_LABELS[status].toLowerCase()}.${r.misstatementProposed ? ' A misstatement was proposed to the register.' : ''}${r.iterationReturnedToIr ? ' The open iteration went back to independent review.' : ''}${r.involvedSetJoined ? ' You are now in the involved set of this service.' : ''}`,
+    onSuccess: onClose,
+  })
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent title="Verified value" description={`${line.activity} · declared ${fmtNumber(line.declared_gross_tco2e)} tCO2e`} size="sm">
-        <Field label="Verified gross tCO2e" required>
-          <Input type="number" step="any" value={gross} onChange={(e) => setGross(e.target.value)} />
+      <DialogContent title="Review line" description={`${line.activity} · declared ${fmtNumber(line.declared_gross_tco2e)} tCO2e. The opinion covers the totals; a line is never individually assured.`} size="sm">
+        <Field label="Review status" required>
+          <NativeSelect value={status} onChange={(e) => setStatus(e.target.value as ReviewStatus)}>
+            {REVIEW_STATUSES.filter((s) => s !== 'not_reviewed').map((s) => (
+              <option key={s} value={s}>
+                {REVIEW_STATUS_LABELS[s]}
+              </option>
+            ))}
+          </NativeSelect>
         </Field>
+        {status === 'adjusted' ? (
+          <Field label="Adjusted gross tCO2e" required className="mt-3" hint="A difference from the declared value is proposed to the misstatement register for confirmation.">
+            <Input type="number" step="any" value={gross} onChange={(e) => setGross(e.target.value)} />
+          </Field>
+        ) : null}
         <Field label="Comment (shown to the client)" className="mt-3">
+          <Textarea value={comment} onChange={(e) => setComment(e.target.value)} />
+        </Field>
+        <Alert tone="info" className="mt-3">
+          Entering or editing a verified value is verification work: you join the involved set and cannot take the final decision on this service (PRD FR-79).
+        </Alert>
+        <DialogFooter>
+          <Button variant="secondary" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button onClick={() => m.mutate()} loading={m.isPending} disabled={status === 'adjusted' && gross === ''}>
+            Record review
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+/** PRD v0.3 FR-43, FR-82: assertion-level verified totals per scope. Proposed from the declared totals with line adjustments applied. */
+function VerifiedTotalsDialog({ inv, onClose }: { inv: InventoryView; onClose: () => void }) {
+  const base = inv.verifiedTotals ?? inv.adjustedTotals
+  const [s1, setS1] = useState(String(base.by_scope['1'] ?? 0))
+  const [s2, setS2] = useState(String(base.by_scope['2'] ?? 0))
+  const [s3, setS3] = useState(String(base.by_scope['3'] ?? 0))
+  const [comment, setComment] = useState('')
+  const m = useAppMutation(() => records.setVerifiedTotals(inv.id, { byScope: { '1': Number(s1), '2': Number(s2), '3': Number(s3) }, biogenic: base.biogenic_co2_t, removals: base.removals_tco2e }, comment || undefined), { successMessage: 'Verified totals recorded; you are now in the involved set of this service.', onSuccess: onClose })
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent title={`Verified totals — inventory ${inv.year}`} description="The figures the opinion will cover, at assertion level. Proposed from the declared totals with your line adjustments applied; a difference from the declared total proposes a misstatement." size="sm">
+        <div className="grid grid-cols-3 gap-3">
+          <Field label="Scope 1 (tCO2e)">
+            <Input type="number" step="any" value={s1} onChange={(e) => setS1(e.target.value)} />
+          </Field>
+          <Field label="Scope 2 (tCO2e)">
+            <Input type="number" step="any" value={s2} onChange={(e) => setS2(e.target.value)} />
+          </Field>
+          <Field label="Scope 3 (tCO2e)">
+            <Input type="number" step="any" value={s3} onChange={(e) => setS3(e.target.value)} />
+          </Field>
+        </div>
+        <p className="text-fg-subtle mt-2 text-xs">
+          Declared: {fmtNumber(inv.totals.by_scope['1'])} / {fmtNumber(inv.totals.by_scope['2'])} / {fmtNumber(inv.totals.by_scope['3'])} tCO2e · gross {fmtNumber(inv.totals.gross_tco2e)} tCO2e
+        </p>
+        <Field label="Comment" className="mt-3">
           <Textarea value={comment} onChange={(e) => setComment(e.target.value)} />
         </Field>
         <DialogFooter>
@@ -262,7 +354,7 @@ function VerifyLineDialog({ inv, line, onClose }: { inv: InventoryView; line: Li
             Cancel
           </Button>
           <Button onClick={() => m.mutate()} loading={m.isPending}>
-            Record
+            Record totals
           </Button>
         </DialogFooter>
       </DialogContent>

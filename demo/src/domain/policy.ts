@@ -1,9 +1,11 @@
 /**
  * Authorisation policy (PRD §11.2): `can(ctx, action, resource)`.
- * Resolution order: platform role (ADMIN allow-list) → org role → service role → COI gate → separation of duties → resource state.
- * Identical in Phase II; only the AuthContext construction changes.
+ * Resolution order: platform role (ADMIN allow-list) → org role → service role → COI gate → involved set →
+ * other separation-of-duties rules → resource state. Identical in Phase II; only the AuthContext construction changes.
  */
 import type { OrgRole, OrgType, PlatformRole, ServiceRole } from './enums'
+import type { InvolvedMember } from './workflow/involved-set'
+import { DECISION_ACTIONS } from './workflow/involved-set'
 
 export interface AuthContext {
   userId: string
@@ -47,6 +49,7 @@ export type Action =
   | 'approval.decide:agreement_acceptance'
   | 'team.nominate'
   | 'team.reassign'
+  | 'team.check_override'
   | 'coi.declare'
   | 'coi.decide'
   | 'document.read'
@@ -71,6 +74,7 @@ export type Action =
   | 'staff.triage_queue'
   | 'staff.templates'
   | 'staff.clients'
+  | 'template.edit'
   | 'feature.interest'
   | 'admin.users'
   | 'admin.orgs'
@@ -79,26 +83,50 @@ export type Action =
   | 'admin.coi_register'
   | 'admin.stats'
   | 'admin.break_glass'
+  // PRD v0.3
+  | 'materiality.set'
+  | 'materiality.approve'
+  | 'misstatement.manage'
+  | 'materiality.acknowledge'
+  | 'statement.post_issuance_open'
+  | 'statement.revise_decide'
+  | 'statement.withdraw_decide'
+  | 'case.create'
+  | 'case.read_own'
+  | 'case.read_all'
+  | 'case.handle'
+  | 'case.assign'
+  | 'case.decide'
+  | 'competence.read'
+  | 'competence.edit'
+  | 'legacy.manage'
 
 export interface Resource {
   /** Owning client org of the resource. */
   orgId?: string
   serviceId?: string
-  /** Team leader of the service (for separation of duties). */
+  /** Team leader of the service (informational; the involved set is authoritative since PRD v0.3). */
   teamLeaderUserId?: string | null
-  /** Manager who approved the iteration (for separation of duties on issue). */
+  /** Manager who approved the iteration (informational). */
   approvingManagerUserId?: string | null
+  /** PRD v0.3 FR-79: the viewer's entry in the involved set of the service or decision, when they are in it. */
+  involved?: InvolvedMember | null
+  /** PRD v0.3 FR-94: true when the competence profile being edited is the viewer's own. */
+  ownProfile?: boolean
   /** Resource state flags. */
   locked?: boolean
 }
 
+export type DecisionCode = 'decision_maker_conflict' | 'own_profile' | 'admin_read_only' | 'coi_pending' | 'forbidden'
+
 export interface Decision {
   allowed: boolean
   reason?: string
+  code?: DecisionCode
 }
 
-const CLIENT_READ: Action[] = ['org.read', 'project.read', 'service.read', 'document.read', 'record.read', 'invoice.read', 'feature.interest']
-const CLIENT_CONTRIBUTE: Action[] = [...CLIENT_READ, 'document.upload:client', 'finding.respond', 'record.create', 'record.submit']
+const CLIENT_READ: Action[] = ['org.read', 'project.read', 'service.read', 'document.read', 'record.read', 'invoice.read', 'feature.interest', 'case.read_own']
+const CLIENT_CONTRIBUTE: Action[] = [...CLIENT_READ, 'document.upload:client', 'finding.respond', 'record.create', 'record.submit', 'case.create']
 const CLIENT_ADMIN: Action[] = [
   ...CLIENT_CONTRIBUTE,
   'project.create',
@@ -120,11 +148,12 @@ const CLIENT_ROLE_ACTIONS: Record<string, Action[]> = {
   client_viewer: CLIENT_READ,
 }
 
-const VERIFIER_COMMON: Action[] = ['org.read', 'service.read', 'project.read', 'document.read', 'record.read', 'invoice.read', 'coi.declare']
+const VERIFIER_COMMON: Action[] = ['org.read', 'service.read', 'project.read', 'document.read', 'record.read', 'invoice.read', 'coi.declare', 'case.handle']
 
 /**
  * ADMIN (platform administrator, PRD §3.2 v0.2): sees everything, administers users, organisations and
  * settings, and never touches engagement or record data. This is the complete allow-list (plan_v1 §8 D2).
+ * PRD v0.3: reads the complaints register (incl. notes) and competence profiles, changes neither.
  */
 export const ADMIN_ACTIONS: readonly Action[] = [
   'org.read',
@@ -137,6 +166,8 @@ export const ADMIN_ACTIONS: readonly Action[] = [
   'staff.templates',
   'org.manage_flags',
   'feature.interest',
+  'case.read_all',
+  'competence.read',
   'admin.users',
   'admin.orgs',
   'admin.settings',
@@ -161,6 +192,7 @@ const VERIFIER_ORG_ACTIONS: Record<string, Action[]> = {
     'approval.decide:contract',
     'team.nominate',
     'team.reassign',
+    'team.check_override',
     'coi.decide',
     'step.transition',
     'step.override',
@@ -176,13 +208,28 @@ const VERIFIER_ORG_ACTIONS: Record<string, Action[]> = {
     'record.verify',
     'invoice.manage',
     'staff.templates',
+    'template.edit',
     'staff.clients',
     'org.manage_members',
     'org.manage_flags',
+    // PRD v0.3
+    'materiality.set',
+    'materiality.approve',
+    'misstatement.manage',
+    'materiality.acknowledge',
+    'statement.post_issuance_open',
+    'statement.revise_decide',
+    'statement.withdraw_decide',
+    'case.read_all',
+    'case.assign',
+    'case.decide',
+    'competence.read',
+    'competence.edit',
+    'legacy.manage',
   ],
-  verifier_coordinator: [...VERIFIER_COMMON, 'staff.triage_queue', 'document.upload:verifier', 'invoice.manage', 'service.close'],
+  verifier_coordinator: [...VERIFIER_COMMON, 'staff.triage_queue', 'document.upload:verifier', 'invoice.manage', 'service.close', 'case.read_all', 'competence.read'],
   verifier_finance: [...VERIFIER_COMMON, 'invoice.manage'],
-  verifier_team_leader: VERIFIER_COMMON,
+  verifier_team_leader: [...VERIFIER_COMMON, 'competence.read'],
   verifier_auditor: VERIFIER_COMMON,
   verifier_technical_expert: VERIFIER_COMMON,
   verifier_independent_reviewer: VERIFIER_COMMON,
@@ -206,10 +253,12 @@ const SERVICE_ROLE_ACTIONS: Record<ServiceRole, Action[]> = {
     'iteration.create',
     'iteration.submit_for_ir',
     'record.verify',
+    'materiality.set',
+    'misstatement.manage',
   ],
-  verifier_auditor: [...VERIFIER_COMMON, 'step.transition', 'document.upload:verifier', 'document.check', 'finding.create', 'finding.transition', 'record.verify'],
-  verifier_technical_expert: [...VERIFIER_COMMON, 'step.transition', 'document.check', 'finding.create', 'finding.transition', 'record.verify'],
-  verifier_independent_reviewer: [...VERIFIER_COMMON, 'iteration.ir_decide'],
+  verifier_auditor: [...VERIFIER_COMMON, 'step.transition', 'document.upload:verifier', 'document.check', 'finding.create', 'finding.transition', 'record.verify', 'misstatement.manage'],
+  verifier_technical_expert: [...VERIFIER_COMMON, 'step.transition', 'document.check', 'finding.create', 'finding.transition', 'record.verify', 'misstatement.manage'],
+  verifier_independent_reviewer: [...VERIFIER_COMMON, 'iteration.ir_decide', 'materiality.acknowledge'],
   verifier_coordinator: [...VERIFIER_COMMON, 'document.upload:verifier', 'invoice.manage'],
   verifier_finance: [...VERIFIER_COMMON, 'invoice.manage'],
   client_contact: CLIENT_ADMIN,
@@ -233,6 +282,7 @@ const SERVICE_SCOPED = new Set<Action>([
   'approval.decide:agreement_acceptance',
   'team.nominate',
   'team.reassign',
+  'team.check_override',
   'coi.declare',
   'coi.decide',
   'document.read',
@@ -251,7 +301,17 @@ const SERVICE_SCOPED = new Set<Action>([
   'record.verify',
   'invoice.read',
   'invoice.manage',
+  'materiality.set',
+  'materiality.approve',
+  'misstatement.manage',
+  'materiality.acknowledge',
+  'statement.post_issuance_open',
+  'statement.revise_decide',
+  'statement.withdraw_decide',
 ])
+
+/** Actions refused to anyone in the involved set (PRD v0.3 FR-79, FR-92). */
+const INVOLVED_SET_REFUSED = new Set<Action>([...(DECISION_ACTIONS as Action[]), 'case.handle', 'case.assign', 'case.decide'])
 
 const ORG_WIDE_VERIFIER_ROLES = new Set<string>(['verifier_manager', 'verifier_coordinator', 'verifier_finance'])
 
@@ -260,16 +320,16 @@ export function decide(ctx: AuthContext, action: Action, resource: Resource = {}
   // before any org or service rule can grant it (PRD §3.2, §11.2).
   if (ctx.platformRole === 'platform_admin' || ctx.orgRole === 'platform_admin') {
     if (ADMIN_ACTIONS.includes(action)) return { allowed: true }
-    return { allowed: false, reason: 'the platform administrator cannot change engagement or record data' }
+    return { allowed: false, code: 'admin_read_only', reason: 'the platform administrator cannot change engagement or record data' }
   }
-  if (action.startsWith('admin.')) return { allowed: false, reason: 'platform administration is reserved to the platform administrator' }
+  if (action.startsWith('admin.')) return { allowed: false, code: 'forbidden', reason: 'platform administration is reserved to the platform administrator' }
 
   if (ctx.orgType === 'client') {
     const allowedActions = ctx.orgRole ? (CLIENT_ROLE_ACTIONS[ctx.orgRole] ?? []) : []
-    if (!allowedActions.includes(action)) return { allowed: false, reason: `role ${ctx.orgRole ?? 'none'} cannot ${action}` }
-    if (resource.orgId && resource.orgId !== ctx.orgId) return { allowed: false, reason: 'resource belongs to another organisation' }
+    if (!allowedActions.includes(action)) return { allowed: false, code: 'forbidden', reason: `role ${ctx.orgRole ?? 'none'} cannot ${action}` }
+    if (resource.orgId && resource.orgId !== ctx.orgId) return { allowed: false, code: 'forbidden', reason: 'resource belongs to another organisation' }
     if (resource.locked && (action.startsWith('document.upload') || action === 'document.delete')) {
-      return { allowed: false, reason: 'document is locked by an issued opinion' }
+      return { allowed: false, code: 'forbidden', reason: 'document is locked by an issued opinion' }
     }
     return { allowed: true }
   }
@@ -283,30 +343,36 @@ export function decide(ctx: AuthContext, action: Action, resource: Resource = {}
   // COI gate: a team member whose COI is not approved may only declare it.
   if (serviceId && myServiceRoles.length > 0 && ctx.coiApproved[serviceId] !== true) {
     if (action !== 'coi.declare') {
-      return { allowed: false, reason: 'conflict of interest declaration pending' }
+      return { allowed: false, code: 'coi_pending', reason: 'conflict of interest declaration pending' }
     }
     return { allowed: true }
   }
 
   const orgWide = ctx.orgRole ? ORG_WIDE_VERIFIER_ROLES.has(ctx.orgRole) : false
   if (SERVICE_SCOPED.has(action) && !serviceId) {
-    return { allowed: false, reason: 'service-scoped action without a service' }
+    return { allowed: false, code: 'forbidden', reason: 'service-scoped action without a service' }
   }
   const allowed = SERVICE_SCOPED.has(action)
     ? serviceActions.includes(action) || (orgWide && orgActions.includes(action))
     : orgActions.includes(action) || serviceActions.includes(action)
-  if (!allowed) return { allowed: false, reason: `no role grants ${action}` }
+  if (!allowed) return { allowed: false, code: 'forbidden', reason: `no role grants ${action}` }
 
-  // Separation of duties (PRD FR-17, §11.2).
+  // Involved set (PRD v0.3 FR-79, FR-92): whoever did verification work cannot decide, and cannot handle a
+  // complaint or appeal about the service. Org role is ignored here: a manager who edited a figure is refused too.
+  if (INVOLVED_SET_REFUSED.has(action) && resource.involved) {
+    return { allowed: false, code: 'decision_maker_conflict', reason: `you are in the involved set of this service (${resource.involved.reasons.join('; ')})` }
+  }
+
+  // Other separation-of-duties rules (PRD FR-17, FR-94, §11.2).
   if (action === 'iteration.ir_decide') {
     const others = myServiceRoles.filter((r) => r !== 'verifier_independent_reviewer')
-    if (others.length > 0) return { allowed: false, reason: 'independent reviewer holds another role on this service' }
+    if (others.length > 0) return { allowed: false, code: 'forbidden', reason: 'independent reviewer holds another role on this service' }
   }
-  if ((action === 'iteration.manager_decide' || action === 'iteration.issue') && resource.teamLeaderUserId === ctx.userId) {
-    return { allowed: false, reason: 'the team leader cannot approve or issue their own opinion' }
+  if (action === 'competence.edit' && resource.ownProfile) {
+    return { allowed: false, code: 'own_profile', reason: 'you cannot edit your own competence profile; another manager maintains it' }
   }
   if (resource.locked && (action.startsWith('document.upload') || action === 'document.delete')) {
-    return { allowed: false, reason: 'document is locked by an issued opinion' }
+    return { allowed: false, code: 'forbidden', reason: 'document is locked by an issued opinion' }
   }
   return { allowed: true }
 }
@@ -324,6 +390,7 @@ export class ForbiddenError extends Error {
   constructor(
     readonly action: Action,
     readonly reason: string | undefined,
+    readonly code: DecisionCode = 'forbidden',
   ) {
     super(`Forbidden: ${action}${reason ? ` (${reason})` : ''}`)
     this.name = 'ForbiddenError'
@@ -332,5 +399,5 @@ export class ForbiddenError extends Error {
 
 export function assertCan(ctx: AuthContext, action: Action, resource: Resource = {}): void {
   const d = decide(ctx, action, resource)
-  if (!d.allowed) throw new ForbiddenError(action, d.reason)
+  if (!d.allowed) throw new ForbiddenError(action, d.reason, d.code)
 }

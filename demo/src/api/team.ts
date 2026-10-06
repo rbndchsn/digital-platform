@@ -46,10 +46,10 @@ export async function nominate(serviceId: string, members: { userId: string; rol
       if (m.role === 'verifier_independent_reviewer' && others.length) throw new ApiError('validation', `${userName(m.userId)} cannot be independent reviewer and hold another role on this service.`)
       if (others.some((o) => o.service_role === 'verifier_independent_reviewer')) throw new ApiError('validation', `${userName(m.userId)} is the independent reviewer and cannot take another role.`)
       if (current.some((c) => c.user_id === m.userId && c.service_role === m.role)) continue
-      const tm: ServiceTeamMember = { ...auditNow(ctx.userId), id: newId('team'), service_id: serviceId, user_id: m.userId, service_role: m.role, status: 'nominated', nominated_by: ctx.userId, nominated_at: nowIsoString() }
+      const tm: ServiceTeamMember = { ...auditNow(ctx.userId), id: newId('team'), service_id: serviceId, user_id: m.userId, service_role: m.role, status: 'nominated', nominated_by: ctx.userId, nominated_at: nowIsoString(), removed_at: null }
       s.insert('team', tm)
       if (m.role === 'verifier_team_leader') s.update('services', serviceId, { team_leader_user_id: m.userId }, ctx.userId)
-      const coi: CoiDeclaration = { ...auditNow(ctx.userId), id: newId('coi'), service_team_id: tm.id, declaration: null, details: null, declared_at: null, status: 'required', decided_by: null, decided_at: null }
+      const coi: CoiDeclaration = { ...auditNow(ctx.userId), id: newId('coi'), service_team_id: tm.id, declaration: null, details: null, declared_at: null, status: 'required', decided_by: null, decided_at: null, reconfirmed_for_iteration_id: null }
       s.insert('cois', coi)
       audit(ctx, { orgId: svc.org_id, serviceId, eventType: 'team.nominated', entityType: 'service_team', entityId: tm.id, summary: `${userName(m.userId)} nominated as ${m.role.replace('verifier_', '').replace('_', ' ')}`, after: { service_role: m.role } })
       notify([m.userId], 'org_verifassur', 'coi_required', 'Conflict-of-interest declaration required', `You were nominated on ${svc.reference}. Declare any conflicts before opening the service.`, serviceId, { type: 'coi', id: coi.id })
@@ -63,7 +63,7 @@ export async function remove(serviceId: string, teamMemberId: string): Promise<T
     const ctx = authorize('team.nominate', serviceResource(serviceId))
     const s = getStore()
     const tm = s.get('team', teamMemberId)
-    s.update('team', teamMemberId, { status: 'removed' }, ctx.userId)
+    s.update('team', teamMemberId, { status: 'removed', removed_at: nowIsoString() }, ctx.userId)
     audit(ctx, { orgId: s.get('services', serviceId).org_id, serviceId, eventType: 'team.removed', entityType: 'service_team', entityId: tm.id, summary: `${userName(tm.user_id)} removed from the team` })
     return teamView(serviceId)
   })
@@ -87,10 +87,10 @@ export async function reassign(serviceId: string, teamMemberId: string, toUserId
     if (tm.service_role === 'verifier_independent_reviewer' && others.length) throw new ApiError('validation', `${toUser.name} cannot be independent reviewer and hold another role on this service.`)
     if (others.some((o) => o.service_role === 'verifier_independent_reviewer')) throw new ApiError('validation', `${toUser.name} is the independent reviewer and cannot take another role.`)
     const svc = s.get('services', serviceId)
-    s.update('team', teamMemberId, { status: 'removed' }, ctx.userId)
-    const next: ServiceTeamMember = { ...auditNow(ctx.userId), id: newId('team'), service_id: serviceId, user_id: toUserId, service_role: tm.service_role, status: 'nominated', nominated_by: ctx.userId, nominated_at: nowIsoString() }
+    s.update('team', teamMemberId, { status: 'removed', removed_at: nowIsoString() }, ctx.userId)
+    const next: ServiceTeamMember = { ...auditNow(ctx.userId), id: newId('team'), service_id: serviceId, user_id: toUserId, service_role: tm.service_role, status: 'nominated', nominated_by: ctx.userId, nominated_at: nowIsoString(), removed_at: null }
     s.insert('team', next)
-    const coi: CoiDeclaration = { ...auditNow(ctx.userId), id: newId('coi'), service_team_id: next.id, declaration: null, details: null, declared_at: null, status: 'required', decided_by: null, decided_at: null }
+    const coi: CoiDeclaration = { ...auditNow(ctx.userId), id: newId('coi'), service_team_id: next.id, declaration: null, details: null, declared_at: null, status: 'required', decided_by: null, decided_at: null, reconfirmed_for_iteration_id: null }
     s.insert('cois', coi)
     if (tm.service_role === 'verifier_team_leader') s.update('services', serviceId, { team_leader_user_id: toUserId }, ctx.userId)
     const role = tm.service_role.replace('verifier_', '').replace('_', ' ')

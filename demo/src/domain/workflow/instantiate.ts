@@ -70,6 +70,7 @@ export function instantiateTemplate(opts: InstantiateOptions): Instantiated {
         actual_start: null,
         actual_end: null,
         parallel_allowed: st.parallel_allowed,
+        non_overridable: st.non_overridable,
         checklist_json: st.checklist.map((c) => ({ ...c, checked: false })),
         closed_by: null,
         closed_at: null,

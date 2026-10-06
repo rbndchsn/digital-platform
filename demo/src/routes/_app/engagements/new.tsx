@@ -49,7 +49,7 @@ const emptyForm = (projectId = ''): FormState => ({
   periodStart: `${thisYear - 1}-01-01`,
   periodEnd: `${thisYear - 1}-12-31`,
   targetOpinionDate: '',
-  scope: { summary: '', sites: [], boundary: '', products: [], interventions: [], materiality_pct: 5 },
+  scope: { summary: '', sites: [], boundary: '', products: [], interventions: [], materiality_pct: 5, sector_scopes: [], technical_areas: [] },
 })
 
 /** Loads a draft (or renewal) when `?draft=` is present, then mounts the wizard with its initial values. */

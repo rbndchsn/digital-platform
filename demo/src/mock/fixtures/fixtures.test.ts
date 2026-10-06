@@ -48,6 +48,30 @@ describe('seed validates against the domain schemas', () => {
     validateAll(seed.templates, WorkflowTemplate, 'templates')
     validateAll(seed.platformSettings, S.PlatformSettings, 'platformSettings')
     validateAll(seed.announcements, S.Announcement, 'announcements')
+    validateAll(seed.materialitySettings, S.MaterialitySetting, 'materialitySettings')
+    validateAll(seed.misstatements, S.Misstatement, 'misstatements')
+    validateAll(seed.postIssuanceEvents, S.PostIssuanceEvent, 'postIssuanceEvents')
+    validateAll(seed.recordAssuranceHistory, S.RecordAssuranceHistory, 'recordAssuranceHistory')
+    validateAll(seed.cases, S.Case, 'cases')
+    validateAll(seed.caseNotes, S.CaseNote, 'caseNotes')
+    validateAll(seed.competenceProfiles, S.CompetenceProfile, 'competenceProfiles')
+    validateAll(seed.competenceQualifications, S.CompetenceQualification, 'competenceQualifications')
+    validateAll(seed.nominationChecks, S.NominationCheck, 'nominationChecks')
+    validateAll(seed.legacyEngagements, S.LegacyEngagement, 'legacyEngagements')
+  })
+
+  it('every shipped template protects the six steps of PRD G5 and validates (PRD v0.3 FR-80)', () => {
+    for (const t of seed.templates) {
+      const steps = t.phases.flatMap((p) => p.steps)
+      for (const key of ['desk_review_cpf', 'team_nomination', 'contract_review', 'service_agreement', 'final_opinion']) expect(steps.find((s) => s.key === key)?.non_overridable, `${t.id} ${key}`).toBe(true)
+      expect(steps.find((s) => s.key === 'desk_review')?.non_overridable, t.id).toBe(false)
+      if (t.assurance.applies) expect(t.materiality_defaults, t.id).toBeTruthy()
+      else expect(t.materiality_defaults, t.id).toBeNull()
+    }
+    const validation = seed.templates.find((t) => t.service_type === 'vcs_validation')!
+    expect(validation.assurance.default).toBe('not_applicable')
+    expect(seed.services.find((s) => s.service_type === 'vcs_validation')?.level_of_assurance).toBe('not_applicable')
+    expect(seed.services.find((s) => s.service_type === 'iso14064_1_inventory_verification')?.level_of_assurance).toBe('reasonable')
   })
 
   it('seeds the platform administrator and the portfolio preview (PRD v0.2)', () => {
@@ -94,8 +118,15 @@ describe('seed validates against the domain schemas', () => {
     for (const d of seed.decarbRecords) {
       expect(has(seed.profiles, d.baseline_profile_id)).toBe(true)
       expect(has(seed.profiles, d.project_profile_id)).toBe(true)
-      if (d.assurance_ref) expect(has(seed.iterations, d.assurance_ref)).toBe(true)
+      // PRD v0.3 FR-83: the assurance reference is the statement, and verified records carry a level of assurance.
+      if (d.assurance_ref) {
+        expect(has(seed.statements, d.assurance_ref)).toBe(true)
+        expect(d.level_of_assurance).not.toBeNull()
+      }
     }
+    for (const i of seed.inventories) if (i.assurance_ref) expect(has(seed.statements, i.assurance_ref)).toBe(true)
+    for (const e of seed.emissionFactors) if (e.assurance_ref) expect(has(seed.statements, e.assurance_ref)).toBe(true)
+    for (const st of seed.steps) expect(typeof st.non_overridable).toBe('boolean')
     for (const n of seed.notifications) expect(has(seed.users, n.user_id)).toBe(true)
   })
 

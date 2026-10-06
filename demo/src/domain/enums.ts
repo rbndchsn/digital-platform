@@ -39,7 +39,7 @@ export type ServiceRole = (typeof SERVICE_ROLES)[number]
 export const STEP_OVERRIDE_ACTIONS = ['complete', 'reopen', 'skip'] as const
 export type StepOverrideAction = (typeof STEP_OVERRIDE_ACTIONS)[number]
 
-export const SERVICE_OVERRIDE_ACTIONS = ['hold', 'resume', 'cancel', 'close', 'return_to_execution'] as const
+export const SERVICE_OVERRIDE_ACTIONS = ['hold', 'resume', 'cancel', 'close', 'return_to_execution', 'change_assurance_level'] as const
 export type ServiceOverrideAction = (typeof SERVICE_OVERRIDE_ACTIONS)[number]
 
 /** Minimum length of the mandatory reason on overrides and ADMIN actions. */
@@ -98,6 +98,8 @@ export const SERVICE_STATUSES = [
   'closed',
   'on_hold',
   'cancelled',
+  /** PRD v0.3 FR-89: an issued or closed service re-running the opinion chain after a post-issuance event. */
+  'in_revision',
 ] as const
 export type ServiceStatus = (typeof SERVICE_STATUSES)[number]
 
@@ -154,6 +156,10 @@ export const EVIDENCE_ENTITY_TYPES = [
   'emission_profile',
   'emission_profile_gas',
   'finding_response',
+  'misstatement',
+  'post_issuance_event',
+  'case_note',
+  'competence_qualification',
 ] as const
 export type EvidenceEntityType = (typeof EVIDENCE_ENTITY_TYPES)[number]
 
@@ -205,8 +211,133 @@ export const OPINION_TYPES = [
 ] as const
 export type OpinionType = (typeof OPINION_TYPES)[number]
 
-export const LEVELS_OF_ASSURANCE = ['limited', 'reasonable'] as const
+/** PRD v0.3 FR-81: `not_applicable` is used by validation service types whose template sets `assurance.applies = false`. */
+export const LEVELS_OF_ASSURANCE = ['limited', 'reasonable', 'not_applicable'] as const
 export type LevelOfAssurance = (typeof LEVELS_OF_ASSURANCE)[number]
+
+export const LEVEL_OF_ASSURANCE_LABELS: Record<LevelOfAssurance, string> = {
+  limited: 'Limited assurance',
+  reasonable: 'Reasonable assurance',
+  not_applicable: 'Validation (no assurance level)',
+}
+
+/** PRD v0.3 FR-82: inventory lines carry a review status, never an individual verified value. */
+export const REVIEW_STATUSES = ['not_reviewed', 'accepted', 'adjusted', 'not_individually_tested'] as const
+export type ReviewStatus = (typeof REVIEW_STATUSES)[number]
+
+export const REVIEW_STATUS_LABELS: Record<ReviewStatus, string> = {
+  not_reviewed: 'Not reviewed',
+  accepted: 'Accepted',
+  adjusted: 'Adjusted',
+  not_individually_tested: 'Not individually tested',
+}
+
+/** PRD v0.3 FR-83: status of the assurance reference carried by a record. */
+export const ASSURANCE_STATUSES = ['verified', 'superseded', 'withdrawn'] as const
+export type AssuranceStatus = (typeof ASSURANCE_STATUSES)[number]
+
+/** PRD v0.3 §8.5: an issued statement is terminal once superseded or withdrawn. */
+export const STATEMENT_STATUSES = ['issued', 'superseded', 'withdrawn'] as const
+export type StatementStatus = (typeof STATEMENT_STATUSES)[number]
+
+export const WITHDRAWAL_PUBLIC_CATEGORIES = ['error_in_statement', 'misrepresentation_by_client', 'programme_decision', 'other'] as const
+export type WithdrawalPublicCategory = (typeof WITHDRAWAL_PUBLIC_CATEGORIES)[number]
+
+export const WITHDRAWAL_PUBLIC_CATEGORY_LABELS: Record<WithdrawalPublicCategory, string> = {
+  error_in_statement: 'Error in the statement',
+  misrepresentation_by_client: 'Misrepresentation by the client',
+  programme_decision: 'Programme decision',
+  other: 'Other',
+}
+
+/** PRD v0.3 FR-88–90. */
+export const POST_ISSUANCE_TRIGGERS = ['verifier', 'client', 'complaint', 'appeal', 'programme', 'other'] as const
+export type PostIssuanceTrigger = (typeof POST_ISSUANCE_TRIGGERS)[number]
+
+export const POST_ISSUANCE_OUTCOMES = ['no_action', 'revise', 'withdraw'] as const
+export type PostIssuanceOutcome = (typeof POST_ISSUANCE_OUTCOMES)[number]
+
+export const POST_ISSUANCE_STATUSES = ['open', 'decided', 'closed'] as const
+export type PostIssuanceStatus = (typeof POST_ISSUANCE_STATUSES)[number]
+
+/** PRD v0.3 FR-84: what the materiality percentage applies to. Template data. */
+export const ASSERTION_BASES = ['total_gross_tco2e', 'scope_1_2_gross_tco2e', 'ef_value', 'reduction_units'] as const
+export type AssertionBase = (typeof ASSERTION_BASES)[number]
+
+export const ASSERTION_BASE_LABELS: Record<AssertionBase, string> = {
+  total_gross_tco2e: 'Total gross emissions (tCO2e)',
+  scope_1_2_gross_tco2e: 'Scope 1 and 2 gross emissions (tCO2e)',
+  ef_value: 'Product emission factor value',
+  reduction_units: 'Reduction decarb_units (tCO2e)',
+}
+
+export const MATERIALITY_BASES = ['programme_rule', 'verifier_judgement'] as const
+export type MaterialityBasis = (typeof MATERIALITY_BASES)[number]
+
+export const MATERIALITY_STATUSES = ['draft', 'approved'] as const
+export type MaterialityStatus = (typeof MATERIALITY_STATUSES)[number]
+
+/** PRD v0.3 FR-85. */
+export const MISSTATEMENT_SOURCES = ['system', 'finding', 'manual'] as const
+export type MisstatementSource = (typeof MISSTATEMENT_SOURCES)[number]
+
+export const MISSTATEMENT_DIRECTIONS = ['overstatement', 'understatement'] as const
+export type MisstatementDirection = (typeof MISSTATEMENT_DIRECTIONS)[number]
+
+export const MISSTATEMENT_NATURES = ['quantitative', 'qualitative'] as const
+export type MisstatementNature = (typeof MISSTATEMENT_NATURES)[number]
+
+export const MISSTATEMENT_STATUSES = ['proposed', 'confirmed', 'dismissed'] as const
+export type MisstatementStatus = (typeof MISSTATEMENT_STATUSES)[number]
+
+export const MISSTATEMENT_RECORD_TYPES = ['inventory', 'emission_factor', 'decarb_unit_record'] as const
+export type MisstatementRecordType = (typeof MISSTATEMENT_RECORD_TYPES)[number]
+
+/** PRD v0.3 FR-91–92: complaints and appeals. */
+export const CASE_KINDS = ['complaint', 'appeal'] as const
+export type CaseKind = (typeof CASE_KINDS)[number]
+
+export const CASE_STATUSES = ['received', 'acknowledged', 'under_investigation', 'decided', 'closed', 'withdrawn_by_complainant'] as const
+export type CaseStatus = (typeof CASE_STATUSES)[number]
+
+export const CASE_OUTCOMES = ['upheld', 'partly_upheld', 'not_upheld', 'withdrawn'] as const
+export type CaseOutcome = (typeof CASE_OUTCOMES)[number]
+
+export const CASE_DECISION_ENTITY_TYPES = ['service', 'approval', 'document_version', 'finding', 'opinion_iteration', 'opinion_statement'] as const
+export type CaseDecisionEntityType = (typeof CASE_DECISION_ENTITY_TYPES)[number]
+
+/** PRD v0.3 FR-94–96: competence. */
+export const QUALIFICATION_KINDS = ['lead_verifier', 'verifier', 'independent_reviewer', 'technical_expert', 'lead_validator', 'validator'] as const
+export type QualificationKind = (typeof QUALIFICATION_KINDS)[number]
+
+export const QUALIFICATION_KIND_LABELS: Record<QualificationKind, string> = {
+  lead_verifier: 'Lead verifier',
+  verifier: 'Verifier',
+  independent_reviewer: 'Independent reviewer',
+  technical_expert: 'Technical expert',
+  lead_validator: 'Lead validator',
+  validator: 'Validator',
+}
+
+export const QUALIFICATION_STATUSES = ['valid', 'expiring', 'expired'] as const
+export type QualificationStatus = (typeof QUALIFICATION_STATUSES)[number]
+
+/** Days before expiry at which a qualification is shown as `expiring` and reminders start (PRD FR-94). */
+export const QUALIFICATION_EXPIRING_DAYS = 90
+
+/** PRD v0.3 FR-97–98: rotation rules. */
+export const ROTATION_SCOPES = ['same_project', 'same_client'] as const
+export type RotationScope = (typeof ROTATION_SCOPES)[number]
+
+export const ROTATION_ROLES = ['verifier_team_leader', 'verifier_auditor', 'verifier_technical_expert', 'verifier_independent_reviewer', 'vvb'] as const
+export type RotationRole = (typeof ROTATION_ROLES)[number]
+
+export const ON_BREACH = ['warn', 'block'] as const
+export type OnBreach = (typeof ON_BREACH)[number]
+
+/** Outcome of a competence or rotation check item. */
+export const CHECK_RESULTS = ['ok', 'warning', 'block'] as const
+export type CheckResult = (typeof CHECK_RESULTS)[number]
 
 export const CONSOLIDATION_APPROACHES = ['operational_control', 'financial_control', 'equity_share'] as const
 export type ConsolidationApproach = (typeof CONSOLIDATION_APPROACHES)[number]
@@ -350,6 +481,24 @@ export const NOTIFICATION_TYPES = [
   'service_overridden',
   'team_reassigned',
   'account_changed',
+  // PRD v0.3 FR-55
+  'iteration_returned_to_ir',
+  'decision_refused',
+  'materiality_changed',
+  'materiality_warning',
+  'misstatement_proposed',
+  'misstatement_confirmed',
+  'post_issuance_opened',
+  'statement_revised',
+  'statement_withdrawn',
+  'case_received',
+  'case_acknowledged',
+  'case_decided',
+  'case_closed',
+  'case_overdue',
+  'competence_expiring',
+  'competence_expired',
+  'check_overridden',
   'generic',
 ] as const
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number]

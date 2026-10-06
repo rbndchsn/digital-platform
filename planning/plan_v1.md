@@ -287,6 +287,45 @@ Brief: `planning/next-session-prompt.md` (2026-10-06). Decisions taken while exe
   - [x] All steps ticked, progress log rows with commit hashes, relevant files updated; tag `v0.2-demo` pushed; CI green including Playwright (run recorded in §6); live site shows Sam Okafor in the sign-in grid.
   - Done when: https://rbndchsn.github.io/digital-platform/ serves the v0.2 build. ✔ **Phase I.5 complete.**
 
+### 3.2 Phase I.6 — Accreditation-grade controls (PRD v0.3, v0.3-demo)
+
+Brief: PRD v0.3 (C1–C10) and `planning/prd-v0.3-report.md` §4, approved by Luc on 2026-10-06 ("Do it all"). Decisions taken while executing are in §8 (D25 onward). Same bookkeeping as Phase I.
+
+- [x] **Step 21 — Domain (PRD v0.3)**
+  - [x] `enums.ts`: `not_applicable` level of assurance, `REVIEW_STATUSES`, `ASSURANCE_STATUSES`, `STATEMENT_STATUSES`, post-issuance triggers / outcomes, materiality bases and statuses, misstatement enums, case enums, qualification kinds, rotation scopes, check results, service status `in_revision`, override action `change_assurance_level`, new notification types and evidence entity types.
+  - [x] Schemas: `Service` (`level_of_assurance`, `assurance_level_locked_at`, `triage_check_json`, scope `sector_scopes` / `technical_areas`), `Step.non_overridable`, `ServiceTeamMember.removed_at`, `CoiDeclaration.reconfirmed_for_iteration_id`, `InventoryLine` review status + adjusted values (no `verified_*`), records `level_of_assurance` + `assurance_status`, `OpinionIteration` aggregation / warning / acknowledgements / `revision_of_statement_id`, `OpinionStatement` status / superseded / withdrawn / materiality; new `MaterialitySetting`, `Misstatement`, `PostIssuanceEvent`, `RecordAssuranceHistory`, `Case`, `CaseNote`, `CompetenceProfile`, `CompetenceQualification`, `NominationCheck`, `LegacyEngagement` (`schemas/governance.ts`); `PlatformSettings.complaint_targets_json`.
+  - [x] `template.schema.ts`: per-step `non_overridable`; template `assurance`, `materiality_defaults`, `competence_requirements`, `rotation_rules`, `complaint_targets`, `blocking_finding_types`, `retention_years`, `last_edit_reason`; `validateTemplate` (protected approvals, team nomination and the opinion step must be `non_overridable`; assurance defaults consistent). `templates/index.ts`: the six protected steps are locked in every template; per-type assurance applicability, materiality defaults, competence requirements and rotation rules; IR and manager checklists carry the `materiality` consistency item. `instantiate.ts` copies `non_overridable`.
+  - [x] `machines.ts`: `applyStepOverride` reads `non_overridable` (typed error `step_non_overridable`; hard-coded keys removed); service `open_revision` / `revision_to_opinion_review`; iteration `return_to_ir`; statement, post-issuance, case, misstatement and materiality machines; COI `reconfirm`; record `withdraw` from `verified`.
+  - [x] New pure modules: `workflow/involved-set.ts`, `compute/materiality.ts`, `workflow/competence.ts`, `workflow/rotation.ts`, each with a test file.
+  - [x] `policy.ts`: v0.3 actions; resolution order gains the involved set (`decision_maker_conflict`) for the manager decision, issue, revision and withdrawal decisions and case handling / assignment / decision; `own_profile` refusal; `Decision.code`; ADMIN allow-list gains `case.read_all` and `competence.read`. `next-action.ts`: `in_revision` leads to the revision iteration.
+  - [x] Compile-level follow-through so the step stands on its own: `api/involved.ts` (involved set, eligibility, verified-value edit consequences), `api/materiality.ts`, `api/records.ts` (line review, verified totals, write-back to statements with history, withdrawal), `api/iterations.ts` (eligibility refusal with audit event, acknowledgement, aggregation snapshot, statements list, revision issuance, public page semantics), `api/services.ts` (`change_assurance_level`), `api/approvals.ts` (acceptance locks the level), store schema 3 with the new tables, fixtures carrying the new columns, Marc Lefèvre seeded, inventory editor rewritten around review status, `components/assurance-badge.tsx`.
+  - Done when: typecheck, lint, vitest pass with the new unit tests. ✔ 113 tests, build green.
+
+- [ ] **Step 22 — Mock api and fixtures**
+  - [ ] Fixtures: second decision-capable manager Marc Lefèvre; competence profiles for all staff (one expiring lead qualification); templates with `non_overridable`; Northwind PCF 2025 service in opinion review with a materiality warning; Northwind PCF 2024 statement **withdrawn** (EF records show "assurance withdrawn"); Northwind FY2023 statement **superseded** by a revision; an appeal under investigation and an overdue complaint; legacy engagements for rotation history; `record.verified_value_edited` history events; `assurance_ref` now points to statements; store schema 3.
+  - [ ] Api: `materiality.ts`, `post-issuance.ts`, `cases.ts`, `competence.ts` (profiles, nomination and rotation checks, legacy history); `iterations.ts` eligibility, acknowledgement, return-to-IR, aggregation snapshot, statements list, revision issuance (supersede, re-point records, history); `records.ts` line review status, verified totals, `issued_immutable`, write-back with level of assurance and history; `team.ts` checks on nominate / reassign; `services.ts` `change_assurance_level`, timeline milestones and override markers; `staff.ts` template edit with reason and validation; `admin.ts` v0.3 statistics; notifications for every new decision point.
+  - [ ] `storyline.test.ts` chapters 13–16; policy, machines, fixtures tests updated.
+  - Done when: all unit tests pass.
+
+- [ ] **Step 23 — UI part A: opinion, materiality, records, public page**
+  - [ ] Opinion tab: aggregation panel, inconsistency warning with acknowledgement comment in the IR and manager dialogs, eligibility notice (`decision_maker_conflict`), statement status chip and level-of-assurance badge, post-issuance events list and dialog, client "Appeal this decision".
+  - [ ] Materiality panel and misstatement register on the service (Planning / Execution), proposals from adjusted lines; inventory editor line review status instead of per-line verified values; EF and decarb editors keep verified values with `issued_immutable`; assurance badge and status on every record card, portfolio and the client home; assurance history drawer.
+  - [ ] Public `/verify/{code}`: level of assurance, materiality line, superseded / withdrawn banners that survive the client opt-out.
+  - [ ] Request wizard and CPF: level of assurance; service header badge; service override "Change level of assurance".
+  - Done when: typecheck, lint, vitest, build pass and the existing Playwright suite passes.
+
+- [ ] **Step 24 — UI part B: complaints, competence, rotation, templates, timeline, admin**
+  - [ ] Complaints and appeals: client Organisation tab (raise, follow), staff register (`/staff/cases`) with targets, handler assignment outside the involved set, notes, decision with actions; "Appeal this decision" entry points.
+  - [ ] Competence page (`/staff/competence`), team panel with competence summary, rotation history and check results, override-with-reason on warnings, IR hard block; triage card shows the VVB rotation history.
+  - [ ] Template editor: `non_overridable` lock toggle with reason, materiality defaults, competence requirements, rotation rules, complaint targets (functional save as a new version).
+  - [ ] Timeline rewritten (`components/timeline.tsx`): collapsible phases, transition ticks with tooltips, milestones, override markers, week sub-axis, keyboard navigation and table view.
+  - [ ] Admin dashboard tiles for refusals, warnings, cases, expiring qualifications, revisions; Service Log filters; nav entries; demo panel chapters 13–16; Service overview shows the level of assurance.
+  - Done when: typecheck, lint, vitest, build pass; probe clean on every page.
+
+- [ ] **Step 25 — Tests, screenshots, docs, release v0.3-demo**
+  - [ ] Playwright `governance.spec.ts` (chapters 13–16), storyline chapters 13–16, a11y on the new pages; screenshots 32–38; `DEMO_SCRIPT.md`, README, `phase2-handover.md`; tag `v0.3-demo`; CI green; live site shows Marc Lefèvre.
+  - Done when: every unit and Playwright test passes and the live URL serves v0.3.
+
 ---
 
 ## 4. Phase II outline (not started; detailed in the PRD and the task list)
@@ -373,6 +412,14 @@ Brief: `planning/next-session-prompt.md` (2026-10-06). Decisions taken while exe
 | `demo/src/components/reason-dialog.tsx` | Mandatory-reason dialog (optional typed phrase) used by overrides, deactivation, suspension, break-glass |
 | `demo/src/routes/_app/admin.tsx`, `admin/*.tsx` | Administration portal: layout guard, dashboard, users and organisations, audit log, COI register, settings |
 | `demo/e2e/admin.spec.ts`, `override.spec.ts` | Chapters 11 and 12 in the browser |
+| `planning/prd-v0.3-report.md` | PRD v0.3 impact map, QA table, inconsistencies, demo proposals (Phase I.6 brief) |
+| `demo/src/domain/schemas/governance.ts` | Cases, case notes, competence profiles and qualifications (PRD v0.3) |
+| `demo/src/domain/workflow/involved-set.ts` | Involved set derived from team rows and verified-value edit events (FR-79) |
+| `demo/src/domain/compute/materiality.ts` | Threshold, gross / net aggregation, consistency warning, misstatement proposal (FR-84–87) |
+| `demo/src/domain/workflow/competence.ts`, `rotation.ts` | Nomination checks: qualifications with the IR hard block; consecutive-engagement rotation rules |
+| `demo/src/api/involved.ts` | Involved set, eligibility, consequences of a verified-value edit (return to IR, `issued_immutable`) |
+| `demo/src/api/materiality.ts` | Materiality setting, misstatement register, aggregation panel |
+| `demo/src/components/assurance-badge.tsx` | Level-of-assurance badge and assurance history (FR-83) |
 
 ---
 
@@ -400,7 +447,9 @@ Brief: `planning/next-session-prompt.md` (2026-10-06). Decisions taken while exe
 | 2026-10-06 | 17 | 64a004e | Mock api: `api/admin.ts`, overrides and reassign, audited sign-ins, Sam Okafor and platform fixtures, storyline chapters 11–12. 80 tests. | Chapter 12 resumes the Solstice service to whatever status it had (planning in the api storyline, execution in the browser storyline) |
 | 2026-10-06 | 18 | c38a1fc | Administration portal (`/admin/*`), read-only ADMIN everywhere with break-glass, manager override / reassign / replan controls, verified-value dialogs for EFs and decarb records, announcement and maintenance banners, Sam in the persona grid and demo panel. | Screenshot entries 28–31 added one step early for the visual check |
 | 2026-10-06 | 19 | 68fd36d | Playwright `admin.spec.ts` and `override.spec.ts`, storyline chapters 11–12, axe on the admin pages, screenshots 27–31, DEMO_SCRIPT chapters 11–12, README, handover. 80 unit tests, 21 Playwright tests. | Break-glass re-render and audit "Overrides" filter fixed |
-| 2026-10-06 | 20 | (this commit, tag v0.2-demo) | Plan bookkeeping, tag `v0.2-demo`, CI and live site confirmed. **Phase I.5 complete.** | Cloudflare Pages job still dormant (no secrets), GitHub Pages is the live demo |
+| 2026-10-06 | 20 | 9fe4d8f (tag v0.2-demo) | Plan bookkeeping, tag `v0.2-demo`, CI and live site confirmed. **Phase I.5 complete.** | Cloudflare Pages job still dormant (no secrets), GitHub Pages is the live demo |
+| 2026-10-06 | — | 0f1b485 | PRD v0.3 (C1–C10), plan §8 D11–D24, `prd-v0.3-report.md`. | Demo untouched; proposals approved by Luc afterwards |
+| 2026-10-06 | 21 | (this commit) | Domain for PRD v0.3: enums, schemas, template schema and data with `non_overridable`, machines, involved set, materiality, competence, rotation, policy, next action; compile-level api/fixture/UI follow-through; store schema 3. 113 tests. | Richer api behaviour, seed storyline and UI land in steps 22–24 |
 
 ---
 
@@ -433,6 +482,15 @@ Brief: `planning/next-session-prompt.md` (2026-10-06). Decisions taken while exe
 - **D22 — Rotation history counts `issued | closed` services only** (cancelled excluded), via `renewed_from_service_id`, same project and same client, plus manager-entered `legacy_engagements`. Role-level rules check at nomination and reassignment; the `vvb` rule checks at triage and can only warn.
 - **D23 — Timeline is a custom read-only SVG/CSS-grid component with a table-view twin;** Recharts stays for KPI charts only. The demo's `components/gantt.tsx` is already pure SVG and meets the planned/actual, today-line and month-axis parts of FR-37; it lacks collapsible phases, transition ticks with event tooltips, milestones, override markers, week axis, keyboard navigation and the table view.
 - **D24 — C10 deferred.** Governance views for an impartiality-committee role are an open item in PRD §16 only; no role, screen or RBAC row added.
+
+### Phase I.6 decisions (2026-10-06, demo implementation of PRD v0.3)
+
+- **D25 — Materiality approval is a manager action of its own (`materiality.approve`)**, not folded into the demo's audit-plan acceptance, because in the demo the audit plan is accepted by the client (`approval.decide:audit_plan` is a client action since Phase I). The PRD's "approved together with the audit plan" maps to Phase II's `audit_plan` approval row; the demo keeps the two decisions side by side on the Planning step so the separation is visible.
+- **D26 — Involved set spans the whole service history.** Since no verified figure can change after issuance (`issued_immutable`) and a revision includes everyone from the original cycle (PRD FR-89), the "current cycle" of FR-79 is the whole service: every team row ever, every `record.verified_value_edited` actor, every IR decider. Simpler, stricter, and exactly what an assessor would expect.
+- **D27 — Verified-value edits are one audit event type, `record.verified_value_edited`**, with `entity_type` telling the record kind (`inventory_line`, `inventory`, `emission_factor`, `decarb_unit_record`). The former `inventory.line_verified`, `emission_factor.verified_value` and `decarb_record.verified_values` events are gone, so the involved set has a single source.
+- **D28 — Public page semantics.** `getPublicStatement` returns a statement for any existing code; `hidden = !public_enabled || status === 'withdrawn'` strips figures and hashes while the superseded / withdrawn banner always renders (PRD FR-36). The current statement of a service is the issued one, else the most recent one.
+- **D29 — A line review or a verified total is recorded through `records.reviewLine` / `records.setVerifiedTotals`** (`PATCH /inventory-lines/:id/review`, `PATCH /inventories/:id/verified-totals`); the response carries `involvedSetJoined`, `iterationReturnedToIr` and `misstatementProposed` so the UI can tell the editor what just happened.
+- **D30 — Decision refusals are audited by the api (`iteration.decision_refused`)** and notify the eligible managers; the UI additionally disables the control from `eligibilitySync`, so a refused attempt can only come from a stale screen or a direct api call.
 
 ## 7. Open questions and assumptions (answer, then start step 0)
 

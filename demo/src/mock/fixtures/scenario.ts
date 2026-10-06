@@ -2,7 +2,7 @@
  * Scenario builder: creates services from the real templates and advances them to a storyline state,
  * producing the same rows (documents, approvals, team, COI, audit events, notifications) the api layer would.
  */
-import type { NotificationType, ServiceRole, ServiceStatus, ServiceType } from '@/domain/enums'
+import type { LevelOfAssurance, NotificationType, ServiceRole, ServiceStatus, ServiceType } from '@/domain/enums'
 import { SERVICE_TYPE_LABELS } from '@/domain/enums'
 import type {
   Approval,
@@ -174,6 +174,7 @@ export class Scenario {
     teamLeader?: string | null
     status?: ServiceStatus
     renewedFrom?: string | null
+    levelOfAssurance?: LevelOfAssurance
   }): ServiceCtx {
     const template = templateFor(opts.type)
     const requestedAt = daysAgo(opts.requestedDaysAgo, 10, 12)
@@ -194,7 +195,7 @@ export class Scenario {
       resume_status: null,
       period_start: opts.periodStart,
       period_end: opts.periodEnd,
-      scope_json: { summary: '', sites: [], boundary: '', products: [], interventions: [], materiality_pct: 5, ...opts.scope },
+      scope_json: { summary: '', sites: [], boundary: '', products: [], interventions: [], materiality_pct: 5, sector_scopes: [], technical_areas: [], ...opts.scope },
       requested_at: requestedAt,
       contracted_at: null,
       issued_at: null,
@@ -204,6 +205,10 @@ export class Scenario {
       client_contact_user_id: opts.clientContact,
       team_leader_user_id: opts.teamLeader ?? null,
       target_opinion_date: addDaysIso(startDate, 70),
+      // PRD v0.3 FR-81: the template says whether a level of assurance applies; the request carries the default.
+      level_of_assurance: opts.levelOfAssurance ?? template.assurance.default,
+      assurance_level_locked_at: null,
+      triage_check_json: null,
     }
     const inst = instantiateTemplate({ serviceId: service.id, template, startDate, now: requestedAt, actorId: USR.mgr, newId: seedId })
     this.t.services.push(service)
@@ -391,7 +396,7 @@ export class Scenario {
   // ---------------------------------------------------------------- team and COI
   nominate(ctx: ServiceCtx, members: { userId: string; role: ServiceRole; coi: 'approved' | 'declared' | 'required' }[], at: string): void {
     for (const m of members) {
-      const tm: ServiceTeamMember = { ...auditAt(at, USR.mgr), id: seedId('team'), service_id: ctx.service.id, user_id: m.userId, service_role: m.role, status: m.coi === 'approved' ? 'active' : 'nominated', nominated_by: USR.mgr, nominated_at: at }
+      const tm: ServiceTeamMember = { ...auditAt(at, USR.mgr), id: seedId('team'), service_id: ctx.service.id, user_id: m.userId, service_role: m.role, status: m.coi === 'approved' ? 'active' : 'nominated', nominated_by: USR.mgr, nominated_at: at, removed_at: null }
       this.t.team.push(tm)
       if (m.role === 'verifier_team_leader') ctx.service.team_leader_user_id = m.userId
       if (m.role === 'client_contact') continue
@@ -405,6 +410,7 @@ export class Scenario {
         status: m.coi,
         decided_by: m.coi === 'approved' ? USR.mgr : null,
         decided_at: m.coi === 'approved' ? addHours(at, 26) : null,
+        reconfirmed_for_iteration_id: null,
       }
       this.t.cois.push(coi)
       this.audit({ org_id: ctx.service.org_id, service_id: ctx.service.id, actor_user_id: USR.mgr, event_type: 'team.nominated', entity_type: 'service_team', entity_id: tm.id, summary: `${userName(m.userId)} nominated as ${roleLabel(m.role)}`, before_json: null, after_json: { service_role: m.role }, occurred_at: at })
@@ -511,7 +517,7 @@ export class Scenario {
       service_id: ctx.service.id,
       iteration_no: it.no,
       status: it.status,
-      summary_json: { opinion_type: it.opinionType, level_of_assurance: 'reasonable', figures: it.figures, narrative: it.narrative },
+      summary_json: { opinion_type: it.opinionType, level_of_assurance: ctx.service.level_of_assurance, figures: it.figures, narrative: it.narrative },
       submitted_for_ir_at: it.status === 'draft' ? null : addHours(createdAt, 30),
       ir_user_id: USR.ir,
       ir_decision: decidedIr ? (irApproved ? 'approve' : 'request_changes') : null,
@@ -523,6 +529,12 @@ export class Scenario {
       manager_decided_at: decidedMgr ? addHours(createdAt, 100) : null,
       checklist_ir_json: template.ir_checklist.map((c) => ({ ...c, checked: decidedIr })),
       checklist_manager_json: template.manager_checklist.map((c) => ({ ...c, checked: decidedMgr })),
+      aggregation_json: null,
+      materiality_warning: false,
+      materiality_ack_ir_json: null,
+      materiality_ack_manager_json: null,
+      revision_of_statement_id: null,
+      returned_to_ir_count: 0,
     }
     this.t.iterations.push(iteration)
     const roles: IterationDocument['role'][] = ['report', 'findings_report', 'opinion', 'calc_check']
@@ -569,7 +581,7 @@ export class Scenario {
       iteration_id: iteration.id,
       public_code: publicCode(ctx.service.id),
       opinion_type: iteration.summary_json.opinion_type ?? 'unqualified',
-      level_of_assurance: iteration.summary_json.level_of_assurance ?? 'reasonable',
+      level_of_assurance: ctx.service.level_of_assurance,
       statement_html_r2_key: `org/${ctx.service.org_id}/statements/${ctx.service.id}/statement.html`,
       statement_pdf_r2_key: `org/${ctx.service.org_id}/statements/${ctx.service.id}/statement.pdf`,
       figures_json: iteration.summary_json.figures,
@@ -581,6 +593,15 @@ export class Scenario {
       issued_at: at,
       issued_by: USR.mgr,
       public_enabled: true,
+      materiality_json: null,
+      misstatement_summary_json: null,
+      status: 'issued',
+      superseded_by_id: null,
+      superseded_at: null,
+      withdrawn_at: null,
+      withdrawn_by: null,
+      withdrawal_reason: null,
+      withdrawal_public_category: null,
     }
     this.t.statements.push(statement)
     iteration.status = 'issued'

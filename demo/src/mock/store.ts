@@ -7,7 +7,11 @@ import type {
   ApiClient,
   Approval,
   AuditEvent,
+  Case,
+  CaseNote,
   CoiDeclaration,
+  CompetenceProfile,
+  CompetenceQualification,
   DecarbUnitRecord,
   Document,
   DocumentSlot,
@@ -26,14 +30,20 @@ import type {
   InventoryLineGas,
   Invoice,
   IterationDocument,
+  LegacyEngagement,
+  MaterialitySetting,
   Membership,
+  Misstatement,
+  NominationCheck,
   Notification,
   OpinionIteration,
   OpinionStatement,
   Organisation,
   Phase,
   PlatformSettings,
+  PostIssuanceEvent,
   Project,
+  RecordAssuranceHistory,
   Service,
   ServiceTeamMember,
   Step,
@@ -78,6 +88,17 @@ export interface Tables {
   templates: WorkflowTemplate[]
   platformSettings: PlatformSettings[]
   announcements: Announcement[]
+  // PRD v0.3
+  materialitySettings: MaterialitySetting[]
+  misstatements: Misstatement[]
+  postIssuanceEvents: PostIssuanceEvent[]
+  recordAssuranceHistory: RecordAssuranceHistory[]
+  cases: Case[]
+  caseNotes: CaseNote[]
+  competenceProfiles: CompetenceProfile[]
+  competenceQualifications: CompetenceQualification[]
+  nominationChecks: NominationCheck[]
+  legacyEngagements: LegacyEngagement[]
 }
 
 export type TableName = keyof Tables
@@ -101,8 +122,8 @@ interface Snapshot {
 }
 
 const STORAGE_KEY = 'vx.demo.v1'
-/** Bumped to 2 for v0.2 (new tables and user columns); a tab holding a v1 snapshot reseeds silently (plan_v1 §8 D10). */
-const SCHEMA = 2
+/** Bumped per release (2: v0.2 ADMIN tables; 3: v0.3 governance tables and record columns); an older snapshot reseeds silently (plan_v1 §8 D10). */
+const SCHEMA = 3
 
 const EMPTY_SESSION = (): SessionState => ({ userId: null, orgId: null, breakGlassServiceIds: [], seededAt: new Date().toISOString(), storylineChapter: 0 })
 

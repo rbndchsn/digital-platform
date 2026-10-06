@@ -3,12 +3,17 @@
  * plus the event name the audit log records. The api layer performs side effects.
  */
 import type {
+  CaseStatus,
   CoiStatus,
   DocumentCheckStatus,
   FindingStatus,
   IterationStatus,
+  MaterialityStatus,
+  MisstatementStatus,
+  PostIssuanceStatus,
   RecordStatus,
   ServiceStatus,
+  StatementStatus,
   StepOverrideAction,
   StepStatus,
 } from '../enums'
@@ -18,6 +23,8 @@ export class TransitionError extends Error {
     readonly machine: string,
     readonly from: string,
     readonly action: string,
+    /** Typed code the api maps to a problem detail (PRD §8.5: `step_non_overridable`, …). */
+    readonly code: string | null = null,
   ) {
     super(`${machine}: cannot "${action}" from "${from}"`)
     this.name = 'TransitionError'
@@ -68,6 +75,8 @@ export type ServiceAction =
   | 'hold'
   | 'resume'
   | 'cancel'
+  | 'open_revision'
+  | 'revision_to_opinion_review'
 
 const ACTIVE: ServiceStatus[] = ['contracting', 'planning', 'execution', 'opinion_review']
 
@@ -87,6 +96,9 @@ export const serviceMachine = createMachine<ServiceStatus, ServiceAction>(
     // `resume` returns to the stored resume_status; the api layer supplies it.
     resume: { from: ['on_hold'], to: 'contracting' },
     cancel: { from: ['draft', 'requested', 'triage', ...ACTIVE, 'on_hold'], to: 'cancelled' },
+    // PRD v0.3 FR-89: a revision re-runs the opinion chain on an issued or closed service.
+    open_revision: { from: ['issued', 'closed'], to: 'in_revision' },
+    revision_to_opinion_review: { from: ['in_revision'], to: 'opinion_review' },
   },
   ['closed', 'cancelled'],
 )
@@ -114,17 +126,17 @@ export const stepMachine = createMachine<StepStatus, StepAction>(
  * Manager step override (PRD FR-73): forces a step to a state from any state, bypassing the normal machine,
  * so the audit event (`step.overridden`) is distinguishable from a normal transition. The api layer enforces
  * the mandatory reason and the notifications.
+ *
+ * PRD v0.3 FR-80: a step copied from the template with `non_overridable` can never be forced to completed or
+ * skipped (typed error `step_non_overridable`); reopening makes the process stricter and stays allowed.
  */
 const STEP_OVERRIDE_TARGET: Record<StepOverrideAction, StepStatus> = { complete: 'completed', reopen: 'in_progress', skip: 'skipped' }
 
-/** Steps whose completion can never be forced: impartiality and issuance are not skippable (PRD G5). */
-export const NON_OVERRIDABLE_COMPLETION_STEPS: readonly string[] = ['team_nomination', 'final_opinion']
-
-export function applyStepOverride(step: { key: string; status: StepStatus }, action: StepOverrideAction): { state: StepStatus; event: 'step.overridden' } {
+export function applyStepOverride(step: { key: string; status: StepStatus; non_overridable?: boolean }, action: StepOverrideAction): { state: StepStatus; event: 'step.overridden' } {
   const target = STEP_OVERRIDE_TARGET[action]
   if (!target) throw new TransitionError('step_override', step.status, action)
   if (step.status === target) throw new TransitionError('step_override', step.status, action)
-  if (action === 'complete' && NON_OVERRIDABLE_COMPLETION_STEPS.includes(step.key)) throw new TransitionError('step_override', step.status, action)
+  if ((action === 'complete' || action === 'skip') && step.non_overridable) throw new TransitionError('step_override', step.status, action, 'step_non_overridable')
   return { state: target, event: 'step.overridden' }
 }
 
@@ -184,7 +196,7 @@ export const FINDING_ACTION_PARTY: Record<FindingAction, 'client' | 'verifier' |
 }
 
 // ---------------------------------------------------------------- Opinion iteration
-export type IterationAction = 'submit_for_ir' | 'ir_approve' | 'ir_request_changes' | 'manager_approve' | 'manager_request_changes' | 'issue'
+export type IterationAction = 'submit_for_ir' | 'ir_approve' | 'ir_request_changes' | 'manager_approve' | 'manager_request_changes' | 'issue' | 'return_to_ir'
 
 export const iterationMachine = createMachine<IterationStatus, IterationAction>(
   'iteration',
@@ -195,12 +207,76 @@ export const iterationMachine = createMachine<IterationStatus, IterationAction>(
     manager_approve: { from: ['manager_review'], to: 'approved' },
     manager_request_changes: { from: ['manager_review'], to: 'changes_requested' },
     issue: { from: ['approved'], to: 'issued' },
+    // PRD v0.3 FR-77 (b): a verified-value edit after IR approval invalidates the review.
+    return_to_ir: { from: ['ir_approved', 'manager_review', 'approved'], to: 'independent_review' },
   },
   ['changes_requested', 'issued'],
 )
 
+// ---------------------------------------------------------------- Opinion statement (PRD v0.3 FR-89, FR-90)
+export type StatementAction = 'supersede' | 'withdraw'
+
+export const statementMachine = createMachine<StatementStatus, StatementAction>(
+  'statement',
+  {
+    supersede: { from: ['issued'], to: 'superseded' },
+    withdraw: { from: ['issued'], to: 'withdrawn' },
+  },
+  ['superseded', 'withdrawn'],
+)
+
+// ---------------------------------------------------------------- Post-issuance event (PRD v0.3 FR-88)
+export type PostIssuanceAction = 'decide' | 'close'
+
+export const postIssuanceMachine = createMachine<PostIssuanceStatus, PostIssuanceAction>(
+  'post_issuance_event',
+  {
+    decide: { from: ['open'], to: 'decided' },
+    close: { from: ['decided'], to: 'closed' },
+  },
+  ['closed'],
+)
+
+// ---------------------------------------------------------------- Complaints and appeals (PRD v0.3 FR-91)
+export type CaseAction = 'acknowledge' | 'start_investigation' | 'decide' | 'close' | 'withdraw'
+
+export const caseMachine = createMachine<CaseStatus, CaseAction>(
+  'case',
+  {
+    acknowledge: { from: ['received'], to: 'acknowledged' },
+    start_investigation: { from: ['acknowledged'], to: 'under_investigation' },
+    decide: { from: ['under_investigation', 'acknowledged'], to: 'decided' },
+    close: { from: ['decided'], to: 'closed' },
+    withdraw: { from: ['received', 'acknowledged', 'under_investigation'], to: 'withdrawn_by_complainant' },
+  },
+  ['closed', 'withdrawn_by_complainant'],
+)
+
+// ---------------------------------------------------------------- Materiality and misstatements (PRD v0.3 FR-84, FR-85)
+export type MaterialityAction = 'approve' | 'reopen'
+
+export const materialityMachine = createMachine<MaterialityStatus, MaterialityAction>(
+  'materiality',
+  {
+    approve: { from: ['draft'], to: 'approved' },
+    reopen: { from: ['approved'], to: 'draft' },
+  },
+  [],
+)
+
+export type MisstatementAction = 'confirm' | 'dismiss'
+
+export const misstatementMachine = createMachine<MisstatementStatus, MisstatementAction>(
+  'misstatement',
+  {
+    confirm: { from: ['proposed'], to: 'confirmed' },
+    dismiss: { from: ['proposed', 'confirmed'], to: 'dismissed' },
+  },
+  ['dismissed'],
+)
+
 // ---------------------------------------------------------------- COI
-export type CoiAction = 'declare' | 'approve' | 'reject' | 'redeclare'
+export type CoiAction = 'declare' | 'approve' | 'reject' | 'redeclare' | 'reconfirm'
 
 export const coiMachine = createMachine<CoiStatus, CoiAction>(
   'coi',
@@ -209,8 +285,10 @@ export const coiMachine = createMachine<CoiStatus, CoiAction>(
     approve: { from: ['declared'], to: 'approved' },
     reject: { from: ['declared'], to: 'rejected' },
     redeclare: { from: ['rejected'], to: 'declared' },
+    // PRD v0.3 FR-89: a revision asks every member to re-confirm; the manager approves again.
+    reconfirm: { from: ['approved'], to: 'declared' },
   },
-  ['approved'],
+  [],
 )
 
 // ---------------------------------------------------------------- Document version
@@ -237,7 +315,8 @@ export const recordMachine = createMachine<RecordStatus, RecordAction>(
     start_verification: { from: ['submitted'], to: 'under_verification' },
     verify: { from: ['under_verification', 'submitted'], to: 'verified' },
     supersede: { from: ['verified'], to: 'superseded' },
-    withdraw: { from: ['draft', 'submitted', 'under_verification'], to: 'withdrawn' },
+    // PRD v0.3 FR-90: `withdrawn` from `verified` means the statement it relied on was withdrawn.
+    withdraw: { from: ['draft', 'submitted', 'under_verification', 'verified'], to: 'withdrawn' },
   },
   ['superseded', 'withdrawn'],
 )

@@ -33,6 +33,8 @@ export const PlatformSettings = z.object({
   branding_json: z.object({ product_name: z.string().min(1), primary_colour: z.string().min(1), logo_r2_key: z.string().nullable() }),
   notification_templates_json: z.array(z.object({ type: z.enum(NOTIFICATION_TYPES), subject: z.string(), body: z.string() })),
   retention_years: z.number().int().positive(),
+  /** PRD v0.3 FR-91: targets (working days) for cases without a service; templates override per programme. */
+  complaint_targets_json: z.object({ acknowledge_days: z.number().int().positive(), decide_days: z.number().int().positive() }).default({ acknowledge_days: 5, decide_days: 30 }),
   updated_by: Id.nullable(),
   updated_at: IsoDateTime,
 })

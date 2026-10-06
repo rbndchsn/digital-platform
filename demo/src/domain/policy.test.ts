@@ -63,8 +63,50 @@ describe('verifier roles', () => {
     const tl = verifier('verifier_team_leader', { s1: ['verifier_team_leader'] }, { s1: true })
     expect(can(tl, 'iteration.create', { serviceId: 's1' })).toBe(true)
     expect(can(tl, 'iteration.manager_decide', { serviceId: 's1' })).toBe(false)
+  })
+  it('refuses the decision, the issue and the post-issuance decisions to the involved set regardless of org role (PRD v0.3 FR-79)', () => {
+    const involved = { userId: 'u_v', reasons: ['Entered or edited verified values on 2027-03-12'] }
+    const m = verifier('verifier_manager')
+    for (const a of ['iteration.manager_decide', 'iteration.issue', 'statement.revise_decide', 'statement.withdraw_decide'] as const) {
+      const d = decide(m, a, { serviceId: 's1', involved })
+      expect(d.allowed, a).toBe(false)
+      expect(d.code, a).toBe('decision_maker_conflict')
+      expect(d.reason, a).toMatch(/involved set/)
+      expect(can(m, a, { serviceId: 's1', involved: null }), a).toBe(true)
+    }
+    // A manager who is also the team leader is involved through the team role, not through a special rule.
     const mgrWhoIsAlsoTl = verifier('verifier_manager', { s1: ['verifier_team_leader'] }, { s1: true })
-    expect(decide(mgrWhoIsAlsoTl, 'iteration.issue', { serviceId: 's1', teamLeaderUserId: 'u_v' }).reason).toMatch(/team leader/)
+    expect(decide(mgrWhoIsAlsoTl, 'iteration.issue', { serviceId: 's1', involved: { userId: 'u_v', reasons: ['Holds the team leader role'] } }).code).toBe('decision_maker_conflict')
+    // Complaint handling follows the same rule (FR-92).
+    expect(decide(m, 'case.decide', { serviceId: 's1', involved }).code).toBe('decision_maker_conflict')
+    expect(can(verifier('verifier_auditor'), 'case.handle', { involved: null })).toBe(true)
+    expect(can(verifier('verifier_auditor'), 'case.handle', { involved })).toBe(false)
+  })
+  it('materiality, misstatements and acknowledgements follow the roles (PRD v0.3 §11.2)', () => {
+    const tl = verifier('verifier_team_leader', { s1: ['verifier_team_leader'] }, { s1: true })
+    expect(can(tl, 'materiality.set', { serviceId: 's1' })).toBe(true)
+    expect(can(tl, 'materiality.approve', { serviceId: 's1' })).toBe(false)
+    expect(can(tl, 'misstatement.manage', { serviceId: 's1' })).toBe(true)
+    expect(can(verifier('verifier_manager'), 'materiality.approve', { serviceId: 's1' })).toBe(true)
+    const ir = verifier('verifier_independent_reviewer', { s1: ['verifier_independent_reviewer'] }, { s1: true })
+    expect(can(ir, 'materiality.acknowledge', { serviceId: 's1' })).toBe(true)
+    expect(can(ir, 'misstatement.manage', { serviceId: 's1' })).toBe(false)
+  })
+  it('competence profiles are edited by managers, never one’s own (PRD v0.3 FR-94)', () => {
+    const m = verifier('verifier_manager')
+    expect(can(m, 'competence.edit')).toBe(true)
+    const own = decide(m, 'competence.edit', { ownProfile: true })
+    expect(own.allowed).toBe(false)
+    expect(own.code).toBe('own_profile')
+    expect(can(verifier('verifier_team_leader'), 'competence.edit')).toBe(false)
+    expect(can(verifier('verifier_team_leader'), 'competence.read')).toBe(true)
+  })
+  it('clients raise and follow their own cases', () => {
+    expect(can(client('client_admin'), 'case.create')).toBe(true)
+    expect(can(client('client_contributor'), 'case.create')).toBe(true)
+    expect(can(client('client_viewer'), 'case.create')).toBe(false)
+    expect(can(client('client_viewer'), 'case.read_own')).toBe(true)
+    expect(can(client('client_admin'), 'case.read_all')).toBe(false)
   })
   it('independent reviewer must hold no other role on the service', () => {
     const ir = verifier('verifier_independent_reviewer', { s1: ['verifier_independent_reviewer'] }, { s1: true })
@@ -107,6 +149,9 @@ describe('ADMIN — platform administrator (PRD §3.2 v0.2)', () => {
     }
     expect(can(admin, 'staff.clients')).toBe(true)
     expect(can(admin, 'staff.templates')).toBe(true)
+    // PRD v0.3: reads the complaints register and competence profiles, changes neither.
+    expect(can(admin, 'case.read_all')).toBe(true)
+    expect(can(admin, 'competence.read')).toBe(true)
   })
   it('administers users, organisations, settings, audit, COI register, stats and break-glass', () => {
     for (const a of ['admin.users', 'admin.orgs', 'admin.settings', 'admin.audit', 'admin.coi_register', 'admin.stats', 'admin.break_glass', 'org.manage_flags'] as const) {
@@ -153,6 +198,21 @@ describe('ADMIN — platform administrator (PRD §3.2 v0.2)', () => {
       'invoice.manage',
       'staff.triage_queue',
       'org.manage_members',
+      // PRD v0.3
+      'materiality.set',
+      'materiality.approve',
+      'misstatement.manage',
+      'materiality.acknowledge',
+      'statement.post_issuance_open',
+      'statement.revise_decide',
+      'statement.withdraw_decide',
+      'case.handle',
+      'case.assign',
+      'case.decide',
+      'competence.edit',
+      'team.check_override',
+      'template.edit',
+      'legacy.manage',
     ] as const
     for (const a of denied) {
       const d = decide(admin, a, { serviceId: 's1', orgId: 'org_c' })

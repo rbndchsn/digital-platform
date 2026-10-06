@@ -3,13 +3,18 @@ import {
   TransitionError,
   applyStepOverride,
   canStartStep,
+  caseMachine,
   coiMachine,
   derivePhaseStatus,
   documentMachine,
   findingMachine,
   iterationMachine,
+  materialityMachine,
+  misstatementMachine,
+  postIssuanceMachine,
   recordMachine,
   serviceMachine,
+  statementMachine,
   stepMachine,
 } from './machines'
 
@@ -23,11 +28,61 @@ describe('manager step override', () => {
     expect(() => stepMachine.apply('not_started', 'complete')).toThrow(TransitionError)
     expect(() => stepMachine.apply('in_progress', 'skip')).toThrow(TransitionError)
   })
-  it('refuses a no-op and never forces impartiality or issuance to completed', () => {
+  it('refuses a no-op and never forces a non-overridable step to completed or skipped (PRD v0.3 FR-80)', () => {
     expect(() => applyStepOverride({ key: 'desk_review', status: 'completed' }, 'complete')).toThrow(TransitionError)
-    expect(() => applyStepOverride({ key: 'team_nomination', status: 'in_progress' }, 'complete')).toThrow(TransitionError)
-    expect(() => applyStepOverride({ key: 'final_opinion', status: 'in_progress' }, 'complete')).toThrow(TransitionError)
-    expect(applyStepOverride({ key: 'team_nomination', status: 'completed' }, 'reopen').state).toBe('in_progress')
+    const nomination = { key: 'team_nomination', status: 'in_progress' as const, non_overridable: true }
+    expect(() => applyStepOverride(nomination, 'complete')).toThrow(TransitionError)
+    expect(() => applyStepOverride(nomination, 'skip')).toThrow(TransitionError)
+    try {
+      applyStepOverride(nomination, 'complete')
+    } catch (e) {
+      expect((e as TransitionError).code).toBe('step_non_overridable')
+    }
+    expect(() => applyStepOverride({ key: 'final_opinion', status: 'in_progress', non_overridable: true }, 'complete')).toThrow(TransitionError)
+    // Reopening makes the process stricter and stays allowed; the attribute, not the key, decides.
+    expect(applyStepOverride({ key: 'team_nomination', status: 'completed', non_overridable: true }, 'reopen').state).toBe('in_progress')
+    expect(applyStepOverride({ key: 'team_nomination', status: 'in_progress', non_overridable: false }, 'complete').state).toBe('completed')
+  })
+})
+
+describe('PRD v0.3 machines', () => {
+  it('revision reopens an issued or closed service and returns to opinion review', () => {
+    expect(serviceMachine.apply('closed', 'open_revision').state).toBe('in_revision')
+    expect(serviceMachine.apply('issued', 'open_revision').state).toBe('in_revision')
+    expect(serviceMachine.apply('in_revision', 'revision_to_opinion_review').state).toBe('opinion_review')
+    expect(() => serviceMachine.apply('execution', 'open_revision')).toThrow(TransitionError)
+  })
+  it('a verified-value edit after IR approval returns the iteration to independent review', () => {
+    expect(iterationMachine.apply('manager_review', 'return_to_ir').state).toBe('independent_review')
+    expect(iterationMachine.apply('approved', 'return_to_ir').state).toBe('independent_review')
+    expect(() => iterationMachine.apply('draft', 'return_to_ir')).toThrow(TransitionError)
+    expect(() => iterationMachine.apply('issued', 'return_to_ir')).toThrow(TransitionError)
+  })
+  it('statements are terminal once superseded or withdrawn', () => {
+    expect(statementMachine.apply('issued', 'supersede').state).toBe('superseded')
+    expect(statementMachine.apply('issued', 'withdraw').state).toBe('withdrawn')
+    expect(() => statementMachine.apply('withdrawn', 'supersede')).toThrow(TransitionError)
+    expect(statementMachine.isTerminal('withdrawn')).toBe(true)
+  })
+  it('cases run received → acknowledged → under investigation → decided → closed, or are withdrawn by the complainant', () => {
+    let s = caseMachine.apply('received', 'acknowledge').state
+    s = caseMachine.apply(s, 'start_investigation').state
+    s = caseMachine.apply(s, 'decide').state
+    expect(caseMachine.apply(s, 'close').state).toBe('closed')
+    expect(caseMachine.apply('acknowledged', 'withdraw').state).toBe('withdrawn_by_complainant')
+    expect(() => caseMachine.apply('decided', 'withdraw')).toThrow(TransitionError)
+  })
+  it('materiality reopens after approval; misstatements go proposed → confirmed → dismissed', () => {
+    expect(materialityMachine.apply('draft', 'approve').state).toBe('approved')
+    expect(materialityMachine.apply('approved', 'reopen').state).toBe('draft')
+    const c = misstatementMachine.apply('proposed', 'confirm').state
+    expect(misstatementMachine.apply(c, 'dismiss').state).toBe('dismissed')
+    expect(() => misstatementMachine.apply('dismissed', 'confirm')).toThrow(TransitionError)
+  })
+  it('a verified record can be withdrawn (assurance withdrawn) and COI re-confirmed for a revision', () => {
+    expect(recordMachine.apply('verified', 'withdraw').state).toBe('withdrawn')
+    expect(coiMachine.apply('approved', 'reconfirm').state).toBe('declared')
+    expect(postIssuanceMachine.apply(postIssuanceMachine.apply('open', 'decide').state, 'close').state).toBe('closed')
   })
 })
 
@@ -52,7 +107,7 @@ describe('service machine', () => {
     expect(() => serviceMachine.apply('closed', 'hold')).toThrow(TransitionError)
     expect(serviceMachine.can('execution', 'hold')).toBe(true)
     expect(serviceMachine.can('requested', 'hold')).toBe(false)
-    expect(serviceMachine.actionsFrom('issued')).toEqual(['close'])
+    expect(serviceMachine.actionsFrom('issued')).toEqual(['close', 'open_revision'])
   })
 })
 
