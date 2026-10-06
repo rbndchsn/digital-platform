@@ -1,0 +1,27 @@
+# Dependencies and builds
+node_modules/
+dist/
+dist-ssr/
+.turbo/
+coverage/
+playwright-report/
+test-results/
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+*.local
+.wrangler/
+.dev.vars
+
+# Third-party reference material (never publish)
+assets/sourceimages/
+
+# OS and editor
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.log
