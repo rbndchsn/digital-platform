@@ -22,6 +22,12 @@ const all = [
   { name: '06-engagements-past', persona: 'Ingrid Vos', path: '/engagements?tab=past' },
   { name: '07-projects', persona: 'Ingrid Vos', path: '/projects' },
   { name: '08-request-wizard', persona: 'Ingrid Vos', path: '/engagements/new' },
+  { name: '09-service-overview', persona: 'Ingrid Vos', path: '/engagements/svc_nw_inv_2025' },
+  { name: '10-step-detail', persona: 'Ingrid Vos', path: '/engagements/svc_nw_inv_2025/phases' },
+  { name: '11-documents', persona: 'Ingrid Vos', path: '/engagements/svc_nw_inv_2025/documents' },
+  { name: '12-timeline', persona: 'Ingrid Vos', path: '/engagements/svc_nw_decarb_2025/timeline' },
+  { name: '13-service-log', persona: 'Ingrid Vos', path: '/engagements/svc_nw_decarb_2025/log' },
+  { name: '14-team-coi', persona: 'Helena Brandt', path: '/engagements/svc_atlas_decarb_2025/phases' },
 ]
 const only = process.env.SHOTS?.split(',')
 const shots = only ? all.filter((s) => only.some((o) => s.name.startsWith(o))) : all
@@ -35,7 +41,8 @@ for (const s of shots) {
     await page.waitForURL((u) => !u.pathname.includes('sign-in'))
   }
   await page.goto(`${base}${s.path}`)
-  await page.waitForTimeout(600)
+  // Mock latency is up to ~400 ms per call and pages chain two or three calls.
+  await page.waitForTimeout(1800)
   await page.screenshot({ path: resolve(out, `${s.name}.png`), fullPage: false })
   console.log('saved', s.name)
 }

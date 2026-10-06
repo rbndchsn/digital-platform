@@ -28,8 +28,16 @@ import { Route as AppStaffFinanceRouteImport } from './routes/_app/staff/finance
 import { Route as AppStaffServicesRouteImport } from './routes/_app/staff/services'
 import { Route as AppStaffTemplatesRouteImport } from './routes/_app/staff/templates'
 import { Route as AppStaffTriageRouteImport } from './routes/_app/staff/triage'
+import { Route as AppEngagementsServiceIdIndexRouteImport } from './routes/_app/engagements/$serviceId/index'
+import { Route as AppEngagementsServiceIdDocumentsRouteImport } from './routes/_app/engagements/$serviceId/documents'
+import { Route as AppEngagementsServiceIdLogRouteImport } from './routes/_app/engagements/$serviceId/log'
+import { Route as AppEngagementsServiceIdOpinionRouteImport } from './routes/_app/engagements/$serviceId/opinion'
+import { Route as AppEngagementsServiceIdPhasesRouteImport } from './routes/_app/engagements/$serviceId/phases'
+import { Route as AppEngagementsServiceIdTimelineRouteImport } from './routes/_app/engagements/$serviceId/timeline'
 import { Route as AppRecordsDecarbUnitsIndexRouteImport } from './routes/_app/records/decarb-units/index'
 import { Route as AppRecordsInventoriesIndexRouteImport } from './routes/_app/records/inventories/index'
+import { Route as AppEngagementsServiceIdFindingsIndexRouteImport } from './routes/_app/engagements/$serviceId/findings/index'
+import { Route as AppEngagementsServiceIdFindingsFindingIdRouteImport } from './routes/_app/engagements/$serviceId/findings/$findingId'
 
 const AppRoute = AppRouteImport.update({
   id: '/_app',
@@ -126,6 +134,42 @@ const AppStaffTriageRoute = AppStaffTriageRouteImport.update({
   path: '/staff/triage',
   getParentRoute: () => AppRoute,
 } as any)
+const AppEngagementsServiceIdIndexRoute =
+  AppEngagementsServiceIdIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AppEngagementsServiceIdRoute,
+  } as any)
+const AppEngagementsServiceIdDocumentsRoute =
+  AppEngagementsServiceIdDocumentsRouteImport.update({
+    id: '/documents',
+    path: '/documents',
+    getParentRoute: () => AppEngagementsServiceIdRoute,
+  } as any)
+const AppEngagementsServiceIdLogRoute =
+  AppEngagementsServiceIdLogRouteImport.update({
+    id: '/log',
+    path: '/log',
+    getParentRoute: () => AppEngagementsServiceIdRoute,
+  } as any)
+const AppEngagementsServiceIdOpinionRoute =
+  AppEngagementsServiceIdOpinionRouteImport.update({
+    id: '/opinion',
+    path: '/opinion',
+    getParentRoute: () => AppEngagementsServiceIdRoute,
+  } as any)
+const AppEngagementsServiceIdPhasesRoute =
+  AppEngagementsServiceIdPhasesRouteImport.update({
+    id: '/phases',
+    path: '/phases',
+    getParentRoute: () => AppEngagementsServiceIdRoute,
+  } as any)
+const AppEngagementsServiceIdTimelineRoute =
+  AppEngagementsServiceIdTimelineRouteImport.update({
+    id: '/timeline',
+    path: '/timeline',
+    getParentRoute: () => AppEngagementsServiceIdRoute,
+  } as any)
 const AppRecordsDecarbUnitsIndexRoute =
   AppRecordsDecarbUnitsIndexRouteImport.update({
     id: '/records/decarb-units/',
@@ -138,6 +182,18 @@ const AppRecordsInventoriesIndexRoute =
     path: '/records/inventories/',
     getParentRoute: () => AppRoute,
   } as any)
+const AppEngagementsServiceIdFindingsIndexRoute =
+  AppEngagementsServiceIdFindingsIndexRouteImport.update({
+    id: '/findings/',
+    path: '/findings/',
+    getParentRoute: () => AppEngagementsServiceIdRoute,
+  } as any)
+const AppEngagementsServiceIdFindingsFindingIdRoute =
+  AppEngagementsServiceIdFindingsFindingIdRouteImport.update({
+    id: '/findings/$findingId',
+    path: '/findings/$findingId',
+    getParentRoute: () => AppEngagementsServiceIdRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
@@ -146,7 +202,7 @@ export interface FileRoutesByFullPath {
   '/integrations': typeof AppIntegrationsRoute
   '/organisation': typeof AppOrganisationRoute
   '/verify/$code': typeof VerifyCodeRoute
-  '/engagements/$serviceId': typeof AppEngagementsServiceIdRoute
+  '/engagements/$serviceId': typeof AppEngagementsServiceIdRouteWithChildren
   '/engagements/new': typeof AppEngagementsNewRoute
   '/projects/$projectId': typeof AppProjectsProjectIdRoute
   '/records/emission-factors': typeof AppRecordsEmissionFactorsRoute
@@ -158,8 +214,16 @@ export interface FileRoutesByFullPath {
   '/engagements/': typeof AppEngagementsIndexRoute
   '/projects/': typeof AppProjectsIndexRoute
   '/staff/': typeof AppStaffIndexRoute
+  '/engagements/$serviceId/documents': typeof AppEngagementsServiceIdDocumentsRoute
+  '/engagements/$serviceId/log': typeof AppEngagementsServiceIdLogRoute
+  '/engagements/$serviceId/opinion': typeof AppEngagementsServiceIdOpinionRoute
+  '/engagements/$serviceId/phases': typeof AppEngagementsServiceIdPhasesRoute
+  '/engagements/$serviceId/timeline': typeof AppEngagementsServiceIdTimelineRoute
+  '/engagements/$serviceId/': typeof AppEngagementsServiceIdIndexRoute
   '/records/decarb-units/': typeof AppRecordsDecarbUnitsIndexRoute
   '/records/inventories/': typeof AppRecordsInventoriesIndexRoute
+  '/engagements/$serviceId/findings/$findingId': typeof AppEngagementsServiceIdFindingsFindingIdRoute
+  '/engagements/$serviceId/findings/': typeof AppEngagementsServiceIdFindingsIndexRoute
 }
 export interface FileRoutesByTo {
   '/sign-in': typeof SignInRoute
@@ -168,7 +232,6 @@ export interface FileRoutesByTo {
   '/organisation': typeof AppOrganisationRoute
   '/verify/$code': typeof VerifyCodeRoute
   '/': typeof AppIndexRoute
-  '/engagements/$serviceId': typeof AppEngagementsServiceIdRoute
   '/engagements/new': typeof AppEngagementsNewRoute
   '/projects/$projectId': typeof AppProjectsProjectIdRoute
   '/records/emission-factors': typeof AppRecordsEmissionFactorsRoute
@@ -180,8 +243,16 @@ export interface FileRoutesByTo {
   '/engagements': typeof AppEngagementsIndexRoute
   '/projects': typeof AppProjectsIndexRoute
   '/staff': typeof AppStaffIndexRoute
+  '/engagements/$serviceId/documents': typeof AppEngagementsServiceIdDocumentsRoute
+  '/engagements/$serviceId/log': typeof AppEngagementsServiceIdLogRoute
+  '/engagements/$serviceId/opinion': typeof AppEngagementsServiceIdOpinionRoute
+  '/engagements/$serviceId/phases': typeof AppEngagementsServiceIdPhasesRoute
+  '/engagements/$serviceId/timeline': typeof AppEngagementsServiceIdTimelineRoute
+  '/engagements/$serviceId': typeof AppEngagementsServiceIdIndexRoute
   '/records/decarb-units': typeof AppRecordsDecarbUnitsIndexRoute
   '/records/inventories': typeof AppRecordsInventoriesIndexRoute
+  '/engagements/$serviceId/findings/$findingId': typeof AppEngagementsServiceIdFindingsFindingIdRoute
+  '/engagements/$serviceId/findings': typeof AppEngagementsServiceIdFindingsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -192,7 +263,7 @@ export interface FileRoutesById {
   '/_app/organisation': typeof AppOrganisationRoute
   '/verify/$code': typeof VerifyCodeRoute
   '/_app/': typeof AppIndexRoute
-  '/_app/engagements/$serviceId': typeof AppEngagementsServiceIdRoute
+  '/_app/engagements/$serviceId': typeof AppEngagementsServiceIdRouteWithChildren
   '/_app/engagements/new': typeof AppEngagementsNewRoute
   '/_app/projects/$projectId': typeof AppProjectsProjectIdRoute
   '/_app/records/emission-factors': typeof AppRecordsEmissionFactorsRoute
@@ -204,8 +275,16 @@ export interface FileRoutesById {
   '/_app/engagements/': typeof AppEngagementsIndexRoute
   '/_app/projects/': typeof AppProjectsIndexRoute
   '/_app/staff/': typeof AppStaffIndexRoute
+  '/_app/engagements/$serviceId/documents': typeof AppEngagementsServiceIdDocumentsRoute
+  '/_app/engagements/$serviceId/log': typeof AppEngagementsServiceIdLogRoute
+  '/_app/engagements/$serviceId/opinion': typeof AppEngagementsServiceIdOpinionRoute
+  '/_app/engagements/$serviceId/phases': typeof AppEngagementsServiceIdPhasesRoute
+  '/_app/engagements/$serviceId/timeline': typeof AppEngagementsServiceIdTimelineRoute
+  '/_app/engagements/$serviceId/': typeof AppEngagementsServiceIdIndexRoute
   '/_app/records/decarb-units/': typeof AppRecordsDecarbUnitsIndexRoute
   '/_app/records/inventories/': typeof AppRecordsInventoriesIndexRoute
+  '/_app/engagements/$serviceId/findings/$findingId': typeof AppEngagementsServiceIdFindingsFindingIdRoute
+  '/_app/engagements/$serviceId/findings/': typeof AppEngagementsServiceIdFindingsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -228,8 +307,16 @@ export interface FileRouteTypes {
     | '/engagements/'
     | '/projects/'
     | '/staff/'
+    | '/engagements/$serviceId/documents'
+    | '/engagements/$serviceId/log'
+    | '/engagements/$serviceId/opinion'
+    | '/engagements/$serviceId/phases'
+    | '/engagements/$serviceId/timeline'
+    | '/engagements/$serviceId/'
     | '/records/decarb-units/'
     | '/records/inventories/'
+    | '/engagements/$serviceId/findings/$findingId'
+    | '/engagements/$serviceId/findings/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/sign-in'
@@ -238,7 +325,6 @@ export interface FileRouteTypes {
     | '/organisation'
     | '/verify/$code'
     | '/'
-    | '/engagements/$serviceId'
     | '/engagements/new'
     | '/projects/$projectId'
     | '/records/emission-factors'
@@ -250,8 +336,16 @@ export interface FileRouteTypes {
     | '/engagements'
     | '/projects'
     | '/staff'
+    | '/engagements/$serviceId/documents'
+    | '/engagements/$serviceId/log'
+    | '/engagements/$serviceId/opinion'
+    | '/engagements/$serviceId/phases'
+    | '/engagements/$serviceId/timeline'
+    | '/engagements/$serviceId'
     | '/records/decarb-units'
     | '/records/inventories'
+    | '/engagements/$serviceId/findings/$findingId'
+    | '/engagements/$serviceId/findings'
   id:
     | '__root__'
     | '/_app'
@@ -273,8 +367,16 @@ export interface FileRouteTypes {
     | '/_app/engagements/'
     | '/_app/projects/'
     | '/_app/staff/'
+    | '/_app/engagements/$serviceId/documents'
+    | '/_app/engagements/$serviceId/log'
+    | '/_app/engagements/$serviceId/opinion'
+    | '/_app/engagements/$serviceId/phases'
+    | '/_app/engagements/$serviceId/timeline'
+    | '/_app/engagements/$serviceId/'
     | '/_app/records/decarb-units/'
     | '/_app/records/inventories/'
+    | '/_app/engagements/$serviceId/findings/$findingId'
+    | '/_app/engagements/$serviceId/findings/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -418,6 +520,48 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppStaffTriageRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/engagements/$serviceId/': {
+      id: '/_app/engagements/$serviceId/'
+      path: '/'
+      fullPath: '/engagements/$serviceId/'
+      preLoaderRoute: typeof AppEngagementsServiceIdIndexRouteImport
+      parentRoute: typeof AppEngagementsServiceIdRoute
+    }
+    '/_app/engagements/$serviceId/documents': {
+      id: '/_app/engagements/$serviceId/documents'
+      path: '/documents'
+      fullPath: '/engagements/$serviceId/documents'
+      preLoaderRoute: typeof AppEngagementsServiceIdDocumentsRouteImport
+      parentRoute: typeof AppEngagementsServiceIdRoute
+    }
+    '/_app/engagements/$serviceId/log': {
+      id: '/_app/engagements/$serviceId/log'
+      path: '/log'
+      fullPath: '/engagements/$serviceId/log'
+      preLoaderRoute: typeof AppEngagementsServiceIdLogRouteImport
+      parentRoute: typeof AppEngagementsServiceIdRoute
+    }
+    '/_app/engagements/$serviceId/opinion': {
+      id: '/_app/engagements/$serviceId/opinion'
+      path: '/opinion'
+      fullPath: '/engagements/$serviceId/opinion'
+      preLoaderRoute: typeof AppEngagementsServiceIdOpinionRouteImport
+      parentRoute: typeof AppEngagementsServiceIdRoute
+    }
+    '/_app/engagements/$serviceId/phases': {
+      id: '/_app/engagements/$serviceId/phases'
+      path: '/phases'
+      fullPath: '/engagements/$serviceId/phases'
+      preLoaderRoute: typeof AppEngagementsServiceIdPhasesRouteImport
+      parentRoute: typeof AppEngagementsServiceIdRoute
+    }
+    '/_app/engagements/$serviceId/timeline': {
+      id: '/_app/engagements/$serviceId/timeline'
+      path: '/timeline'
+      fullPath: '/engagements/$serviceId/timeline'
+      preLoaderRoute: typeof AppEngagementsServiceIdTimelineRouteImport
+      parentRoute: typeof AppEngagementsServiceIdRoute
+    }
     '/_app/records/decarb-units/': {
       id: '/_app/records/decarb-units/'
       path: '/records/decarb-units'
@@ -432,15 +576,60 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRecordsInventoriesIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/engagements/$serviceId/findings/': {
+      id: '/_app/engagements/$serviceId/findings/'
+      path: '/findings'
+      fullPath: '/engagements/$serviceId/findings/'
+      preLoaderRoute: typeof AppEngagementsServiceIdFindingsIndexRouteImport
+      parentRoute: typeof AppEngagementsServiceIdRoute
+    }
+    '/_app/engagements/$serviceId/findings/$findingId': {
+      id: '/_app/engagements/$serviceId/findings/$findingId'
+      path: '/findings/$findingId'
+      fullPath: '/engagements/$serviceId/findings/$findingId'
+      preLoaderRoute: typeof AppEngagementsServiceIdFindingsFindingIdRouteImport
+      parentRoute: typeof AppEngagementsServiceIdRoute
+    }
   }
 }
+
+interface AppEngagementsServiceIdRouteChildren {
+  AppEngagementsServiceIdDocumentsRoute: typeof AppEngagementsServiceIdDocumentsRoute
+  AppEngagementsServiceIdLogRoute: typeof AppEngagementsServiceIdLogRoute
+  AppEngagementsServiceIdOpinionRoute: typeof AppEngagementsServiceIdOpinionRoute
+  AppEngagementsServiceIdPhasesRoute: typeof AppEngagementsServiceIdPhasesRoute
+  AppEngagementsServiceIdTimelineRoute: typeof AppEngagementsServiceIdTimelineRoute
+  AppEngagementsServiceIdIndexRoute: typeof AppEngagementsServiceIdIndexRoute
+  AppEngagementsServiceIdFindingsFindingIdRoute: typeof AppEngagementsServiceIdFindingsFindingIdRoute
+  AppEngagementsServiceIdFindingsIndexRoute: typeof AppEngagementsServiceIdFindingsIndexRoute
+}
+
+const AppEngagementsServiceIdRouteChildren: AppEngagementsServiceIdRouteChildren =
+  {
+    AppEngagementsServiceIdDocumentsRoute:
+      AppEngagementsServiceIdDocumentsRoute,
+    AppEngagementsServiceIdLogRoute: AppEngagementsServiceIdLogRoute,
+    AppEngagementsServiceIdOpinionRoute: AppEngagementsServiceIdOpinionRoute,
+    AppEngagementsServiceIdPhasesRoute: AppEngagementsServiceIdPhasesRoute,
+    AppEngagementsServiceIdTimelineRoute: AppEngagementsServiceIdTimelineRoute,
+    AppEngagementsServiceIdIndexRoute: AppEngagementsServiceIdIndexRoute,
+    AppEngagementsServiceIdFindingsFindingIdRoute:
+      AppEngagementsServiceIdFindingsFindingIdRoute,
+    AppEngagementsServiceIdFindingsIndexRoute:
+      AppEngagementsServiceIdFindingsIndexRoute,
+  }
+
+const AppEngagementsServiceIdRouteWithChildren =
+  AppEngagementsServiceIdRoute._addFileChildren(
+    AppEngagementsServiceIdRouteChildren,
+  )
 
 interface AppRouteChildren {
   AppAccountRoute: typeof AppAccountRoute
   AppIntegrationsRoute: typeof AppIntegrationsRoute
   AppOrganisationRoute: typeof AppOrganisationRoute
   AppIndexRoute: typeof AppIndexRoute
-  AppEngagementsServiceIdRoute: typeof AppEngagementsServiceIdRoute
+  AppEngagementsServiceIdRoute: typeof AppEngagementsServiceIdRouteWithChildren
   AppEngagementsNewRoute: typeof AppEngagementsNewRoute
   AppProjectsProjectIdRoute: typeof AppProjectsProjectIdRoute
   AppRecordsEmissionFactorsRoute: typeof AppRecordsEmissionFactorsRoute
@@ -461,7 +650,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppIntegrationsRoute: AppIntegrationsRoute,
   AppOrganisationRoute: AppOrganisationRoute,
   AppIndexRoute: AppIndexRoute,
-  AppEngagementsServiceIdRoute: AppEngagementsServiceIdRoute,
+  AppEngagementsServiceIdRoute: AppEngagementsServiceIdRouteWithChildren,
   AppEngagementsNewRoute: AppEngagementsNewRoute,
   AppProjectsProjectIdRoute: AppProjectsProjectIdRoute,
   AppRecordsEmissionFactorsRoute: AppRecordsEmissionFactorsRoute,

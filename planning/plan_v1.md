@@ -183,13 +183,15 @@ Tick sub-items as you go; tick the step only when its "Done when" holds.
   - [x] Playwright `wizard.spec.ts` runs chapter 2 in Chromium. `Field` now wraps its control in the label (accessible names).
   - Done when: chapter 2 runs; a submitted request is visible in `/staff/triage`. ✔ (queue UI in step 8)
 
-- [ ] **Step 7 — Service workspace (client and staff views)**
-  - [ ] Overview: phase rail with expandable steps and status chips, next-action banner, team contacts with roles, key dates, quote/invoice card, download-all.
-  - [ ] Step detail: header (phase › step, status chip, role badge), required/optional slots with upload (file picker, client-side SHA-256, progress, metadata only), slot status, submitted-by/date, rejected-with-reason state, approvals rows, supporting documents, staff "Close step" / "Request document" / "Accept / Reject version".
-  - [ ] Documents tab: grouped by category with counts, (Required) flags, version history drawer, row actions (view mock, download mock, replace, delete with typed confirmation).
-  - [ ] Timeline: Gantt (SVG) with planned outline vs actual fill, milestone ticks, legend, hover transitions with timestamps.
-  - [ ] Service Log: reverse-chronological events, type and actor filters, CSV export (client-side).
-  - Done when: chapters 5 and 9 run; every action writes to the Service Log.
+- [x] **Step 7 — Service workspace (client and staff views)**
+  - [x] Layout route with header (reference, status, client, team role badge, statement link), next-action banner (orange when it is on the viewer), tabs (Overview, Phases, Documents, Findings, Timeline, Opinion, Service Log) and a staff Actions menu (hold / resume / cancel / close with typed confirmation). A nominated verifier whose COI is pending sees the declaration card instead of the workspace.
+  - [x] Overview: phase rail with expandable steps and status chips, where-it-stands card, team with roles and COI chips, quote/invoice card, at-a-glance counts, download-all (manifest dialog).
+  - [x] Step detail: header (phase › step, status, current-step badge), owner/planned/actual, Start / Close / Hold / Resume / Reopen for verifier roles with gating reasons, required and supporting slots with party-aware Upload / Re-upload / Request-from-client, document rows (view, download, replace, delete, version history, accept/reject with reason), approval rows (manager approve/reject with comment; client accept audit plan; client agreement acceptance with typed name, read confirmation and document hash), team nomination panel (nominate dialog with workload and IR exclusivity, COI approve/reject, remove), checklist, Opinion-tab hint on the final-opinion step.
+  - [x] Documents tab: grouped (Service reporting, Phase, Contract, Supporting) with counts, slot context, search, supporting upload, download-all, version history, row actions.
+  - [x] Timeline: SVG Gantt with month axis, planned outline vs actual fill, completion ticks, today line, hover card with transitions and timestamps, legend.
+  - [x] Service Log: newest first, type and text filters, client-side CSV export.
+  - [x] Playwright `workspace.spec.ts`: chapter 5 (re-upload → accept → log → timeline) and the chapter 3 COI gate.
+  - Done when: chapters 5 and 9 run; every action writes to the Service Log. ✔
 
 - [ ] **Step 8 — Staff workflow: triage, team, COI, approvals, transitions**
   - [ ] `/staff` My Work (by service role, blocking pills, phase | step) and Triage queue.
@@ -301,6 +303,14 @@ Tick sub-items as you go; tick the step only when its "Done when" holds.
 | `demo/src/components/upload-dialog.tsx` | Show-don't-do upload dialog backed by `documents.simulateUpload` |
 | `demo/src/components/stepper.tsx` | Wizard progress header |
 | `demo/e2e/wizard.spec.ts` | Chapter 2 in the browser |
+| `demo/e2e/workspace.spec.ts`, `helpers.ts` | Chapters 3 (COI gate) and 5 in the browser; `enterAs` helper |
+| `demo/src/lib/service-hooks.ts` | Query hooks for service, documents, findings, iterations, statement, timeline |
+| `demo/src/components/document-row.tsx` | Document row, version history, preview and reject dialogs |
+| `demo/src/components/approval-row.tsx` | Approval row, decide dialog, agreement acceptance dialog |
+| `demo/src/components/gantt.tsx` | SVG Gantt |
+| `demo/src/components/download-all.tsx`, `coi-declare.tsx` | Download-all dialog; COI declaration card |
+| `demo/src/features/service/step-detail.tsx` | Step detail, slot groups, team panel, nominate dialog, `useServicePermissions` |
+| `demo/src/routes/_app/engagements/$serviceId.tsx` + `$serviceId/*` | Workspace layout and tabs |
 
 ---
 
@@ -315,7 +325,8 @@ Tick sub-items as you go; tick the step only when its "Done when" holds.
 | 2026-10-06 | 3 | 7f72cac | Mock backend: store with sessionStorage snapshot, latency toggles, programmatic seed for the whole storyline, 15 api modules, fixture validation and end-to-end storyline tests. 69 tests. | Storyline §2.4 adjusted: the opinion chapter (8) runs on the insetting service `svc_nw_decarb_2025`, the evidence and findings chapters (5, 6) on the inventory service `svc_nw_inv_2025` |
 | 2026-10-06 | 4 | c27b0b7 | App shell, sign-in with persona picker, navigation for both portals, notifications bell, demo panel, UI primitives and domain components, feature previews, Integrations/Account/Organisation pages, placeholder routes for every nav entry, Playwright smoke tests in Chromium. | Lint reports 5 fast-refresh warnings (hooks exported next to components); harmless, left as warnings |
 | 2026-10-06 | 5 | a92c47a | Client home, engagements lists (ongoing/past/drafts, renewal), projects list/detail with create dialog, shared service table. | Fixed Button `asChild` slotting; added `scripts/probe.mjs` to surface runtime errors per page |
-| 2026-10-06 | 6 | (this commit) | Request wizard with autosave/resume/renewal, upload dialog, stepper, wizard e2e test. | React Hooks v7 forbids setState in effects: dialogs derive defaults, the wizard mounts with initial values |
+| 2026-10-06 | 6 | e8b6074 | Request wizard with autosave/resume/renewal, upload dialog, stepper, wizard e2e test. | React Hooks v7 forbids setState in effects: dialogs derive defaults, the wizard mounts with initial values |
+| 2026-10-06 | 7 | (this commit) | Service workspace: layout, overview, step detail with slots/approvals/team/COI, documents, Gantt, Service Log; document and approval rows; COI gate; workspace e2e tests. | Step 8 items already present where natural (step transitions, approvals, team nomination, agreement acceptance); step 8 adds the staff pages |
 
 ---
 
