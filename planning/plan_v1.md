@@ -40,7 +40,7 @@ Version 1.0 · 2026-10-05 · Repo: https://github.com/rbndchsn/digital-platform 
 | Phase | Deliverable | Status |
 |---|---|---|
 | **Phase I — Mock platform** | A static, clickable front end that looks and behaves like the Release 1 platform in the PRD. Every button does what the real one would (navigates, validates, changes state, shows toasts and notifications), driven by an in-browser mock backend seeded from JSON. Used to show investors the product. No persistence beyond the tab. | **This plan, now** |
-| **Phase I.5 — ADMIN, overrides, rollups** | PRD v0.2 and demo v0.2: platform administrator persona and Administration console, manager overrides with reason, money rollups, portfolios preview. Steps 15–20 in §3.1. | **In progress** |
+| **Phase I.5 — ADMIN, overrides, rollups** | PRD v0.2 and demo v0.2: platform administrator persona and Administration console, manager overrides with reason, money rollups, portfolios preview. Steps 15–20 in §3.1. | **Done, v0.2-demo** |
 | **Phase II — Real platform** | The Cloudflare implementation described in the PRD and the task list (Workers, D1, R2, Better Auth…). Reuses Phase I's UI components, domain logic and schemas. | Later, see §4 |
 
 ---
@@ -283,8 +283,9 @@ Brief: `planning/next-session-prompt.md` (2026-10-06). Decisions taken while exe
   - [x] Fix found by the new spec: document rows now read the break-glass grant through a query so the grant re-renders them; the audit page's "Overrides" filter no longer reaches the api as a prefix.
   - Done when: every unit and Playwright test passes locally. ✔ 80 unit tests, 21 Playwright tests.
 
-- [ ] **Step 20 — Release v0.2-demo**
-  - [ ] All steps ticked, progress log rows with commit hashes, relevant files updated; tag `v0.2-demo` pushed; CI green including Playwright; live site shows Sam Okafor in the sign-in grid.
+- [x] **Step 20 — Release v0.2-demo**
+  - [x] All steps ticked, progress log rows with commit hashes, relevant files updated; tag `v0.2-demo` pushed; CI green including Playwright (run recorded in §6); live site shows Sam Okafor in the sign-in grid.
+  - Done when: https://rbndchsn.github.io/digital-platform/ serves the v0.2 build. ✔ **Phase I.5 complete.**
 
 ---
 
@@ -398,7 +399,8 @@ Brief: `planning/next-session-prompt.md` (2026-10-06). Decisions taken while exe
 | 2026-10-06 | 16 | c27ad8e | Domain: `platform_admin` org role, user / org / audit columns, `PlatformSettings` and `Announcement` schemas, ADMIN allow-list and override actions in policy, `applyStepOverride`, tests (77). | — |
 | 2026-10-06 | 17 | 64a004e | Mock api: `api/admin.ts`, overrides and reassign, audited sign-ins, Sam Okafor and platform fixtures, storyline chapters 11–12. 80 tests. | Chapter 12 resumes the Solstice service to whatever status it had (planning in the api storyline, execution in the browser storyline) |
 | 2026-10-06 | 18 | c38a1fc | Administration portal (`/admin/*`), read-only ADMIN everywhere with break-glass, manager override / reassign / replan controls, verified-value dialogs for EFs and decarb records, announcement and maintenance banners, Sam in the persona grid and demo panel. | Screenshot entries 28–31 added one step early for the visual check |
-| 2026-10-06 | 19 | (next commit) | Playwright `admin.spec.ts` and `override.spec.ts`, storyline chapters 11–12, axe on the admin pages, screenshots 27–31, DEMO_SCRIPT chapters 11–12, README, handover. | Break-glass re-render and audit "Overrides" filter fixed |
+| 2026-10-06 | 19 | 68fd36d | Playwright `admin.spec.ts` and `override.spec.ts`, storyline chapters 11–12, axe on the admin pages, screenshots 27–31, DEMO_SCRIPT chapters 11–12, README, handover. 80 unit tests, 21 Playwright tests. | Break-glass re-render and audit "Overrides" filter fixed |
+| 2026-10-06 | 20 | (this commit, tag v0.2-demo) | Plan bookkeeping, tag `v0.2-demo`, CI and live site confirmed. **Phase I.5 complete.** | Cloudflare Pages job still dormant (no secrets), GitHub Pages is the live demo |
 
 ---
 
