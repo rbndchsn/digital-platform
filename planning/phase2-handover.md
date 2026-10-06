@@ -1,6 +1,6 @@
 # Phase II handover — from the demo to the real platform
 
-Date: 2026-10-06 · Demo tag: `v0.1-demo` · Target: the PRD (`0001-prd-verifassurx-platform.md`) and the task list (`tasks-0001-prd-verifassurx-platform.md`).
+Date: 2026-10-06 · Demo tag: `v0.2-demo` (v0.1-demo plus the ADMIN console and manager overrides of PRD v0.2) · Target: the PRD (`0001-prd-verifassurx-platform.md`) and the task list (`tasks-0001-prd-verifassurx-platform.md`).
 
 ## 1. What carries over unchanged
 
@@ -9,7 +9,9 @@ Date: 2026-10-06 · Demo tag: `v0.1-demo` · Target: the PRD (`0001-prd-verifass
 | `demo/src/domain/enums.ts`, `schemas/*` | `packages/schema` | zod schemas are the API contract; add `.openapi()` metadata and they become the OpenAPI spec and the MCP tool inputs. |
 | `demo/src/domain/units.ts`, `compute/*` | `packages/schema` or `packages/workflow` | GWP tables, unit normalisation, inventory and decarb arithmetic. 100 % of the unit tests move with them. |
 | `demo/src/domain/workflow/*` (templates, instantiate, machines, next-action) | `packages/workflow` | Templates become rows in `workflow_templates` (seed from `templates/index.ts`); machines and next-action run unchanged in the Worker. |
-| `demo/src/domain/policy.ts` | `packages/workflow/policy.ts` | Same `decide/can/assertCan`; only the construction of `AuthContext` changes (from the Better Auth session + D1 instead of the mock store). |
+| `demo/src/domain/policy.ts` | `packages/workflow/policy.ts` | Same `decide/can/assertCan`; only the construction of `AuthContext` changes (from the Better Auth session + D1 instead of the mock store). `ADMIN_ACTIONS` is the complete allow-list of the platform administrator; `applyStepOverride` in `machines.ts` is the manager override. |
+| `demo/src/api/admin.ts` (operation names and view shapes) | `apps/app/src/api/routes/admin.ts` (task 13.0) | `listUsers / updateUser / changeRole / deactivateUser → ReassignmentSummary / reactivateUser / resetPassword / resetMfa / forceSignOut / anonymiseUser / inviteUser`, `listOrgs / createOrg / updateOrg / suspendOrg / unsuspendOrg`, `getSettings / updateSettings / listFlagDefaults / setFlagDefault`, announcements CRUD, `auditLog` + `auditCsv`, `coiRegister`, `stats` (FR-71, money only for ADMIN), `breakGlass`, `dataOperation`. Map 1:1 to PRD §10.2 `/admin/*`. |
+| `services.overrideStep / overrideService / replanStep`, `team.reassign` | `apps/app/src/api/routes/overrides.ts` (tasks 5.11, 6.8) | `POST /services/:id/steps/:stepId/override`, `POST /services/:id/override`, `PATCH /services/:id/steps/:stepId/plan`, `POST /services/:id/team/:memberId/reassign`; `requireReason` (10 characters) becomes a zod refinement; audit events `step.overridden`, `service.overridden`, `team.reassigned`, `step.replanned` carry `reason`. |
 | `demo/src/components/*`, `components/ui/*`, `styles/tokens.css` | `packages/ui` | Design system and domain components. Keep the contrast-safe tokens (axe clean). |
 | `demo/src/routes/**` | `apps/app/src/web/routes` | Route tree and screens. Pages only call `@/api/*`, so they keep working once the api layer talks to the Worker. |
 | `demo/src/mock/fixtures/*` | `packages/db/src/seed` and test fixtures | The storyline seed becomes the staging/pilot seed and the e2e fixture. Replace deterministic ids with ULIDs at insert time. |
@@ -37,6 +39,10 @@ Date: 2026-10-06 · Demo tag: `v0.1-demo` · Target: the PRD (`0001-prd-verifass
 - Separation of duties enforced in policy (IR exclusivity; the team leader cannot approve or issue their own opinion) and surfaced in the UI with disabled buttons and explanations.
 - Records: declared and verified values side by side; write-back and supersession on issuance; biogenic CO2 and removals never netted; units explicit with `UnitError` on mismatch.
 - "Show, don't do" dialogs name exactly what the real platform does; reuse the copy for the real dialogs.
+- The platform administrator is an org-level role (`platform_admin` on the verifier org, `memberships.role`), resolved first in the policy and denied every engagement or record mutation; engagement screens render no action control for it (`useServicePermissions().readOnly`). Evidence content needs a break-glass grant per service and session (`admin.break_glass`, `admin.break_glass_read`); in Phase II keep the grant in the session record, not in a table.
+- Manager overrides are distinct actions (`step.override`, `service.override`, `team.reassign`, `step.plan_dates`) with distinct audit events and a mandatory reason; `team_nomination` and `final_opinion` can never be forced to completed. Users and organisations are deactivated or suspended, never deleted; deactivation returns a reassignment summary and notifies the managers.
+- Money rollups exist only in `admin.stats` for the platform administrator; Finance stays per engagement.
+- Sign-ins write `auth.signed_in` audit events and `users.last_sign_in_at`; the ADMIN "Authentication events" view reads the same table.
 
 ## 4. Gaps to close in Phase II (not in the demo)
 
@@ -44,7 +50,8 @@ Date: 2026-10-06 · Demo tag: `v0.1-demo` · Target: the PRD (`0001-prd-verifass
 - E-mail delivery and digests; notification preferences persisted per user.
 - Spreadsheet import, REST API with API keys, MCP server, webhooks (Release 2 of the PRD).
 - Multi-tenant data isolation enforced in the repository layer and covered by cross-org tests (the demo enforces it in `policy.ts` and the api guards).
-- Audit of auth events, re-authentication for agreement acceptance and issuance (the demo only states it).
+- Re-authentication for agreement acceptance, issuance and every ADMIN mutation (`requireRecentAuth(15)`); real password / MFA / passkey resets and session revocation; maintenance mode actually blocking mutations; real exports, backups and the retention job; anonymisation gated by the retention date (the demo only records the events).
+- Portfolios (R2, flag `portfolios`): `organisations.portfolio_manager_user_id` exists and is shown read-only; scoping of My Work, triage and rollups by portfolio is not built.
 - i18n (French), mobile layouts beyond read-only.
 
 ## 5. First steps

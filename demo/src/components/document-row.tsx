@@ -1,4 +1,5 @@
 /** Document row with provenance, status and actions (view, download, replace, delete, accept/reject). PRD §7.2. */
+import { useQuery } from '@tanstack/react-query'
 import { Check, Download, Eye, FileText, History, Lock, MoreHorizontal, RefreshCw, Trash2, X } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
@@ -40,7 +41,9 @@ export function DocumentRow({ doc, serviceId, canReplace, canDelete, canCheck, c
   const v = doc.current
   const locked = Boolean(doc.locked_at)
   // PRD FR-70: the platform administrator sees metadata and hashes; content needs break-glass for this service.
-  const contentAllowed = admin.canReadEvidenceContentSync(serviceId ?? doc.service_id)
+  // A query (same key as the engagement banner) so the grant re-renders every row after the mutation invalidates.
+  const grant = useQuery({ queryKey: ['breakGlass', serviceId ?? doc.service_id], queryFn: async () => admin.canReadEvidenceContentSync(serviceId ?? doc.service_id) })
+  const contentAllowed = grant.data ?? admin.canReadEvidenceContentSync(serviceId ?? doc.service_id)
   const accept = useAppMutation(() => documents.check(serviceId!, v!.id, 'accept'), { successMessage: 'Document accepted.' })
   const remove = useAppMutation(() => documents.removeVersion(v!.id), { successMessage: 'Version deleted.' })
   if (!v) return null

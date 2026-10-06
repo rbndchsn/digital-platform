@@ -116,7 +116,7 @@ function AdminReadOnlyBanner({ serviceId, reference }: { serviceId: string; refe
       <Alert tone="warning" className="mb-5" icon={<Eye />} title="Platform administrator: read-only view">
         <span>You see every detail of this engagement but cannot act on it. {granted ? 'Evidence content is open for this session under break-glass access; every view is logged.' : 'Document contents stay closed until you request break-glass access with a reason.'}</span>
         {!granted ? (
-          <Button size="sm" variant="outline" className="ml-3" onClick={() => setAsk(true)}>
+          <Button size="sm" variant="secondary" className="ml-3 opacity-100" onClick={() => setAsk(true)}>
             <KeyRound /> Break-glass access
           </Button>
         ) : null}

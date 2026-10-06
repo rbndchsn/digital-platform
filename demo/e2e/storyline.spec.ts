@@ -4,8 +4,8 @@ import { enterAs } from './helpers'
 
 test.describe.configure({ mode: 'serial' })
 
-test('the full ten-chapter storyline runs without a dead click', async ({ page }) => {
-  test.setTimeout(240_000)
+test('the full twelve-chapter storyline runs without a dead click', async ({ page }) => {
+  test.setTimeout(300_000)
 
   // 1 — home
   await enterAs(page, /Ingrid Vos/)
@@ -116,4 +116,34 @@ test('the full ten-chapter storyline runs without a dead click', async ({ page }
   await page.goto('/staff/clients')
   await expect(page.getByText('Interest signals')).toBeVisible()
   await expect(page.getByText('Ingrid Vos · Northwind Dairy Cooperative')).toBeVisible()
+  await expect(page.getByText('Portfolio manager')).toBeVisible()
+
+  // 11 — administration
+  await enterAs(page, /Sam Okafor/)
+  await expect(page.getByRole('heading', { name: 'Administration dashboard' })).toBeVisible()
+  await expect(page.getByText('Platform administrator only')).toBeVisible()
+  await page.goto('/admin/users')
+  await page.getByRole('button', { name: 'Actions for Claire Mertens' }).click()
+  await page.getByRole('menuitem', { name: 'Deactivate' }).click()
+  await page.getByLabel(/^Reason/).fill('Retired on 30 September 2026; access no longer needed.')
+  await page.getByPlaceholder('deactivate').fill('deactivate')
+  await page.getByRole('button', { name: 'Deactivate user' }).click()
+  await page.getByRole('button', { name: 'Done' }).click()
+  await page.goto('/admin/audit')
+  await expect(page.getByText(/Claire Mertens deactivated by Sam Okafor/).first()).toBeVisible()
+  await page.goto('/engagements/svc_nw_inv_2025/phases')
+  await expect(page.getByText('Platform administrator: read-only view')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Close step' })).toHaveCount(0)
+
+  // 12 — manager override on the Solstice verification (in execution since chapter 4)
+  await enterAs(page, /Helena Brandt/)
+  await page.goto('/engagements/svc_sol_ver_2025/phases')
+  await page.getByRole('button', { name: 'Override status' }).click()
+  await page.getByRole('menuitem', { name: 'Force complete' }).click()
+  await page.getByLabel(/Reason for the override/).fill('Desk review done on the shared drive before the platform go-live; closing to align the plan.')
+  await page.getByRole('button', { name: 'Force complete' }).click()
+  await expect(page.getByText(/Override recorded/)).toBeVisible()
+  await page.goto('/engagements/svc_sol_ver_2025/log')
+  await page.getByRole('combobox', { name: 'Filter by event type' }).selectOption('override')
+  await expect(page.getByText(/^Override: .* by Helena Brandt/).first()).toBeVisible()
 })

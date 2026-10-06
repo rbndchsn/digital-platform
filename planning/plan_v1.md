@@ -276,11 +276,12 @@ Brief: `planning/next-session-prompt.md` (2026-10-06). Decisions taken while exe
   - [x] Sign-in grid and demo panel show Sam Okafor and grey out deactivated personas; chapters 11 and 12 in `demo.CHAPTERS`; `scripts/screenshot.mjs` entries 28–31 added for the visual check.
   - Done when: typecheck, lint, vitest, build and the existing Playwright suite pass. ✔ 80 unit tests, 16 Playwright tests, probe clean on 19 pages.
 
-- [ ] **Step 19 — Tests, screenshots, docs**
-  - [ ] `e2e/admin.spec.ts`, `e2e/override.spec.ts`; chapters 11–12 in `e2e/storyline.spec.ts`; `/admin/*` in `e2e/a11y.spec.ts`, axe clean.
-  - [ ] `scripts/screenshot.mjs` 28–31; two new screenshots embedded in README.
-  - [ ] `DEMO_SCRIPT.md` chapters 11 and 12; README ADMIN persona and overrides; `phase2-handover.md` admin api and override endpoints.
-  - Done when: every unit and Playwright test passes locally.
+- [x] **Step 19 — Tests, screenshots, docs**
+  - [x] `e2e/admin.spec.ts` (Sam: dashboard with money, deactivate Pieter with reason and typed confirmation → reassignment summary, audit and auth log, announcement goes live; Sam on an engagement sees no action control, break-glass opens content and is logged, records and finance read-only) and `e2e/override.spec.ts` (Helena forces the desk review with a reason, "Completed by override", Service Log override filter, Ingrid's re-upload action gone, override in the ADMIN audit log; reassign Priya → Jonas with COI pending, force-complete disabled on team nomination); chapters 11–12 in `e2e/storyline.spec.ts` (Claire deactivated, Solstice desk review overridden); nine `/admin/*` and ADMIN engagement pages in `e2e/a11y.spec.ts`, axe clean.
+  - [x] `scripts/screenshot.mjs` 28–31 captured (plus 27 refreshed for the Portfolio manager column and a dark variant of 28); 28 and 31 embedded in README.
+  - [x] `DEMO_SCRIPT.md` chapters 11 and 12 with the chapter table; README v0.2 paragraph, phase row, role-enforcement note; `phase2-handover.md` admin api and override endpoints, decisions to keep, new gaps.
+  - [x] Fix found by the new spec: document rows now read the break-glass grant through a query so the grant re-renders them; the audit page's "Overrides" filter no longer reaches the api as a prefix.
+  - Done when: every unit and Playwright test passes locally. ✔ 80 unit tests, 21 Playwright tests.
 
 - [ ] **Step 20 — Release v0.2-demo**
   - [ ] All steps ticked, progress log rows with commit hashes, relevant files updated; tag `v0.2-demo` pushed; CI green including Playwright; live site shows Sam Okafor in the sign-in grid.
@@ -363,9 +364,14 @@ Brief: `planning/next-session-prompt.md` (2026-10-06). Decisions taken while exe
 | `demo/src/routes/_app/records/**` | Inventories, emission factors, decarb_units screens |
 | `demo/src/routes/_app/staff/*`, `preview.$key.tsx` | Staff pages; generic preview page |
 | `demo/e2e/*.spec.ts` | Chapter tests, a11y audit, full storyline |
-| `demo/DEMO_SCRIPT.md` | Presenter script |
+| `demo/DEMO_SCRIPT.md` | Presenter script (12 chapters) |
 | `planning/phase2-handover.md` | Handover to the real platform |
-| `assets/demo-screenshots/` | Screenshots (light + dark variants) |
+| `assets/demo-screenshots/` | Screenshots (light + dark variants; 28–31 are the v0.2 admin and override screens) |
+| `planning/next-session-prompt.md` | Brief that drove Phase I.5 (steps 15–20) |
+| `demo/src/api/admin.ts` | Administration console api: users, organisations, settings, announcements, global audit, COI register, FR-71 stats with ADMIN-only money, break-glass, data operations |
+| `demo/src/components/reason-dialog.tsx` | Mandatory-reason dialog (optional typed phrase) used by overrides, deactivation, suspension, break-glass |
+| `demo/src/routes/_app/admin.tsx`, `admin/*.tsx` | Administration portal: layout guard, dashboard, users and organisations, audit log, COI register, settings |
+| `demo/e2e/admin.spec.ts`, `override.spec.ts` | Chapters 11 and 12 in the browser |
 
 ---
 
@@ -391,7 +397,8 @@ Brief: `planning/next-session-prompt.md` (2026-10-06). Decisions taken while exe
 | 2026-10-06 | 15 | 28044ce | PRD v0.2: ADMIN platform administrator, manager overrides, Administration console, portfolios; task list 3.11–3.14, 5.11, 6.8, 11.8, 13.0. | Decisions D1–D10 in §8 |
 | 2026-10-06 | 16 | c27ad8e | Domain: `platform_admin` org role, user / org / audit columns, `PlatformSettings` and `Announcement` schemas, ADMIN allow-list and override actions in policy, `applyStepOverride`, tests (77). | — |
 | 2026-10-06 | 17 | 64a004e | Mock api: `api/admin.ts`, overrides and reassign, audited sign-ins, Sam Okafor and platform fixtures, storyline chapters 11–12. 80 tests. | Chapter 12 resumes the Solstice service to whatever status it had (planning in the api storyline, execution in the browser storyline) |
-| 2026-10-06 | 18 | (next commit) | Administration portal (`/admin/*`), read-only ADMIN everywhere with break-glass, manager override / reassign / replan controls, verified-value dialogs for EFs and decarb records, announcement and maintenance banners, Sam in the persona grid and demo panel. | Screenshot entries 28–31 added one step early for the visual check |
+| 2026-10-06 | 18 | c38a1fc | Administration portal (`/admin/*`), read-only ADMIN everywhere with break-glass, manager override / reassign / replan controls, verified-value dialogs for EFs and decarb records, announcement and maintenance banners, Sam in the persona grid and demo panel. | Screenshot entries 28–31 added one step early for the visual check |
+| 2026-10-06 | 19 | (next commit) | Playwright `admin.spec.ts` and `override.spec.ts`, storyline chapters 11–12, axe on the admin pages, screenshots 27–31, DEMO_SCRIPT chapters 11–12, README, handover. | Break-glass re-render and audit "Overrides" filter fixed |
 
 ---
 

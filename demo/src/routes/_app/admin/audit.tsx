@@ -35,7 +35,8 @@ function AuditLog() {
   const [search, setSearch] = useState('')
   const orgs = useQuery({ queryKey: ['admin', 'orgs'], queryFn: admin.listOrgs })
   const types = useQuery({ queryKey: ['admin', 'audit', 'types'], queryFn: admin.auditEventTypes })
-  const q = useQuery({ queryKey: ['admin', 'audit', view, orgId, type, from, to, search], queryFn: () => admin.auditLog({ authOnly: view === 'auth', orgId: orgId || undefined, type: type || undefined, from: from || undefined, to: to || undefined, search: search || undefined, limit: 500 }) })
+  // "Overrides" spans three event types, so it is filtered client-side below rather than as a prefix.
+  const q = useQuery({ queryKey: ['admin', 'audit', view, orgId, type, from, to, search], queryFn: () => admin.auditLog({ authOnly: view === 'auth', orgId: orgId || undefined, type: type && type !== 'override' ? type : undefined, from: from || undefined, to: to || undefined, search: search || undefined, limit: 500 }) })
   function exportCsv() {
     const csv = admin.auditCsv(q.data ?? [])
     const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }))
