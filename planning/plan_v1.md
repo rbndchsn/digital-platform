@@ -208,12 +208,13 @@ Tick sub-items as you go; tick the step only when its "Done when" holds.
   - [x] Playwright `findings.spec.ts` runs chapter 6 across the two personas.
   - Done when: chapter 6 runs and the finding appears in the Service Log and notifications. ✔
 
-- [ ] **Step 10 — Opinion iterations, issuance, statement, public verify**
-  - [ ] Opinion tab: iteration accordions (bundle by document role, IR decision, manager decision, banners), staff actions (create iteration, attach documents, submit for IR, IR decide with checklist, manager decide with checklist, issue).
-  - [ ] Animated issuance sequence per PRD §8.6 with each step completing; then statement card with verification code, hashes, QR (client-side generated), verified figures tiles, PDF "download" mock.
-  - [ ] Public route `/verify/:code` rendered without a session (statement summary, hashes, opinion type, issuer).
-  - [ ] Write-back visible in Records: status Verified, assurance link opens the opinion; earlier record Superseded.
-  - Done when: chapter 8 runs; a new tab on `/verify/{code}` works from the seeded issued statement.
+- [x] **Step 10 — Opinion iterations, issuance, statement, public verify**
+  - [x] Opinion tab: statement card when issued (code, type, assurance level, figures tiles, locked documents with hashes, signatories, PDF show-don't-do, public page link, client toggle for public visibility); iteration accordions with status banner, wording, figures, document groups by role (team leader bundle, independent review with checklist and comment, manager checklist); role-aware actions (prepare iteration with suggested figures from attached records, submit for IR, independent review dialog with checklist, manager approval dialog disabled while CARs are open, issue).
+  - [x] `IssuanceDialog`: confirm → animated PRD §8.6 steps → success with code and "Open public statement".
+  - [x] `/verify/:code`: public page without a session with lookup box, genuine banner, QR-like code pattern, verified figures, document hashes, signatories; not-found state.
+  - [x] Write-back is performed by the api on issuance; the Records screens (step 11) display Verified / Superseded with the assurance link.
+  - [x] Playwright `opinion.spec.ts` runs chapter 8 across three personas and checks the public page.
+  - Done when: chapter 8 runs; a new tab on `/verify/{code}` works from the seeded issued statement. ✔
 
 - [ ] **Step 11 — Records: inventory, product emission factors, decarb_unit records**
   - [ ] Inventory editor: year header (GWP set, consolidation), Scope 1 / 2 / 3 tabs, line table with gas sub-rows, computed tCO2e, biogenic and removals columns, evidence chips (link to a document), completeness bar, declared vs verified columns (staff can enter verified), submit for verification (attach to service or create request), revision notice after edits. YoY chart by scope.
@@ -330,7 +331,8 @@ Tick sub-items as you go; tick the step only when its "Done when" holds.
 | 2026-10-06 | 6 | e8b6074 | Request wizard with autosave/resume/renewal, upload dialog, stepper, wizard e2e test. | React Hooks v7 forbids setState in effects: dialogs derive defaults, the wizard mounts with initial values |
 | 2026-10-06 | 7 | e3ca156 | Service workspace: layout, overview, step detail with slots/approvals/team/COI, documents, Gantt, Service Log; document and approval rows; COI gate; workspace e2e tests. | Step 8 items already present where natural (step transitions, approvals, team nomination, agreement acceptance); step 8 adds the staff pages |
 | 2026-10-06 | 8 | 08dd57d | Staff pages: My Work, triage queue, all services, finance; staff e2e tests. | — |
-| 2026-10-06 | 9 | (this commit) | Findings list and thread with attachments and transitions; findings e2e test. | — |
+| 2026-10-06 | 9 | 9b1eda5 | Findings list and thread with attachments and transitions; findings e2e test. | — |
+| 2026-10-06 | 10 | (this commit) | Opinion tab, review/approval dialogs, animated issuance, statement card, public verification page; opinion e2e test. | QR is a deterministic decorative pattern; Phase II renders a real QR |
 
 ---
 
