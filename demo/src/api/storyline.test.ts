@@ -5,7 +5,7 @@ import { beforeAll, describe, expect, it } from 'vitest'
 import { setLatencyEnabled } from '@/mock/latency'
 import { SVC } from '@/mock/fixtures'
 import { USR } from '@/mock/fixtures/base'
-import { ApiError, approvals, auth, dashboard, demo, documents, features, findings, iterations, records, services, team } from './index'
+import { ApiError, admin, approvals, auth, dashboard, demo, documents, features, findings, invoices, iterations, records, services, team } from './index'
 
 const as = (userId: string) => auth.signIn(userId)
 const slot = (detail: services.ServiceDetail, key: string) => detail.phases.flatMap((p) => p.steps).flatMap((s) => s.slots).find((s) => s.key === key)!
@@ -222,6 +222,126 @@ describe('storyline', () => {
     await as(USR.mgr)
     const interest = await features.staffInterest()
     expect(interest.some((i) => i.flagKey === 'mcp' && i.orgName === 'Northwind Dairy Cooperative')).toBe(true)
+  })
+
+  it('ch.11 — administration: Sam sees the whole platform, deactivates a user and cannot touch an engagement', async () => {
+    await as(USR.admin)
+    const me = await auth.me()
+    expect(me.isAdmin).toBe(true)
+    expect(me.role).toBe('platform_admin')
+
+    // Rollups, including money (only ADMIN gets money).
+    const st = await admin.stats()
+    expect(st.totals.started).toBeGreaterThanOrEqual(10)
+    expect(st.totals.issued).toBeGreaterThanOrEqual(5)
+    expect(st.money).not.toBeNull()
+    const eur = st.money!.find((m) => m.currency === 'EUR')!
+    expect(eur.invoicedMinor).toBeGreaterThan(0)
+    expect(eur.outstandingMinor).toBe(eur.invoicedMinor - eur.paidMinor)
+    expect(st.byClient[0].orgName).toBe('Northwind Dairy Cooperative')
+    expect(st.cycleTimes.requestToContractMedianDays).not.toBeNull()
+    expect(st.coiPending.some((c) => c.userName === 'Priya Natarajan')).toBe(true)
+    expect(st.byStaff.find((x) => x.name === 'Helena Brandt')).toBeDefined()
+    expect(st.byStaff.some((x) => x.name === 'Sam Okafor')).toBe(false)
+    const filtered = await admin.stats({ orgId: 'org_solstice' })
+    expect(filtered.byClient.every((c) => c.orgId === 'org_solstice' || c.started + c.ongoing + c.issued + c.closed === 0)).toBe(true)
+
+    // Reads everywhere.
+    const all = await services.list({})
+    expect(all.length).toBeGreaterThanOrEqual(10)
+    expect((await services.get(SVC.nwInv2025)).service.id).toBe(SVC.nwInv2025)
+    expect((await admin.listOrgs()).find((o) => o.id === 'org_northwind')?.portfolioManagerName).toBe('Helena Brandt')
+
+    // Users and deactivation with the reassignment summary.
+    const users = await admin.listUsers()
+    const pieter = users.find((u) => u.id === USR.nwContrib)!
+    expect(pieter.openWork).toBeGreaterThanOrEqual(0)
+    await expect(admin.deactivateUser(USR.nwContrib, 'short')).rejects.toMatchObject({ code: 'validation' })
+    await expect(admin.deactivateUser(USR.admin, 'Trying to deactivate myself by mistake')).rejects.toMatchObject({ code: 'validation' })
+    const summary = await admin.deactivateUser(USR.nwContrib, 'Left Northwind on 30 September 2026 (HR ticket 4471).')
+    expect(summary.userName).toBe('Pieter de Jong')
+    expect(summary.notifiedManagers).toContain('Helena Brandt')
+    const after = (await admin.listUsers({ status: 'disabled' })).find((u) => u.id === USR.nwContrib)!
+    expect(after.status).toBe('disabled')
+    expect(after.deactivationReason).toMatch(/HR ticket/)
+    const log = await admin.auditLog({ type: 'admin.' })
+    expect(log[0].event_type).toBe('admin.user_deactivated')
+    expect(log[0].reason).toMatch(/HR ticket/)
+    expect((await admin.auditLog({ authOnly: true })).some((e) => e.event_type === 'auth.signed_in' && e.actorName === 'Sam Okafor')).toBe(true)
+    expect(auth.listPersonas().find((p) => p.userId === USR.nwContrib)?.disabled).toBe(true)
+    await admin.reactivateUser(USR.nwContrib)
+    expect((await admin.listUsers()).find((u) => u.id === USR.nwContrib)!.status).toBe('active')
+
+    // Settings: announcement goes live for everyone, flag default changes.
+    const ann = (await admin.listAnnouncements())[0]
+    await admin.updateAnnouncement(ann.id, { active: true })
+    expect(admin.activeAnnouncementsSync().map((a) => a.id)).toContain(ann.id)
+    await admin.setFlagDefault('portfolios', 'preview')
+    expect((await admin.listFlagDefaults()).find((f) => f.key === 'portfolios')?.defaultState).toBe('preview')
+    expect((await admin.coiRegister()).length).toBeGreaterThan(5)
+
+    // Break-glass: content is gated until a reason is given.
+    expect(admin.canReadEvidenceContentSync(SVC.nwInv2025)).toBe(false)
+    await admin.breakGlass(SVC.nwInv2025, 'Support ticket 2210: client cannot open the activity data sample.')
+    expect(admin.canReadEvidenceContentSync(SVC.nwInv2025)).toBe(true)
+
+    // ADMIN never changes engagement or record data.
+    const detail = await services.get(SVC.nwInv2025)
+    const step = detail.phases.flatMap((p) => p.steps).find((s) => s.status !== 'completed' && s.status !== 'skipped')!
+    await expect(services.transitionStep(SVC.nwInv2025, step.id, 'complete')).rejects.toMatchObject({ code: 'forbidden' })
+    await expect(services.overrideStep(SVC.nwInv2025, step.id, 'complete', 'Administrators must not be able to do this')).rejects.toMatchObject({ code: 'forbidden' })
+    await expect(services.hold(SVC.nwInv2025, 'no')).rejects.toMatchObject({ code: 'forbidden' })
+    await expect(upload(SVC.nwInv2025, slot(detail, 'org_chart').id, 'x.pdf')).rejects.toMatchObject({ code: 'forbidden' })
+    await expect(invoices.upsert(SVC.nwInv2025, { kind: 'invoice', reference: 'X', amountMinor: 1, currency: 'EUR', issuedAt: null, dueAt: null, status: 'sent' })).rejects.toMatchObject({ code: 'forbidden' })
+    await expect(records.setVerifiedDecarb('dcu_nw_milk_2025', { reduction: 1, removal: 0 })).rejects.toMatchObject({ code: 'forbidden' })
+    await expect(team.nominate(SVC.atlasDecarb2025, [{ userId: USR.fin, role: 'verifier_auditor' }])).rejects.toMatchObject({ code: 'forbidden' })
+    // …and nobody else can use the admin api.
+    await as(USR.mgr)
+    await expect(admin.listUsers()).rejects.toMatchObject({ code: 'forbidden' })
+    await expect(admin.stats()).rejects.toMatchObject({ code: 'forbidden' })
+  })
+
+  it('ch.12 — manager override: Helena forces a step with a reason and the next action moves', async () => {
+    await as(USR.mgr)
+    let detail = await services.get(SVC.nwInv2025)
+    const current = detail.phases.flatMap((p) => p.steps).find((s) => s.status !== 'completed' && s.status !== 'skipped')!
+    await expect(services.overrideStep(SVC.nwInv2025, current.id, 'complete', 'too short')).rejects.toMatchObject({ code: 'validation' })
+    const reason = 'Client evidence reviewed off-platform during the site visit; closing to keep the plan.'
+    const forced = await services.overrideStep(SVC.nwInv2025, current.id, 'complete', reason)
+    expect(forced.status).toBe('completed')
+    expect(forced.closed_by).toBe(USR.mgr)
+    detail = await services.get(SVC.nwInv2025)
+    expect(detail.nextAction?.step_id).not.toBe(current.id)
+    const log = await services.log(SVC.nwInv2025, { types: ['step.overridden'] })
+    expect(log[0].reason).toBe(reason)
+    expect(log[0].summary).toMatch(/^Override:/)
+    // Reopen by override, then the normal flow is back.
+    const reopened = await services.overrideStep(SVC.nwInv2025, current.id, 'reopen', 'Reopened: the site-visit notes were incomplete after all.')
+    expect(reopened.status).toBe('in_progress')
+    // Impartiality cannot be forced: the Atlas team nomination is waiting for a COI declaration.
+    const atlas = await services.get(SVC.atlasDecarb2025)
+    const nomination = atlas.phases.flatMap((p) => p.steps).find((s) => s.key === 'team_nomination')!
+    await expect(services.overrideStep(SVC.atlasDecarb2025, nomination.id, 'complete', 'Trying to skip the impartiality gate')).rejects.toMatchObject({ code: 'conflict' })
+    // Reassign the auditor role from Priya to Jonas; Jonas must declare COI.
+    const priya = atlas.team.find((t) => t.userId === USR.aud)!
+    const teamAfter = await team.reassign(SVC.atlasDecarb2025, priya.id, USR.fin, 'Priya is on leave until November; Jonas takes the data review.')
+    expect(teamAfter.some((t) => t.userId === USR.aud)).toBe(false)
+    const jonas = teamAfter.find((t) => t.userId === USR.fin)!
+    expect(jonas.role).toBe('verifier_auditor')
+    expect(jonas.coi?.status).toBe('required')
+    // Service override: hold and resume with reasons, both logged as overrides.
+    const beforeHold = (await services.get(SVC.solVer2025)).service.status
+    await services.overrideService(SVC.solVer2025, 'hold', 'Client asked to pause until the new site manager starts.')
+    expect((await services.get(SVC.solVer2025)).service.status).toBe('on_hold')
+    await services.overrideService(SVC.solVer2025, 'resume', 'New site manager confirmed; resuming the plan.')
+    expect((await services.get(SVC.solVer2025)).service.status).toBe(beforeHold)
+    expect((await services.log(SVC.solVer2025, { types: ['service.overridden'] })).length).toBe(2)
+    // Planned dates.
+    const replanned = await services.replanStep(SVC.nwInv2025, current.id, { plannedStart: current.planned_start, plannedEnd: '2026-12-31' }, 'Site visit moved.')
+    expect(replanned.planned_end).toBe('2026-12-31')
+    // Only managers override.
+    await as(USR.tl)
+    await expect(services.overrideStep(SVC.nwInv2025, current.id, 'complete', 'Team leaders cannot override steps')).rejects.toMatchObject({ code: 'forbidden' })
   })
 
   it('reset restores the seed', async () => {

@@ -3,6 +3,7 @@
  * Pages never import this module; they use `@/api/*`.
  */
 import type {
+  Announcement,
   ApiClient,
   Approval,
   AuditEvent,
@@ -31,6 +32,7 @@ import type {
   OpinionStatement,
   Organisation,
   Phase,
+  PlatformSettings,
   Project,
   Service,
   ServiceTeamMember,
@@ -74,6 +76,8 @@ export interface Tables {
   flagOverrides: FeatureFlagOverride[]
   featureInterest: FeatureInterest[]
   templates: WorkflowTemplate[]
+  platformSettings: PlatformSettings[]
+  announcements: Announcement[]
 }
 
 export type TableName = keyof Tables
@@ -83,6 +87,8 @@ export interface SessionState {
   /** Signed-in persona (user id) and active org. */
   userId: string | null
   orgId: string | null
+  /** Services for which the platform administrator holds break-glass evidence access this session (PRD FR-70). */
+  breakGlassServiceIds: string[]
   /** Demo bookkeeping. */
   seededAt: string
   storylineChapter: number
@@ -95,7 +101,10 @@ interface Snapshot {
 }
 
 const STORAGE_KEY = 'vx.demo.v1'
-const SCHEMA = 1
+/** Bumped to 2 for v0.2 (new tables and user columns); a tab holding a v1 snapshot reseeds silently (plan_v1 §8 D10). */
+const SCHEMA = 2
+
+const EMPTY_SESSION = (): SessionState => ({ userId: null, orgId: null, breakGlassServiceIds: [], seededAt: new Date().toISOString(), storylineChapter: 0 })
 
 type Listener = () => void
 
@@ -112,7 +121,7 @@ export class Store {
       this.session = restored.session
     } else {
       this.tables = seed()
-      this.session = { userId: null, orgId: null, seededAt: new Date().toISOString(), storylineChapter: 0 }
+      this.session = EMPTY_SESSION()
       this.persist()
     }
   }
@@ -178,7 +187,7 @@ export class Store {
   /** Replace everything with fresh seed data (Demo panel → Reset). */
   reset(seed: () => Tables): void {
     this.tables = seed()
-    this.session = { userId: null, orgId: null, seededAt: new Date().toISOString(), storylineChapter: 0 }
+    this.session = EMPTY_SESSION()
     try {
       window.sessionStorage.removeItem(STORAGE_KEY)
     } catch {

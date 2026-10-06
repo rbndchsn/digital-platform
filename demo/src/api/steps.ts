@@ -1,8 +1,16 @@
 /** Internal step helpers shared by services, approvals, documents and team modules (no latency). */
-import type { ServiceStatus } from '@/domain/enums'
+import { OVERRIDE_REASON_MIN_LENGTH, type ServiceStatus, type StepOverrideAction } from '@/domain/enums'
+import type { AuthContext } from '@/domain/policy'
 import type { Phase, Step } from '@/domain/schemas'
-import { canStartStep, derivePhaseStatus, stepMachine, type StepAction } from '@/domain/workflow/machines'
+import { applyStepOverride, canStartStep, derivePhaseStatus, stepMachine, type StepAction } from '@/domain/workflow/machines'
 import { ApiError, audit, getStore, notify, nowIsoString, serviceAudience, userName } from './core'
+
+/** Overrides and ADMIN actions need a real reason (PRD FR-73, §11.2). */
+export function requireReason(reason: string | undefined | null): string {
+  const r = (reason ?? '').trim()
+  if (r.length < OVERRIDE_REASON_MIN_LENGTH) throw new ApiError('validation', `A reason of at least ${OVERRIDE_REASON_MIN_LENGTH} characters is required.`)
+  return r
+}
 
 export function currentStepOf(serviceId: string): { phase: Phase; step: Step } | null {
   const s = getStore()
@@ -108,5 +116,43 @@ export function transitionStepInternal(serviceId: string, stepId: string, action
     startFirstStep(serviceId, actorId)
   }
   syncServiceStatus(serviceId, actorId)
+  return updated
+}
+
+/**
+ * Manager override of a step status (PRD FR-73): bypasses required slots and approvals, writes the distinct
+ * `step.overridden` event with the reason, notifies both parties and lets the workflow move on.
+ */
+export function overrideStepInternal(ctx: AuthContext, serviceId: string, stepId: string, action: StepOverrideAction, reason: string): Step {
+  const s = getStore()
+  const step = s.get('steps', stepId)
+  if (step.service_id !== serviceId) throw new ApiError('not_found', 'Step not on this service')
+  const phase = s.get('phases', step.phase_id)
+  const svc = s.get('services', serviceId)
+  const { state } = applyStepOverride(step, action)
+  const now = nowIsoString()
+  const patch: Partial<Step> = { status: state }
+  if (action === 'complete' || action === 'skip') {
+    patch.actual_start = step.actual_start ?? now
+    patch.actual_end = now
+    patch.closed_by = ctx.userId
+    patch.closed_at = now
+  }
+  if (action === 'reopen') {
+    patch.actual_start = step.actual_start ?? now
+    patch.actual_end = null
+    patch.closed_by = null
+    patch.closed_at = null
+  }
+  const updated = s.update('steps', stepId, patch, ctx.userId)
+  refreshPhaseStatus(phase.id, ctx.userId)
+  const verb = action === 'complete' ? 'completed' : action === 'reopen' ? 'reopened' : 'skipped'
+  audit(ctx, { orgId: svc.org_id, serviceId, eventType: 'step.overridden', entityType: 'step', entityId: stepId, summary: `Override: ${step.name} ${verb} by ${userName(ctx.userId)} — ${reason}`, reason, before: { status: step.status }, after: { status: state, action } })
+  const title = `${step.name} ${verb} by manager override`
+  const body = `${userName(ctx.userId)} ${verb} "${step.name}" on ${svc.reference}. Reason: ${reason}`
+  notify(serviceAudience(serviceId, 'client'), svc.org_id, 'step_overridden', title, body, serviceId, { type: 'step', id: stepId })
+  notify(serviceAudience(serviceId, 'verifier').filter((u) => u !== ctx.userId), 'org_verifassur', 'step_overridden', title, body, serviceId, { type: 'step', id: stepId })
+  if (action === 'complete' || action === 'skip') startFirstStep(serviceId, ctx.userId)
+  syncServiceStatus(serviceId, ctx.userId)
   return updated
 }

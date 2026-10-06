@@ -305,6 +305,19 @@ export async function submitEmissionFactor(id: string, target: SubmitTarget): Pr
   })
 }
 
+/** Verifier (or manager, PRD FR-77) records the verified value of a product emission factor. */
+export async function setVerifiedEmissionFactor(id: string, value: number, comment?: string): Promise<EmissionFactorView> {
+  return call(() => {
+    const s = getStore()
+    const ef = s.get('emissionFactors', id)
+    const ctx = authorize('record.verify', { orgId: ef.org_id, serviceId: ef.service_id ?? undefined })
+    if (ef.status === 'verified' || ef.status === 'superseded') throw new ApiError('conflict', 'Verified figures of an issued opinion are immutable; prepare a new iteration.')
+    s.update('emissionFactors', id, { verified_value: value, status: ef.status === 'submitted' ? 'under_verification' : ef.status }, ctx.userId)
+    audit(ctx, { orgId: ef.org_id, serviceId: ef.service_id, eventType: 'emission_factor.verified_value', entityType: 'emission_factor', entityId: id, summary: `Verified value entered for ${ef.product_name} ${ef.year}: ${value} ${ef.value_unit}${comment ? ` (${comment})` : ''}`, before: { verified_value: ef.verified_value }, after: { verified_value: value } })
+    return efView(s.get('emissionFactors', id))
+  })
+}
+
 // ---------------------------------------------------------------- decarb_unit records
 export interface ProfileView extends EmissionProfile {
   gases: EmissionProfileGas[]

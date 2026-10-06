@@ -261,13 +261,13 @@ Brief: `planning/next-session-prompt.md` (2026-10-06). Decisions taken while exe
   - [x] `api/core.ts` derives `platformRole` from the membership and refuses deactivated users; `audit()` writes `reason`; fixtures carry the new columns.
   - Done when: typecheck, lint, vitest pass. ✔ 77 tests.
 
-- [ ] **Step 17 — Mock api and fixtures**
-  - [ ] Fixtures: Sam Okafor (`usr_sam`, platform administrator, VERIFASSUR, role `platform_admin`); `last_sign_in_at` on every user; `portfolio_manager_user_id = usr_helena` on the three client orgs; `platformSettings` and one `announcements` row; store schema bumped to 2 so stale sessions reseed.
-  - [ ] `api/admin.ts`: users (list / update / changeRole / deactivate with reassignment summary / reactivate / resetPassword / resetMfa / forceSignOut / anonymise / invite), orgs (list / create / update / suspend / unsuspend), settings (get / update / setFlagDefault), announcements (list / create / update / remove / activeForViewer), audit (global list with filters, CSV), coiRegister, stats (every FR-71 KPI; money only for ADMIN), breakGlass.
-  - [ ] `api/services.ts`: `overrideStep`, `overrideService`, `replanStep`; `api/team.ts`: `reassign`; audit events `step.overridden`, `service.overridden`, `team.reassigned`, `step.replanned` with `reason`; notifications to the affected users; `api/auth.ts`: `auth.signed_in` audit event, `last_sign_in_at`, suspended org and disabled user cannot sign in.
-  - [ ] `api/records.ts`: `setVerifiedEmissionFactor`.
-  - [ ] `storyline.test.ts` chapters 11 (ADMIN) and 12 (manager override), incl. ADMIN `forbidden` on a mutating engagement api.
-  - Done when: all unit tests pass (≥ 69 + new).
+- [x] **Step 17 — Mock api and fixtures**
+  - [x] Fixtures: Sam Okafor (`usr_sam`, platform administrator, VERIFASSUR, role `platform_admin`); deterministic `last_sign_in_at` on every user and one `auth.signed_in` event each (plus a failed sign-in and a flag-default change for the auth and admin logs); `portfolio_manager_user_id = usr_helena` on the three client orgs; `portfolios` flag; `platformSettings` row (branding, four notification templates, retention 10 years) and one inactive `announcements` row (Sam publishes it in chapter 11); store schema 2, session carries `breakGlassServiceIds`.
+  - [x] `api/admin.ts`: users (list with filters and open-work count / update / changeRole / deactivate → reassignment summary and manager notifications / reactivate / resetPassword / resetMfa / forceSignOut / anonymise / invite), orgs (list / create / update / suspend / unsuspend), settings (get / update / listFlagDefaults / setFlagDefault), announcements (list / create / update / remove / `activeAnnouncementsSync` for the shell), `auditLog` with org / actor / type / date / text / auth-only filters and `auditCsv`, `coiRegister`, `stats` (every FR-71 KPI with year / client / type filters; `money` only for ADMIN, per currency), `breakGlass` + `canReadEvidenceContentSync` + `logBreakGlassRead`.
+  - [x] `api/services.ts`: `overrideStep`, `overrideService`, `replanStep`; `api/steps.ts`: `overrideStepInternal`, `requireReason`; `api/team.ts`: `reassign` (IR exclusivity kept, COI required for the new member) and ADMIN excluded from nomination candidates; audit events `step.overridden`, `service.overridden`, `team.reassigned`, `step.replanned` carry `reason`; notifications `step_overridden`, `service_overridden`, `team_reassigned`, `account_changed`. `api/auth.ts`: `auth.signed_in` / `auth.signed_out` / `auth.refused` events, `last_sign_in_at`, deactivated users and suspended organisations cannot sign in, personas carry `disabled`, `Me.isAdmin`. ADMIN sees every service in `services.list`.
+  - [x] `api/records.ts`: `setVerifiedEmissionFactor` (immutable once verified).
+  - [x] `storyline.test.ts` chapters 11 (Sam: stats with money, deactivate Pieter with summary, audit and auth logs, announcement, flag default, COI register, break-glass, nine forbidden engagement mutations, managers refused on `admin.*`) and 12 (Helena: reason validation, override complete → next action moves, reopen, impartiality refused, reassign Priya → Jonas with COI required, service hold / resume by override, replan, team leader refused).
+  - Done when: all unit tests pass. ✔ 80 tests.
 
 - [ ] **Step 18 — Administration UI**
   - [ ] `nav.ts` `ADMIN_NAV`; ADMIN lands on `/admin`; shell shows the announcement banner and the "Platform administrator: read-only view" banner on engagement and record screens; `useServicePermissions` returns no powers for ADMIN; engagement Actions menu, finance and records hide their controls.
@@ -389,7 +389,8 @@ Brief: `planning/next-session-prompt.md` (2026-10-06). Decisions taken while exe
 | 2026-10-06 | 12 | 7826d53 | Preview pages for future features, staff Clients (flag matrix, interest signals) and Templates pages; previews e2e test. | — |
 | 2026-10-06 | 13–14 | 821b542 (tag v0.1-demo) | Demo script, axe audit and fixes, full-storyline test, CI runs Playwright, screenshot set, README, Phase II handover. **Phase I complete.** | Cloudflare Pages deploy waits for the two repository secrets; GitHub Pages is live |
 | 2026-10-06 | 15 | 28044ce | PRD v0.2: ADMIN platform administrator, manager overrides, Administration console, portfolios; task list 3.11–3.14, 5.11, 6.8, 11.8, 13.0. | Decisions D1–D10 in §8 |
-| 2026-10-06 | 16 | (next commit) | Domain: `platform_admin` org role, user / org / audit columns, `PlatformSettings` and `Announcement` schemas, ADMIN allow-list and override actions in policy, `applyStepOverride`, tests (77). | — |
+| 2026-10-06 | 16 | c27ad8e | Domain: `platform_admin` org role, user / org / audit columns, `PlatformSettings` and `Announcement` schemas, ADMIN allow-list and override actions in policy, `applyStepOverride`, tests (77). | — |
+| 2026-10-06 | 17 | (next commit) | Mock api: `api/admin.ts`, overrides and reassign, audited sign-ins, Sam Okafor and platform fixtures, storyline chapters 11–12. 80 tests. | Chapter 12 resumes the Solstice service to whatever status it had (planning in the api storyline, execution in the browser storyline) |
 
 ---
 

@@ -1,6 +1,7 @@
 /** Services (engagements): list, detail aggregate, request lifecycle, triage, hold/cancel/close, timeline, log. */
-import type { PHASE_KEYS, ServiceStatus, ServiceType } from '@/domain/enums'
+import type { PHASE_KEYS, ServiceOverrideAction, ServiceStatus, ServiceType, StepOverrideAction } from '@/domain/enums'
 import { SERVICE_TYPE_LABELS } from '@/domain/enums'
+import { isPlatformAdmin } from '@/domain/policy'
 import type { Approval, AuditEvent, DocumentSlot, DocumentVersion, Invoice, Phase, Project, Service, ServiceScope, Step } from '@/domain/schemas'
 import { instantiateTemplate } from '@/domain/workflow/instantiate'
 import { canStartStep, serviceMachine, type StepAction } from '@/domain/workflow/machines'
@@ -10,7 +11,7 @@ import { templateFor } from '@/domain/workflow/templates'
 import { snapshotFrom } from '@/mock/snapshot'
 import { todayIso } from '@/mock/clock'
 import { ApiError, audit, auditNow, authContext, authorize, call, getStore, newId, notify, nowIsoString, orgName, serviceAudience, serviceResource, userName } from './core'
-import { currentStepOf, startFirstStep, transitionStepInternal } from './steps'
+import { currentStepOf, overrideStepInternal, requireReason, startFirstStep, transitionStepInternal } from './steps'
 
 export { syncServiceStatus, refreshPhaseStatus } from './steps'
 
@@ -134,7 +135,8 @@ function visibleServices(): Service[] {
   const s = getStore()
   const ctx = authContext()
   if (ctx.orgType === 'client') return s.where('services', (x) => x.org_id === ctx.orgId && !x.deleted_at)
-  const orgWide = ctx.orgRole === 'verifier_manager' || ctx.orgRole === 'verifier_coordinator' || ctx.orgRole === 'verifier_finance'
+  // ADMIN sees every engagement (read-only); managers, coordinators and finance see the whole verifier portfolio.
+  const orgWide = isPlatformAdmin(ctx) || ctx.orgRole === 'verifier_manager' || ctx.orgRole === 'verifier_coordinator' || ctx.orgRole === 'verifier_finance'
   return s.where('services', (x) => x.verifier_org_id === ctx.orgId && !x.deleted_at && (orgWide || (ctx.serviceRoles[x.id]?.length ?? 0) > 0))
 }
 
@@ -454,6 +456,58 @@ export async function transitionStep(serviceId: string, stepId: string, action: 
   return call(() => {
     const ctx = authorize('step.transition', serviceResource(serviceId))
     return transitionStepInternal(serviceId, stepId, action, ctx.userId, opts)
+  })
+}
+
+// ---------------------------------------------------------------- manager overrides (PRD §6.14)
+/** Force a step to completed / in progress / skipped with a mandatory reason (FR-73). */
+export async function overrideStep(serviceId: string, stepId: string, action: StepOverrideAction, reason: string): Promise<Step> {
+  return call(() => {
+    const ctx = authorize('step.override', serviceResource(serviceId))
+    return overrideStepInternal(ctx, serviceId, stepId, action, requireReason(reason))
+  })
+}
+
+/** Force a service status change with a mandatory reason (FR-74); both parties are notified. */
+export async function overrideService(serviceId: string, action: ServiceOverrideAction, reason: string): Promise<Service> {
+  return call(() => {
+    const ctx = authorize('service.override', serviceResource(serviceId))
+    const r = requireReason(reason)
+    const s = getStore()
+    const svc = s.get('services', serviceId)
+    let next: Partial<Service>
+    if (action === 'resume') {
+      serviceMachine.apply(svc.status, 'resume')
+      next = { status: svc.resume_status ?? 'contracting', resume_status: null, on_hold_reason: null }
+    } else if (action === 'return_to_execution') {
+      next = { status: serviceMachine.apply(svc.status, 'return_to_execution').state }
+    } else {
+      const { state } = serviceMachine.apply(svc.status, action)
+      next = { status: state }
+      if (action === 'hold') Object.assign(next, { resume_status: svc.status, on_hold_reason: r })
+      if (action === 'cancel') Object.assign(next, { on_hold_reason: r, closed_at: nowIsoString() })
+      if (action === 'close') Object.assign(next, { closed_at: nowIsoString() })
+    }
+    const updated = s.update('services', serviceId, next, ctx.userId)
+    const verb = { hold: 'put on hold', resume: 'resumed', cancel: 'cancelled', close: 'closed', return_to_execution: 'returned to execution' }[action]
+    audit(ctx, { orgId: svc.org_id, serviceId, eventType: 'service.overridden', entityType: 'service', entityId: serviceId, summary: `Override: service ${verb} by ${userName(ctx.userId)} — ${r}`, reason: r, before: { status: svc.status }, after: { status: updated.status, action } })
+    notify(serviceAudience(serviceId, 'both').filter((u) => u !== ctx.userId), svc.org_id, 'service_overridden', `${svc.reference} ${verb} by manager override`, `${userName(ctx.userId)} ${verb} ${svc.reference}. Reason: ${r}`, serviceId)
+    return updated
+  })
+}
+
+/** Change the planned dates of a step (FR-76); manager or team leader. */
+export async function replanStep(serviceId: string, stepId: string, dates: { plannedStart: string | null; plannedEnd: string | null }, reason?: string): Promise<Step> {
+  return call(() => {
+    const ctx = authorize('step.plan_dates', serviceResource(serviceId))
+    const s = getStore()
+    const step = s.get('steps', stepId)
+    if (step.service_id !== serviceId) throw new ApiError('not_found', 'Step not on this service')
+    if (dates.plannedStart && dates.plannedEnd && dates.plannedEnd < dates.plannedStart) throw new ApiError('validation', 'The planned end must not be before the planned start.')
+    const updated = s.update('steps', stepId, { planned_start: dates.plannedStart, planned_end: dates.plannedEnd }, ctx.userId)
+    const svc = s.get('services', serviceId)
+    audit(ctx, { orgId: svc.org_id, serviceId, eventType: 'step.replanned', entityType: 'step', entityId: stepId, summary: `${step.name} replanned to ${dates.plannedStart ?? '—'} – ${dates.plannedEnd ?? '—'} by ${userName(ctx.userId)}${reason ? ` — ${reason}` : ''}`, reason: reason?.trim() || null, before: { planned_start: step.planned_start, planned_end: step.planned_end }, after: { planned_start: dates.plannedStart, planned_end: dates.plannedEnd } })
+    return updated
   })
 }
 

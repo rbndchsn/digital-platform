@@ -1,5 +1,5 @@
 /** Organisations, users, memberships, projects and feature flags for the investor storyline (plan_v1 §2.3–2.4). */
-import type { AuditColumns, FeatureFlag, Membership, Organisation, Project, User } from '@/domain/schemas'
+import type { Announcement, AuditColumns, FeatureFlag, Membership, Organisation, PlatformSettings, Project, User } from '@/domain/schemas'
 import { daysAgo } from '../clock'
 
 export const ORG = {
@@ -16,6 +16,7 @@ export const USR = {
   ir: 'usr_tomas',
   coord: 'usr_ana',
   fin: 'usr_jonas',
+  admin: 'usr_sam',
   nwAdmin: 'usr_ingrid',
   nwContrib: 'usr_pieter',
   nwViewer: 'usr_claire',
@@ -62,12 +63,16 @@ const PEOPLE: Person[] = [
   { id: USR.ir, name: 'Tomas Lindqvist', email: 'tomas.lindqvist@verifassur.example', title: 'Independent reviewer', org: ORG.verifassur, role: 'verifier_independent_reviewer' },
   { id: USR.coord, name: 'Ana Ferreira', email: 'ana.ferreira@verifassur.example', title: 'Engagement coordinator', org: ORG.verifassur, role: 'verifier_coordinator' },
   { id: USR.fin, name: 'Jonas Weber', email: 'jonas.weber@verifassur.example', title: 'Finance', org: ORG.verifassur, role: 'verifier_finance' },
+  { id: USR.admin, name: 'Sam Okafor', email: 'sam.okafor@verifassur.example', title: 'Platform administrator', org: ORG.verifassur, role: 'platform_admin' },
   { id: USR.nwAdmin, name: 'Ingrid Vos', email: 'ingrid.vos@northwind.example', title: 'Head of Sustainability', org: ORG.northwind, role: 'client_admin' },
   { id: USR.nwContrib, name: 'Pieter de Jong', email: 'pieter.dejong@northwind.example', title: 'Site manager, Lelystad', org: ORG.northwind, role: 'client_contributor' },
   { id: USR.nwViewer, name: 'Claire Mertens', email: 'claire.mertens@northwind.example', title: 'Chief Financial Officer', org: ORG.northwind, role: 'client_viewer' },
   { id: USR.solAdmin, name: 'Amina Wanjiru', email: 'amina.wanjiru@solstice.example', title: 'Carbon programme lead', org: ORG.solstice, role: 'client_admin' },
   { id: USR.atlasAdmin, name: 'Luc Moreau', email: 'luc.moreau@atlasfoods.example', title: 'Scope 3 manager', org: ORG.atlas, role: 'client_admin' },
 ]
+
+/** Deterministic "last sign-in" per persona: staff daily, client admins weekly, viewers rarely. */
+const LAST_SIGN_IN_DAYS: Record<string, number> = { usr_helena: 0, usr_marcus: 0, usr_priya: 1, usr_tomas: 2, usr_ana: 0, usr_jonas: 3, usr_sam: 0, usr_ingrid: 1, usr_pieter: 4, usr_claire: 23, usr_amina: 2, usr_luc: 6 }
 
 export function users(): User[] {
   const a = auditAt(daysAgo(380))
@@ -77,12 +82,12 @@ export function users(): User[] {
     email: p.email,
     name: p.name,
     email_verified: true,
-    mfa_enabled: true,
+    mfa_enabled: p.id !== USR.nwViewer,
     locale: 'en',
     timezone: p.org === ORG.solstice ? 'Africa/Nairobi' : 'Europe/Amsterdam',
     status: 'active',
     job_title: p.title,
-    last_sign_in_at: null,
+    last_sign_in_at: daysAgo(LAST_SIGN_IN_DAYS[p.id] ?? 7, 8, 30 + (p.id.length % 20)),
     deactivated_at: null,
     deactivated_by: null,
     deactivation_reason: null,
@@ -130,5 +135,47 @@ export function featureFlags(): FeatureFlag[] {
     { key: 'dpp_export', default_state: 'preview', title: 'Digital product passport export', description: 'Publish verified product emission factors to digital product passports.', horizon: 'later', area: 'records' },
     { key: 'agent_verification', default_state: 'preview', title: 'Agent-to-agent verification', description: 'Your agent and the VERIFASSUR auditor agent negotiate data requests and findings over MCP.', horizon: 'later', area: 'integrations' },
     { key: 'multi_verifier', default_state: 'preview', title: 'Multi-verifier recognition', description: 'Import opinions from other verification bodies with a trust level.', horizon: 'later', area: 'platform' },
+    { key: 'portfolios', default_state: 'preview', title: 'Portfolios', description: 'A senior manager owns a handful of clients and their auditors; work queues, triage and rollups scoped by portfolio.', horizon: 'next', area: 'platform' },
+  ]
+}
+
+/** Platform configuration (PRD FR-67). */
+export function platformSettings(): PlatformSettings[] {
+  return [
+    {
+      id: 'platform',
+      maintenance_mode: false,
+      maintenance_message: null,
+      maintenance_from: null,
+      maintenance_until: null,
+      branding_json: { product_name: 'VERIFASSUR_X', primary_colour: '#0f766e', logo_r2_key: null },
+      notification_templates_json: [
+        { type: 'document_requested', subject: '[VERIFASSUR_X] {{service_reference}}: {{slot_name}} requested', body: 'Hello {{first_name}},\n\n{{requester}} asked for "{{slot_name}}" on {{service_name}} by {{due_date}}.\n\nOpen the slot: {{link}}' },
+        { type: 'finding_raised', subject: '[VERIFASSUR_X] {{service_reference}}: {{finding_type}} #{{finding_no}} raised', body: 'Hello {{first_name}},\n\n{{auditor}} raised {{finding_type}} #{{finding_no}} "{{finding_title}}", due {{due_date}}.\n\nRespond: {{link}}' },
+        { type: 'opinion_issued', subject: '[VERIFASSUR_X] Opinion issued for {{service_reference}}', body: 'Hello {{first_name}},\n\nThe opinion for {{service_name}} was issued on {{issued_at}}. Public statement: {{public_url}}' },
+        { type: 'step_overridden', subject: '[VERIFASSUR_X] {{service_reference}}: {{step_name}} {{override_action}} by the manager', body: 'Hello {{first_name}},\n\n{{manager}} set "{{step_name}}" to {{new_status}} on {{service_name}}.\nReason: {{reason}}\n\nWhat happens next: {{next_action}}' },
+      ],
+      retention_years: 10,
+      updated_by: USR.admin,
+      updated_at: daysAgo(30, 10, 0),
+    },
+  ]
+}
+
+/** One prepared (inactive) announcement the ADMIN switches on during chapter 11. */
+export function announcements(): Announcement[] {
+  return [
+    {
+      id: 'ann_maintenance_2026_10',
+      title: 'Scheduled maintenance',
+      body: 'VERIFASSUR_X will be read-only on Sunday 02:00–04:00 UTC while the evidence vault is migrated to the new EU region. Uploads and approvals resume automatically afterwards.',
+      tone: 'info',
+      audience: 'all',
+      starts_at: daysAgo(0, 6, 0),
+      ends_at: null,
+      active: false,
+      created_by: USR.admin,
+      created_at: daysAgo(1, 16, 20),
+    },
   ]
 }

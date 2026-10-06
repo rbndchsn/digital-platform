@@ -3,7 +3,7 @@ import { WORKFLOW_TEMPLATES } from '@/domain/workflow/templates'
 import { daysAgo } from '../clock'
 import { resetIds } from '../ids'
 import type { Tables } from '../store'
-import { ORG, PRJ, USR, featureFlags, memberships, organisations, projects, userName, users } from './base'
+import { ORG, PRJ, USR, announcements, featureFlags, memberships, organisations, platformSettings, projects, userName, users } from './base'
 import { buildRecords } from './records'
 import { Scenario, addHours } from './scenario'
 
@@ -132,6 +132,14 @@ export function buildSeed(): Tables {
   sc.notify(USR.mgr, ORG.verifassur, 'coi_required', 'COI declaration outstanding', `${userName(USR.aud)} has not yet declared conflicts of interest on VX-2026-0047.`, SVC.atlasDecarb2025, daysAgo(0, 8, 5))
   sc.notify(USR.tl, ORG.verifassur, 'finding_responded', 'Client responded to CL #1', `${userName(USR.nwAdmin)} responded to CL #1 on VX-2026-0031.`, SVC.nwInv2025, daysAgo(3, 14, 30))
 
+  // Authentication events for the ADMIN auth log (PRD FR-68): one sign-in per persona at their last sign-in time, plus a failed attempt.
+  for (const u of users()) {
+    const m = memberships().find((x) => x.user_id === u.id)!
+    sc.audit({ org_id: m.org_id, service_id: null, actor_user_id: u.id, event_type: 'auth.signed_in', entity_type: 'user', entity_id: u.id, summary: `${u.name} signed in (password + TOTP)`, before_json: null, after_json: { method: 'password+totp' }, occurred_at: u.last_sign_in_at! })
+  }
+  sc.audit({ org_id: ORG.northwind, service_id: null, actor_user_id: null, event_type: 'auth.failed', entity_type: 'user', entity_id: USR.nwContrib, summary: 'Failed sign-in for pieter.dejong@northwind.example (wrong password, 2nd attempt)', before_json: null, after_json: { ip: '198.51.100.23' }, occurred_at: daysAgo(4, 7, 58) })
+  sc.audit({ org_id: ORG.verifassur, service_id: null, actor_user_id: USR.admin, event_type: 'admin.flag_default_changed', entity_type: 'feature_flag', entity_id: 'public_statement', summary: 'Default state of "Public verification statement" set to enabled', before_json: { state: 'preview' }, after_json: { state: 'enabled' }, occurred_at: daysAgo(30, 10, 0) })
+
   return {
     organisations: organisations(),
     users: users(),
@@ -167,5 +175,7 @@ export function buildSeed(): Tables {
     flagOverrides: [],
     featureInterest: [],
     templates: WORKFLOW_TEMPLATES,
+    platformSettings: platformSettings(),
+    announcements: announcements(),
   }
 }

@@ -46,6 +46,20 @@ describe('seed validates against the domain schemas', () => {
     validateAll(seed.auditEvents, S.AuditEvent, 'auditEvents')
     validateAll(seed.featureFlags, S.FeatureFlag, 'featureFlags')
     validateAll(seed.templates, WorkflowTemplate, 'templates')
+    validateAll(seed.platformSettings, S.PlatformSettings, 'platformSettings')
+    validateAll(seed.announcements, S.Announcement, 'announcements')
+  })
+
+  it('seeds the platform administrator and the portfolio preview (PRD v0.2)', () => {
+    const sam = seed.users.find((u) => u.id === USR.admin)!
+    expect(sam.name).toBe('Sam Okafor')
+    expect(seed.memberships.find((m) => m.user_id === USR.admin)!.role).toBe('platform_admin')
+    expect(seed.team.some((t) => t.user_id === USR.admin)).toBe(false)
+    expect(seed.organisations.filter((o) => o.type === 'client').every((o) => o.portfolio_manager_user_id === USR.mgr)).toBe(true)
+    expect(seed.featureFlags.find((f) => f.key === 'portfolios')?.default_state).toBe('preview')
+    expect(seed.users.every((u) => u.last_sign_in_at)).toBe(true)
+    expect(seed.auditEvents.filter((e) => e.event_type === 'auth.signed_in').length).toBe(seed.users.length)
+    expect(seed.announcements[0].active).toBe(false)
   })
 
   it('has unique ids per table', () => {

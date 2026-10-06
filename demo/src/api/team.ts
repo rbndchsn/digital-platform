@@ -4,7 +4,7 @@ import type { CoiDeclaration, ServiceTeamMember } from '@/domain/schemas'
 import { coiMachine } from '@/domain/workflow/machines'
 import { ApiError, audit, auditNow, authContext, authorize, call, getStore, newId, notify, nowIsoString, serviceAudience, serviceResource, userName } from './core'
 import { teamView, type TeamView } from './services'
-import { transitionStepInternal } from './steps'
+import { requireReason, transitionStepInternal } from './steps'
 
 export interface Candidate {
   userId: string
@@ -21,7 +21,7 @@ export async function candidates(serviceId: string): Promise<Candidate[]> {
     const s = getStore()
     const existing = new Set(s.where('team', (t) => t.service_id === serviceId && t.status !== 'removed').map((t) => t.user_id))
     return s
-      .where('memberships', (m) => m.org_id === 'org_verifassur' && m.status === 'active' && !existing.has(m.user_id))
+      .where('memberships', (m) => m.org_id === 'org_verifassur' && m.status === 'active' && m.role !== 'platform_admin' && !existing.has(m.user_id))
       .map((m) => {
         const u = s.get('users', m.user_id)
         return {
@@ -65,6 +65,38 @@ export async function remove(serviceId: string, teamMemberId: string): Promise<T
     const tm = s.get('team', teamMemberId)
     s.update('team', teamMemberId, { status: 'removed' }, ctx.userId)
     audit(ctx, { orgId: s.get('services', serviceId).org_id, serviceId, eventType: 'team.removed', entityType: 'service_team', entityId: tm.id, summary: `${userName(tm.user_id)} removed from the team` })
+    return teamView(serviceId)
+  })
+}
+
+/**
+ * Manager reassigns a team role to another person (PRD FR-75): the previous member is removed, the new one is
+ * nominated in the same role and must declare conflicts of interest; the reason is mandatory and logged.
+ */
+export async function reassign(serviceId: string, teamMemberId: string, toUserId: string, reason: string): Promise<TeamView[]> {
+  return call(() => {
+    const ctx = authorize('team.reassign', serviceResource(serviceId))
+    const r = requireReason(reason)
+    const s = getStore()
+    const tm = s.get('team', teamMemberId)
+    if (tm.service_id !== serviceId || tm.status === 'removed') throw new ApiError('not_found', 'Team member not on this service')
+    if (tm.user_id === toUserId) throw new ApiError('validation', 'Pick a different person.')
+    const toUser = s.get('users', toUserId)
+    if (toUser.status !== 'active' || !s.where('memberships', (m) => m.user_id === toUserId && m.org_id === 'org_verifassur' && m.status === 'active').length) throw new ApiError('validation', `${toUser.name} is not an active VERIFASSUR user.`)
+    const others = s.where('team', (t) => t.service_id === serviceId && t.status !== 'removed' && t.user_id === toUserId && t.id !== teamMemberId)
+    if (tm.service_role === 'verifier_independent_reviewer' && others.length) throw new ApiError('validation', `${toUser.name} cannot be independent reviewer and hold another role on this service.`)
+    if (others.some((o) => o.service_role === 'verifier_independent_reviewer')) throw new ApiError('validation', `${toUser.name} is the independent reviewer and cannot take another role.`)
+    const svc = s.get('services', serviceId)
+    s.update('team', teamMemberId, { status: 'removed' }, ctx.userId)
+    const next: ServiceTeamMember = { ...auditNow(ctx.userId), id: newId('team'), service_id: serviceId, user_id: toUserId, service_role: tm.service_role, status: 'nominated', nominated_by: ctx.userId, nominated_at: nowIsoString() }
+    s.insert('team', next)
+    const coi: CoiDeclaration = { ...auditNow(ctx.userId), id: newId('coi'), service_team_id: next.id, declaration: null, details: null, declared_at: null, status: 'required', decided_by: null, decided_at: null }
+    s.insert('cois', coi)
+    if (tm.service_role === 'verifier_team_leader') s.update('services', serviceId, { team_leader_user_id: toUserId }, ctx.userId)
+    const role = tm.service_role.replace('verifier_', '').replace('_', ' ')
+    audit(ctx, { orgId: svc.org_id, serviceId, eventType: 'team.reassigned', entityType: 'service_team', entityId: next.id, summary: `Override: ${role} reassigned from ${userName(tm.user_id)} to ${toUser.name} by ${userName(ctx.userId)} — ${r}`, reason: r, before: { user_id: tm.user_id, service_role: tm.service_role }, after: { user_id: toUserId, service_role: tm.service_role } })
+    notify([tm.user_id], 'org_verifassur', 'team_reassigned', `Your ${role} role on ${svc.reference} was reassigned`, `${userName(ctx.userId)} reassigned the ${role} role to ${toUser.name}. Reason: ${r}`, serviceId)
+    notify([toUserId], 'org_verifassur', 'coi_required', 'Conflict-of-interest declaration required', `You were assigned as ${role} on ${svc.reference} (reassigned from ${userName(tm.user_id)}). Declare any conflicts before opening the service.`, serviceId, { type: 'coi', id: coi.id })
     return teamView(serviceId)
   })
 }
