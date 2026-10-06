@@ -21,14 +21,17 @@ export function Label({ className, ...props }: LabelHTMLAttributes<HTMLLabelElem
   return <label className={cn('text-fg mb-1 block text-sm font-medium', className)} {...props} />
 }
 
+/** Label wraps the control so assistive tech (and tests) associate them without ids. */
 export function Field({ label, hint, error, required, children, className }: { label: string; hint?: ReactNode; error?: string | null; required?: boolean; children: ReactNode; className?: string }) {
   return (
     <div className={cn('space-y-1', className)}>
-      <Label>
-        {label}
-        {required ? <span className="text-danger ml-0.5">*</span> : null}
-      </Label>
-      {children}
+      <label className="block">
+        <span className="text-fg mb-1 block text-sm font-medium">
+          {label}
+          {required ? <span className="text-danger ml-0.5">*</span> : null}
+        </span>
+        {children}
+      </label>
       {error ? <p className="text-danger text-xs">{error}</p> : hint ? <p className="text-fg-subtle text-xs">{hint}</p> : null}
     </div>
   )

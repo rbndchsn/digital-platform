@@ -21,6 +21,7 @@ const all = [
   { name: '05-engagements', persona: 'Ingrid Vos', path: '/engagements' },
   { name: '06-engagements-past', persona: 'Ingrid Vos', path: '/engagements?tab=past' },
   { name: '07-projects', persona: 'Ingrid Vos', path: '/projects' },
+  { name: '08-request-wizard', persona: 'Ingrid Vos', path: '/engagements/new' },
 ]
 const only = process.env.SHOTS?.split(',')
 const shots = only ? all.filter((s) => only.some((o) => s.name.startsWith(o))) : all

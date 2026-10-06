@@ -175,11 +175,13 @@ Tick sub-items as you go; tick the step only when its "Done when" holds.
   - [x] Projects list with a functional "New project" dialog; project detail with programme, country, registry ID, ongoing and past engagements, "Request work on this project".
   - Done when: storyline chapter 1 runs without a dead click. ✔ (download-all lives on the service workspace, step 7)
 
-- [ ] **Step 6 — Request wizard and renewal**
-  - [ ] 5-step wizard (Project → Service type & standard → Scope & period → Attachments → Review & submit) with zod validation per step, autosave to the store as a draft, resume from Requests.
-  - [ ] Submit → status `requested`, CPF generated, notification to verifier manager, appears in staff triage.
-  - [ ] "Renew" from a closed service pre-fills the wizard.
-  - Done when: chapter 2 runs; a submitted request is visible in `/staff/triage`.
+- [x] **Step 6 — Request wizard and renewal**
+  - [x] 5-step wizard (Project → Service type & standard → Scope & period → Attachments → Review & submit) with per-step validation, draft created on leaving step 2 and updated on every subsequent step ("Draft … autosaved" badge), resume from Engagements › Drafts via `?draft=`, project pre-selection via `?project=`, inline "New project", a side panel listing the documents the chosen template will require, and the generated pre-engagement form on the review step.
+  - [x] Attachments use the shared `UploadDialog` ("show, don't do": drop zone, inert Choose file / Choose folder, editable recorded filename, animated progress, Simulate upload).
+  - [x] Submit → `requested`, CPF data on the service, notification to the verifier manager, appears in the triage queue (verified by the api storyline test; the triage screen itself is step 8).
+  - [x] "Renew" (Engagements › Past) drafts from the closed service and opens the wizard at the scope step.
+  - [x] Playwright `wizard.spec.ts` runs chapter 2 in Chromium. `Field` now wraps its control in the label (accessible names).
+  - Done when: chapter 2 runs; a submitted request is visible in `/staff/triage`. ✔ (queue UI in step 8)
 
 - [ ] **Step 7 — Service workspace (client and staff views)**
   - [ ] Overview: phase rail with expandable steps and status chips, next-action banner, team contacts with roles, key dates, quote/invoice card, download-all.
@@ -293,7 +295,12 @@ Tick sub-items as you go; tick the step only when its "Done when" holds.
 | `demo/src/components/shell/*` | App shell, nav config, notifications bell, demo panel |
 | `demo/src/routes/__root.tsx`, `_app.tsx`, `sign-in.tsx`, `verify.$code.tsx` | Providers, guarded layout, sign-in, public statement route |
 | `demo/src/routes/_app/**` | One file per screen; placeholders until their step |
-| `demo/scripts/screenshot.mjs` | Screenshot capture from the production build |
+| `demo/scripts/screenshot.mjs` | Screenshot capture from the production build (`SHOTS=02,05` filters) |
+| `demo/scripts/probe.mjs` | Loads pages as a persona and prints console/page errors |
+| `demo/src/components/service-table.tsx` | Shared engagements table (ongoing/past/drafts) |
+| `demo/src/components/upload-dialog.tsx` | Show-don't-do upload dialog backed by `documents.simulateUpload` |
+| `demo/src/components/stepper.tsx` | Wizard progress header |
+| `demo/e2e/wizard.spec.ts` | Chapter 2 in the browser |
 
 ---
 
@@ -307,7 +314,8 @@ Tick sub-items as you go; tick the step only when its "Done when" holds.
 | 2026-10-05 | 2 | 21ad0c7 | Domain layer: enums, zod schemas, units + GWP, inventory and decarb compute, 8 workflow templates, instantiate, 7 state machines, next-action, policy. 46 unit tests. | Schema coverage counted in step 3 via fixture validation |
 | 2026-10-06 | 3 | 7f72cac | Mock backend: store with sessionStorage snapshot, latency toggles, programmatic seed for the whole storyline, 15 api modules, fixture validation and end-to-end storyline tests. 69 tests. | Storyline §2.4 adjusted: the opinion chapter (8) runs on the insetting service `svc_nw_decarb_2025`, the evidence and findings chapters (5, 6) on the inventory service `svc_nw_inv_2025` |
 | 2026-10-06 | 4 | c27b0b7 | App shell, sign-in with persona picker, navigation for both portals, notifications bell, demo panel, UI primitives and domain components, feature previews, Integrations/Account/Organisation pages, placeholder routes for every nav entry, Playwright smoke tests in Chromium. | Lint reports 5 fast-refresh warnings (hooks exported next to components); harmless, left as warnings |
-| 2026-10-06 | 5 | (this commit) | Client home, engagements lists (ongoing/past/drafts, renewal), projects list/detail with create dialog, shared service table. | — |
+| 2026-10-06 | 5 | a92c47a | Client home, engagements lists (ongoing/past/drafts, renewal), projects list/detail with create dialog, shared service table. | Fixed Button `asChild` slotting; added `scripts/probe.mjs` to surface runtime errors per page |
+| 2026-10-06 | 6 | (this commit) | Request wizard with autosave/resume/renewal, upload dialog, stepper, wizard e2e test. | React Hooks v7 forbids setState in effects: dialogs derive defaults, the wizard mounts with initial values |
 
 ---
 
