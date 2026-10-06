@@ -201,10 +201,12 @@ Tick sub-items as you go; tick the step only when its "Done when" holds.
   - [x] Playwright `staff.spec.ts`: triage accept + request document, audit-plan acceptance (chapter 4), COI approval, finance mark paid.
   - Done when: chapters 3 and 4 run end to end across persona switches. ✔
 
-- [ ] **Step 9 — Findings**
-  - [ ] Findings tab table, raise-finding dialog (staff), thread view with responses and attachments, respond (client), under review / close / reopen / withdraw (staff), due-date badges.
-  - [ ] Blocking CAR prevents manager approval of an iteration (surfaced as a clear message).
-  - Done when: chapter 6 runs and the finding appears in the Service Log and notifications.
+- [x] **Step 9 — Findings**
+  - [x] Findings tab: table (number, type badge, title, severity, responses, step, assignee, due with overdue, status), blocking banner, raise-finding dialog for verifier roles (type, severity, title, description, step, client assignee, due date).
+  - [x] Thread view: finding header with blocking badge, description, chat-style thread (verifier left, client right) with attachments, client respond composer with "Attach evidence" (upload dialog → linked to the response), verifier comment / mark under review / close / withdraw / reopen.
+  - [x] Blocking CAR prevents manager approval (api rule; surfaced in the opinion tab in step 10 and in the next-action label).
+  - [x] Playwright `findings.spec.ts` runs chapter 6 across the two personas.
+  - Done when: chapter 6 runs and the finding appears in the Service Log and notifications. ✔
 
 - [ ] **Step 10 — Opinion iterations, issuance, statement, public verify**
   - [ ] Opinion tab: iteration accordions (bundle by document role, IR decision, manager decision, banners), staff actions (create iteration, attach documents, submit for IR, IR decide with checklist, manager decide with checklist, issue).
@@ -327,7 +329,8 @@ Tick sub-items as you go; tick the step only when its "Done when" holds.
 | 2026-10-06 | 5 | a92c47a | Client home, engagements lists (ongoing/past/drafts, renewal), projects list/detail with create dialog, shared service table. | Fixed Button `asChild` slotting; added `scripts/probe.mjs` to surface runtime errors per page |
 | 2026-10-06 | 6 | e8b6074 | Request wizard with autosave/resume/renewal, upload dialog, stepper, wizard e2e test. | React Hooks v7 forbids setState in effects: dialogs derive defaults, the wizard mounts with initial values |
 | 2026-10-06 | 7 | e3ca156 | Service workspace: layout, overview, step detail with slots/approvals/team/COI, documents, Gantt, Service Log; document and approval rows; COI gate; workspace e2e tests. | Step 8 items already present where natural (step transitions, approvals, team nomination, agreement acceptance); step 8 adds the staff pages |
-| 2026-10-06 | 8 | (this commit) | Staff pages: My Work, triage queue, all services, finance; staff e2e tests. | — |
+| 2026-10-06 | 8 | 08dd57d | Staff pages: My Work, triage queue, all services, finance; staff e2e tests. | — |
+| 2026-10-06 | 9 | (this commit) | Findings list and thread with attachments and transitions; findings e2e test. | — |
 
 ---
 
