@@ -389,7 +389,7 @@ function ReassignDialog({ member, serviceId, onClose }: { member: TeamView; serv
     setLoaded(true)
     void team.candidates(serviceId).then(setCandidates)
   }
-  const m = useAppMutation((reason: string) => team.reassign(serviceId, member.id, toUserId, reason), { successMessage: (t) => `${roleLabel(member.role)} reassigned to ${t.find((x) => x.userId === toUserId)?.name ?? 'the new member'}; they must declare conflicts of interest.`, onSuccess: onClose })
+  const m = useAppMutation((reason: string) => team.reassign(serviceId, member.id, toUserId, reason), { successMessage: (r) => `${roleLabel(member.role)} reassigned to ${r.team.find((x) => x.userId === toUserId)?.name ?? 'the new member'}; they must declare conflicts of interest.${r.checks[0]?.warnings.length ? ` ${r.checks[0].warnings.length} competence or rotation warning(s) overridden with your reason.` : ''}`, onSuccess: onClose })
   return (
     <ReasonDialog
       open
@@ -428,7 +428,7 @@ function NominateDialog({ open, onOpenChange, serviceId, existing }: { open: boo
           .filter(([, r]) => r)
           .map(([userId, role]) => ({ userId, role: role as ServiceRole })),
       ),
-    { successMessage: 'Team nominated; each member has been asked to declare conflicts of interest.', onSuccess: () => { onOpenChange(false); setPicked({}) } },
+    { successMessage: (r) => `Team nominated (competence and rotation checks ${r.checks.some((c) => c.warnings.length) ? 'passed with overridden warnings' : 'passed'}); each member has been asked to declare conflicts of interest.`, onSuccess: () => { onOpenChange(false); setPicked({}) } },
   )
   const ROLES: ServiceRole[] = ['verifier_team_leader', 'verifier_auditor', 'verifier_technical_expert', 'verifier_independent_reviewer', 'verifier_coordinator']
   return (

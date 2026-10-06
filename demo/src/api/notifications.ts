@@ -19,6 +19,9 @@ export function toView(n: Notification): NotificationView {
   if (svc && n.entity_type === 'coi') href = `/engagements/${svc.id}`
   if (n.entity_type === 'inventory' && n.entity_id) href = `/records/inventories/${n.entity_id}`
   if (n.entity_type === 'decarb_unit_record' && n.entity_id) href = `/records/decarb-units/${n.entity_id}`
+  // PRD v0.3: cases open on the register of the viewer's side; competence reminders open the Competence page.
+  if (n.entity_type === 'case') href = s.find('organisations', n.org_id)?.type === 'verifier' ? '/staff/cases' : '/organisation?tab=cases'
+  if (n.entity_type === 'competence') href = '/staff/competence'
   return { ...n, serviceReference: svc?.reference ?? null, href }
 }
 

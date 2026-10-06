@@ -182,6 +182,34 @@ describe('storyline preconditions (plan_v1 §2.4)', () => {
     expect(a.label).toMatch(/iteration 2/)
     expect(seed.services.find((s) => s.id === SVC.nwDecarb2025)!.status).toBe('opinion_review')
   })
+  it('ch.13: the PCF 2025 iteration waits for the independent reviewer with a materiality warning; Helena is involved', () => {
+    const a = computeNextAction(snapshotFrom(seed, SVC.nwPcf2025))!
+    expect(a.action).toBe('ir_decide')
+    const it = seed.iterations.find((i) => i.service_id === SVC.nwPcf2025)!
+    expect(it.materiality_warning).toBe(true)
+    expect(it.aggregation_json?.exceeds).toBe(true)
+    expect(seed.materialitySettings.find((m) => m.service_id === SVC.nwPcf2025)?.status).toBe('approved')
+    expect(seed.auditEvents.some((e) => e.service_id === SVC.nwPcf2025 && e.event_type === 'record.verified_value_edited' && e.actor_user_id === USR.mgr)).toBe(true)
+    expect(seed.memberships.filter((m) => m.role === 'verifier_manager').length).toBe(2)
+  })
+  it('ch.14: the PCF 2024 statement is withdrawn and the 2024 decarb statement superseded', () => {
+    const withdrawn = seed.statements.find((s) => s.service_id === SVC.nwPcf2024)!
+    expect(withdrawn.status).toBe('withdrawn')
+    expect(seed.emissionFactors.filter((e) => e.service_id === SVC.nwPcf2024).every((e) => e.status === 'withdrawn' && e.assurance_status === 'withdrawn')).toBe(true)
+    const decarb = seed.statements.filter((s) => s.service_id === SVC.nwDecarb2024).sort((a, b) => (a.issued_at < b.issued_at ? -1 : 1))
+    expect(decarb.map((s) => s.status)).toEqual(['superseded', 'issued'])
+    expect(decarb[0].superseded_by_id).toBe(decarb[1].id)
+    expect(new Set(seed.statements.map((s) => s.public_code)).size).toBe(seed.statements.length)
+    expect(seed.postIssuanceEvents.map((e) => e.outcome).sort()).toEqual(['revise', 'withdraw'])
+  })
+  it('ch.15 / 16: an appeal under investigation, an overdue complaint, competence profiles and legacy history', () => {
+    expect(seed.cases.find((c) => c.kind === 'appeal')?.status).toBe('under_investigation')
+    expect(seed.cases.find((c) => c.kind === 'complaint')?.status).toBe('received')
+    expect(seed.competenceProfiles.length).toBe(7)
+    expect(seed.competenceQualifications.some((q) => q.kind === 'independent_reviewer')).toBe(true)
+    expect(seed.legacyEngagements.length).toBe(2)
+    expect(seed.nominationChecks.filter((c) => c.overridden).length).toBeGreaterThanOrEqual(3)
+  })
   it('ch.9: closed services have paid invoices and verified inventories', () => {
     const inv = seed.invoices.find((i) => i.service_id === SVC.nwInv2024 && i.kind === 'invoice')!
     expect(inv.status).toBe('paid')

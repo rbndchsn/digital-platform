@@ -1,7 +1,8 @@
 /** Client home, staff "My Work" and triage queue (PRD FR-54). */
 import type { ServiceStatus } from '@/domain/enums'
 import { todayIso } from '@/mock/clock'
-import { authContext, authorize, call, getStore, orgName } from './core'
+import { authContext, authorize, call, getStore, nowIsoString, orgName } from './core'
+import { eligibleManagersSync } from './involved'
 import { listSync as notificationsSync, type NotificationView } from './notifications'
 import { toListItem, type ServiceListItem } from './services'
 
@@ -12,11 +13,13 @@ export interface ClientDashboard {
   needsAction: ServiceListItem[]
   waitingOnVerifier: ServiceListItem[]
   notifications: NotificationView[]
-  records: { inventories: number; verifiedInventories: number; emissionFactors: number; decarbRecords: number; verifiedUnits: number }
-  latestVerified: { year: number; scope1: number; scope2: number; scope3: number; statementCode: string | null } | null
+  records: { inventories: number; verifiedInventories: number; emissionFactors: number; decarbRecords: number; verifiedUnits: number; withdrawn: number }
+  latestVerified: { year: number; scope1: number; scope2: number; scope3: number; statementCode: string | null; levelOfAssurance: string | null } | null
+  /** PRD v0.3: open complaints and appeals of the organisation. */
+  casesOpen: number
 }
 
-const ONGOING: ServiceStatus[] = ['requested', 'triage', 'contracting', 'planning', 'execution', 'opinion_review', 'issued', 'on_hold']
+const ONGOING: ServiceStatus[] = ['requested', 'triage', 'contracting', 'planning', 'execution', 'opinion_review', 'issued', 'on_hold', 'in_revision']
 
 export async function client(): Promise<ClientDashboard> {
   return call(() => {
@@ -28,8 +31,9 @@ export async function client(): Promise<ClientDashboard> {
     const needsAction = ongoing.filter((x) => x.actionForMe).sort((a, b) => ((a.nextAction?.due ?? '9') < (b.nextAction?.due ?? '9') ? -1 : 1))
     const waiting = ongoing.filter((x) => !x.actionForMe && x.nextAction)
     const inventories = s.where('inventories', (i) => i.org_id === ctx.orgId && !i.deleted_at)
-    const latest = inventories.filter((i) => i.verified_totals_json).sort((a, b) => b.year - a.year)[0]
+    const latest = inventories.filter((i) => i.verified_totals_json && i.status === 'verified').sort((a, b) => b.year - a.year)[0]
     const decarb = s.where('decarbRecords', (d) => d.org_id === ctx.orgId && !d.deleted_at)
+    const efs = s.where('emissionFactors', (e) => e.org_id === ctx.orgId && !e.deleted_at)
     return {
       year,
       ongoing: ongoing.length,
@@ -40,13 +44,15 @@ export async function client(): Promise<ClientDashboard> {
       records: {
         inventories: inventories.length,
         verifiedInventories: inventories.filter((i) => i.status === 'verified').length,
-        emissionFactors: s.where('emissionFactors', (e) => e.org_id === ctx.orgId && !e.deleted_at).length,
+        emissionFactors: efs.length,
         decarbRecords: decarb.length,
         verifiedUnits: decarb.filter((d) => d.status === 'verified').reduce((a, d) => a + (d.verified_reduction_units ?? 0) + (d.verified_removal_units ?? 0), 0),
+        withdrawn: [...inventories, ...efs, ...decarb].filter((r) => r.assurance_status === 'withdrawn').length,
       },
       latestVerified: latest
-        ? { year: latest.year, scope1: latest.verified_totals_json!.by_scope['1'] ?? 0, scope2: latest.verified_totals_json!.by_scope['2'] ?? 0, scope3: latest.verified_totals_json!.by_scope['3'] ?? 0, statementCode: latest.service_id ? (s.where('statements', (st) => st.service_id === latest.service_id)[0]?.public_code ?? null) : null }
+        ? { year: latest.year, scope1: latest.verified_totals_json!.by_scope['1'] ?? 0, scope2: latest.verified_totals_json!.by_scope['2'] ?? 0, scope3: latest.verified_totals_json!.by_scope['3'] ?? 0, statementCode: latest.assurance_ref ? (s.find('statements', latest.assurance_ref)?.public_code ?? null) : null, levelOfAssurance: latest.level_of_assurance }
         : null,
+      casesOpen: s.where('cases', (c) => c.org_id === ctx.orgId && ['received', 'acknowledged', 'under_investigation'].includes(c.status)).length,
     }
   })
 }
@@ -60,6 +66,10 @@ export interface StaffDashboard {
   coiPending: { serviceId: string; serviceReference: string; coiId: string; role: string }[]
   notifications: NotificationView[]
   byClient: { orgId: string; orgName: string; ongoing: number }[]
+  /** PRD v0.3: open and overdue complaints and appeals (managers), decisions waiting for a manager outside the involved set. */
+  casesOpen: number
+  casesOverdue: number
+  decisionsWaiting: { serviceId: string; serviceReference: string; iterationNo: number; eligible: boolean }[]
 }
 
 export async function staff(): Promise<StaffDashboard> {
@@ -79,6 +89,11 @@ export async function staff(): Promise<StaffDashboard> {
       .map((x) => ({ serviceId: x.t.service_id, serviceReference: s.get('services', x.t.service_id).reference, coiId: x.coi!.id, role: x.t.service_role }))
     const clients = new Map<string, number>()
     for (const x of all.filter((y) => ONGOING.includes(y.status))) clients.set(x.org_id, (clients.get(x.org_id) ?? 0) + 1)
+    const now = nowIsoString()
+    const openCases = ctx.orgRole === 'verifier_manager' ? s.where('cases', (c) => ['received', 'acknowledged', 'under_investigation'].includes(c.status)) : []
+    const decisionsWaiting = ctx.orgRole === 'verifier_manager'
+      ? s.where('iterations', (i) => i.status === 'manager_review').map((i) => ({ serviceId: i.service_id, serviceReference: s.get('services', i.service_id).reference, iterationNo: i.iteration_no, eligible: eligibleManagersSync(i.service_id).includes(ctx.userId) }))
+      : []
     return {
       year,
       ongoing: all.filter((x) => ONGOING.includes(x.status)).length,
@@ -88,6 +103,9 @@ export async function staff(): Promise<StaffDashboard> {
       coiPending,
       notifications: notificationsSync({ limit: 6 }),
       byClient: [...clients.entries()].map(([orgId, ongoing]) => ({ orgId, orgName: orgName(orgId), ongoing })).sort((a, b) => b.ongoing - a.ongoing),
+      casesOpen: openCases.length,
+      casesOverdue: openCases.filter((c) => (c.status === 'received' && c.acknowledge_target_at < now) || c.decide_target_at < now).length,
+      decisionsWaiting,
     }
   })
 }

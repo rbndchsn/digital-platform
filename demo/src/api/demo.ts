@@ -25,6 +25,10 @@ export const CHAPTERS: Chapter[] = [
   { no: 10, title: 'The future, in preview', persona: 'usr_ingrid', path: '/integrations', say: 'API, MCP and webhooks are visible but not yet enabled; interest is captured and seen by VERIFASSUR.' },
   { no: 11, title: 'Administration', persona: 'usr_sam', path: '/admin', say: 'Sam sees the whole platform and the money, manages users and settings, and cannot touch a single engagement.' },
   { no: 12, title: 'Manager override', persona: 'usr_helena', path: '/engagements/svc_nw_inv_2025/phases', say: 'Helena forces a stuck step with a mandatory reason; the log shows the override and the client’s next action moves.' },
+  { no: 13, title: 'Materiality and decision separation', persona: 'usr_tomas', path: '/engagements/svc_nw_pcf_2025/opinion', say: 'The aggregation panel warns that misstatements exceed materiality; Tomas acknowledges. Helena edited a figure, so the decision is refused to her and Marc takes it.' },
+  { no: 14, title: 'Revision and withdrawal', persona: 'usr_helena', path: '/engagements/svc_nw_pcf_2024/opinion', say: 'A withdrawn statement, its public page and the records marked "assurance withdrawn"; Helena opens a revision on the 2024 decarb_units and Marc decides.' },
+  { no: 15, title: 'Complaints and appeals', persona: 'usr_ingrid', path: '/organisation?tab=cases', say: 'Ingrid follows her appeal; Marc, outside the involved set, handles and decides it with a recorded outcome.' },
+  { no: 16, title: 'Competence and rotation', persona: 'usr_helena', path: '/engagements/svc_atlas_decarb_2025/phases', say: 'The team panel shows qualifications, expiry and rotation history; a warning needs a reason, an unqualified reviewer is blocked.' },
 ]
 
 export function network() {

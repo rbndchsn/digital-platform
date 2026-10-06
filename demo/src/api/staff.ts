@@ -1,8 +1,9 @@
 /** Staff administration: clients, templates, users of an org. */
 import type { FlagState } from '@/domain/enums'
-import type { WorkflowTemplate } from '@/domain/workflow/template.schema'
-import { authorize, call, getStore } from './core'
+import { WorkflowTemplate as WorkflowTemplateSchema, validateTemplate, type WorkflowTemplate } from '@/domain/workflow/template.schema'
+import { ApiError, audit, authorize, call, getStore, userName } from './core'
 import { listSync as featuresSync, type FeatureView } from './features'
+import { requireReason } from './steps'
 
 export interface ClientRow {
   orgId: string
@@ -48,6 +49,48 @@ export async function templates(): Promise<WorkflowTemplate[]> {
   return call(() => {
     authorize('staff.templates')
     return getStore().all('templates')
+  })
+}
+
+export interface TemplatePatch {
+  /** Step key → new value of the lock (PRD v0.3 FR-80). */
+  nonOverridable?: Record<string, boolean>
+  materialityDefaults?: WorkflowTemplate['materiality_defaults']
+  competenceRequirements?: WorkflowTemplate['competence_requirements']
+  rotationRules?: WorkflowTemplate['rotation_rules']
+  complaintTargets?: WorkflowTemplate['complaint_targets']
+  blockingFindingTypes?: WorkflowTemplate['blocking_finding_types']
+  retentionYears?: number | null
+}
+
+/**
+ * Manager edits a template (PRD FR-10, FR-80): a reason is mandatory, the result must validate, and a new version
+ * becomes active for new services. Running services keep their copied steps (§8.5).
+ */
+export async function updateTemplate(templateId: string, patch: TemplatePatch, reason: string): Promise<WorkflowTemplate> {
+  return call(() => {
+    const ctx = authorize('template.edit')
+    const r = requireReason(reason)
+    const s = getStore()
+    const current = s.get('templates', templateId)
+    const next: WorkflowTemplate = WorkflowTemplateSchema.parse(JSON.parse(JSON.stringify(current)))
+    if (patch.nonOverridable) for (const p of next.phases) for (const st of p.steps) if (patch.nonOverridable[st.key] !== undefined) st.non_overridable = patch.nonOverridable[st.key]
+    if (patch.materialityDefaults !== undefined) next.materiality_defaults = patch.materialityDefaults
+    if (patch.competenceRequirements) next.competence_requirements = patch.competenceRequirements
+    if (patch.rotationRules) next.rotation_rules = patch.rotationRules
+    if (patch.complaintTargets) next.complaint_targets = patch.complaintTargets
+    if (patch.blockingFindingTypes) next.blocking_finding_types = patch.blockingFindingTypes
+    if (patch.retentionYears !== undefined) next.retention_years = patch.retentionYears
+    const errors = validateTemplate(next)
+    if (errors.length) throw new ApiError('validation', errors.join(' '), { code: 'template_invalid', errors })
+    next.version = current.version + 1
+    next.last_edit_reason = r
+    // The previous version stays in the table (inactive) so running services can still be read against it.
+    s.update('templates', templateId, { is_active: false }, ctx.userId)
+    const row: WorkflowTemplate = { ...next, id: `${templateId}_v${next.version}` }
+    s.insert('templates', row)
+    audit(ctx, { orgId: 'org_verifassur', serviceId: null, eventType: 'template.edited', entityType: 'workflow_template', entityId: row.id, summary: `Template "${current.name}" saved as version ${next.version} by ${userName(ctx.userId)} (${Object.keys(patch).join(', ')}) — ${r}`, reason: r, before: { version: current.version, non_overridable: Object.fromEntries(current.phases.flatMap((p) => p.steps).map((st) => [st.key, st.non_overridable])) }, after: { version: next.version, non_overridable: Object.fromEntries(next.phases.flatMap((p) => p.steps).map((st) => [st.key, st.non_overridable])), patch } })
+    return row
   })
 }
 

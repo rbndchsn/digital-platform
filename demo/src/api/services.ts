@@ -7,10 +7,10 @@ import { instantiateTemplate } from '@/domain/workflow/instantiate'
 import { canStartStep, serviceMachine, type StepAction } from '@/domain/workflow/machines'
 import type { NextAction } from '@/domain/workflow/next-action'
 import { computeNextAction, isActionForViewer } from '@/domain/workflow/next-action'
-import { templateFor } from '@/domain/workflow/templates'
 import { snapshotFrom } from '@/mock/snapshot'
 import { todayIso } from '@/mock/clock'
-import { ApiError, audit, auditNow, authContext, authorize, call, getStore, newId, notify, nowIsoString, orgName, serviceAudience, serviceResource, userName } from './core'
+import { ApiError, activeTemplateFor, audit, auditNow, authContext, authorize, call, getStore, newId, notify, nowIsoString, orgName, serviceAudience, serviceResource, userName } from './core'
+import { vvbCheckSync } from './competence'
 import { currentStepOf, overrideStepInternal, requireReason, startFirstStep, transitionStepInternal } from './steps'
 
 export { syncServiceStatus, refreshPhaseStatus } from './steps'
@@ -263,7 +263,7 @@ export function getSync(serviceId: string): ServiceDetail {
     },
     statementCode: currentStatement(serviceId)?.public_code ?? null,
     statementStatus: currentStatement(serviceId)?.status ?? null,
-    assuranceApplies: templateFor(service.service_type).assurance.applies,
+    assuranceApplies: activeTemplateFor(service.service_type).assurance.applies,
     myRoles,
     canEdit: ctx.orgType === 'client' ? service.status === 'draft' : false,
     clientContactName: service.client_contact_user_id ? userName(service.client_contact_user_id) : null,
@@ -307,7 +307,7 @@ export async function createDraft(input: DraftInput): Promise<Service> {
     const s = getStore()
     const project = s.get('projects', input.projectId)
     if (project.org_id !== ctx.orgId) throw new ApiError('forbidden', 'Project belongs to another organisation')
-    const template = templateFor(input.serviceType)
+    const template = activeTemplateFor(input.serviceType)
     const svc: Service = {
       ...auditNow(ctx.userId),
       id: newId('svc'),
@@ -356,7 +356,7 @@ export async function updateDraft(serviceId: string, patch: Partial<DraftInput>)
     if (patch.periodEnd) next.period_end = patch.periodEnd
     if (patch.targetOpinionDate !== undefined) next.target_opinion_date = patch.targetOpinionDate
     if (patch.serviceType && patch.serviceType !== svc.service_type) {
-      const template = templateFor(patch.serviceType)
+      const template = activeTemplateFor(patch.serviceType)
       next.service_type = patch.serviceType
       next.template_id = template.id
       next.template_version = template.version
@@ -364,7 +364,7 @@ export async function updateDraft(serviceId: string, patch: Partial<DraftInput>)
       next.level_of_assurance = template.assurance.applies ? (svc.level_of_assurance === 'not_applicable' ? template.assurance.default : svc.level_of_assurance) : 'not_applicable'
     }
     if (patch.levelOfAssurance) {
-      const template = templateFor(patch.serviceType ?? svc.service_type)
+      const template = activeTemplateFor(patch.serviceType ?? svc.service_type)
       if (template.assurance.applies && patch.levelOfAssurance !== 'not_applicable') next.level_of_assurance = patch.levelOfAssurance
     }
     if (patch.projectId) next.project_id = patch.projectId
@@ -379,7 +379,7 @@ export async function submit(serviceId: string): Promise<Service> {
     const s = getStore()
     const svc = s.get('services', serviceId)
     const { state } = serviceMachine.apply(svc.status, 'submit')
-    const template = templateFor(svc.service_type)
+    const template = activeTemplateFor(svc.service_type)
     const inst = instantiateTemplate({ serviceId, template, startDate: todayIso(), now: nowIsoString(), actorId: ctx.userId, newId })
     for (const p of inst.phases) s.insert('phases', p)
     for (const st of inst.steps) s.insert('steps', st)
@@ -397,7 +397,7 @@ export async function renew(serviceId: string): Promise<Service> {
     const ctx = authorize('service.renew', serviceResource(serviceId))
     const s = getStore()
     const src = s.get('services', serviceId)
-    const template = templateFor(src.service_type)
+    const template = activeTemplateFor(src.service_type)
     const shift = (d: string) => `${Number(d.slice(0, 4)) + 1}${d.slice(4)}`
     const svc: Service = {
       ...src,
@@ -430,14 +430,25 @@ export async function renew(serviceId: string): Promise<Service> {
 }
 
 // ---------------------------------------------------------------- triage and status (verifier)
+/** PRD v0.3 FR-98: the VVB-level rotation history shown on the triage card (warn only). */
+export async function triageCheck(serviceId: string): Promise<{ items: { requirement: string; result: string; detail: string; count: number; chain: string[] }[] }> {
+  return call(() => {
+    authorize('service.read', serviceResource(serviceId))
+    return { items: vvbCheckSync(serviceId).map((i) => ({ requirement: i.requirement, result: i.result, detail: i.detail, count: i.count, chain: i.chain })) }
+  })
+}
+
 export async function triage(serviceId: string, decision: 'accept' | 'decline', reason?: string): Promise<Service> {
   return call(() => {
     const ctx = authorize('service.triage', serviceResource(serviceId))
     const s = getStore()
     const svc = s.get('services', serviceId)
     const { state } = serviceMachine.apply(svc.status, decision === 'accept' ? 'triage_accept' : 'triage_decline')
-    const updated = s.update('services', serviceId, { status: state, on_hold_reason: decision === 'decline' ? (reason ?? null) : null }, ctx.userId)
-    audit(ctx, { orgId: svc.org_id, serviceId, eventType: decision === 'accept' ? 'service.triaged' : 'service.declined', entityType: 'service', entityId: serviceId, summary: decision === 'accept' ? `Request accepted for ${svc.standard} by ${userName(ctx.userId)}` : `Request declined by ${userName(ctx.userId)}: ${reason ?? ''}`, before: { status: svc.status }, after: { status: state } })
+    // PRD v0.3 FR-98: the VVB-level rotation check is recorded with the triage decision.
+    const vvb = vvbCheckSync(serviceId).map(({ key, requirement, result, detail, count, chain }) => ({ key, requirement, result, detail, count, chain }))
+    const updated = s.update('services', serviceId, { status: state, on_hold_reason: decision === 'decline' ? (reason ?? null) : null, triage_check_json: vvb.length ? { items: vvb, decided_by: ctx.userId, decided_at: nowIsoString() } : null }, ctx.userId)
+    const warn = vvb.filter((i) => i.result === 'warning')
+    audit(ctx, { orgId: svc.org_id, serviceId, eventType: decision === 'accept' ? 'service.triaged' : 'service.declined', entityType: 'service', entityId: serviceId, summary: decision === 'accept' ? `Request accepted for ${svc.standard} by ${userName(ctx.userId)}${warn.length ? ` (rotation warning accepted: ${warn.map((w) => w.detail).join(' ')})` : ''}` : `Request declined by ${userName(ctx.userId)}: ${reason ?? ''}`, before: { status: svc.status }, after: { status: state, vvb_rotation: vvb } })
     notify(serviceAudience(serviceId, 'client'), svc.org_id, 'request_triaged', decision === 'accept' ? 'Request accepted' : 'Request declined', decision === 'accept' ? `VERIFASSUR accepted your request ${svc.reference}. Contracting has started.` : `VERIFASSUR could not accept ${svc.reference}: ${reason ?? 'no reason given'}.`, serviceId)
     if (decision === 'accept') startFirstStep(serviceId, ctx.userId)
     return updated
@@ -523,7 +534,7 @@ export async function overrideService(serviceId: string, action: ServiceOverride
     const s = getStore()
     const svc = s.get('services', serviceId)
     if (action === 'change_assurance_level') {
-      const template = templateFor(svc.service_type)
+      const template = activeTemplateFor(svc.service_type)
       const level = extra.levelOfAssurance
       if (!template.assurance.applies) throw new ApiError('validation', 'A level of assurance does not apply to this service type.')
       if (!level || level === 'not_applicable' || level === svc.level_of_assurance) throw new ApiError('validation', 'Choose a different level of assurance (limited or reasonable).')
@@ -579,9 +590,18 @@ export async function replanStep(serviceId: string, stepId: string, dates: { pla
 }
 
 // ---------------------------------------------------------------- timeline and log
+export interface TimelineTransition {
+  at: string
+  summary: string
+  actorName: string
+  eventType: string
+  override: boolean
+}
+
 export interface TimelineRow {
   id: string
   kind: 'phase' | 'step'
+  phaseId: string
   phaseKey: string
   name: string
   status: string
@@ -589,22 +609,44 @@ export interface TimelineRow {
   plannedEnd: string | null
   actualStart: string | null
   actualEnd: string | null
-  transitions: { at: string; summary: string }[]
+  nonOverridable: boolean
+  transitions: TimelineTransition[]
 }
 
-export async function timeline(serviceId: string): Promise<{ rows: TimelineRow[]; rangeStart: string; rangeEnd: string; today: string }> {
+export type MilestoneKind = 'agreement' | 'issued' | 'revised' | 'withdrawn' | 'superseded'
+
+export interface TimelineMilestone {
+  kind: MilestoneKind
+  label: string
+  at: string
+}
+
+export interface TimelineView {
+  rows: TimelineRow[]
+  milestones: TimelineMilestone[]
+  rangeStart: string
+  rangeEnd: string
+  today: string
+}
+
+const OVERRIDE_EVENTS = ['step.overridden', 'service.overridden', 'step.replanned', 'team.reassigned', 'team.check_overridden', 'service.assurance_level_changed']
+
+/** PRD FR-37 (v0.3): rows per phase and step, every status event with actor, milestones and override markers. */
+export async function timeline(serviceId: string): Promise<TimelineView> {
   return call(() => {
     authorize('service.read', serviceResource(serviceId))
     const s = getStore()
     const phases = s.where('phases', (p) => p.service_id === serviceId).sort((a, b) => a.order_no - b.order_no)
     const events = s.where('auditEvents', (e) => e.service_id === serviceId)
+    const toTransition = (e: AuditEvent): TimelineTransition => ({ at: e.occurred_at, summary: e.summary, actorName: e.actor_user_id ? userName(e.actor_user_id) : 'System', eventType: e.event_type, override: OVERRIDE_EVENTS.includes(e.event_type) })
     const rows: TimelineRow[] = []
     for (const p of phases) {
-      rows.push({ id: p.id, kind: 'phase', phaseKey: p.key, name: p.name, status: p.status, plannedStart: p.planned_start, plannedEnd: p.planned_end, actualStart: p.actual_start, actualEnd: p.actual_end, transitions: [] })
+      rows.push({ id: p.id, kind: 'phase', phaseId: p.id, phaseKey: p.key, name: p.name, status: p.status, plannedStart: p.planned_start, plannedEnd: p.planned_end, actualStart: p.actual_start, actualEnd: p.actual_end, nonOverridable: false, transitions: [] })
       for (const st of s.where('steps', (x) => x.phase_id === p.id).sort((a, b) => a.order_no - b.order_no)) {
         rows.push({
           id: st.id,
           kind: 'step',
+          phaseId: p.id,
           phaseKey: p.key,
           name: st.name,
           status: st.status,
@@ -612,13 +654,21 @@ export async function timeline(serviceId: string): Promise<{ rows: TimelineRow[]
           plannedEnd: st.planned_end,
           actualStart: st.actual_start,
           actualEnd: st.actual_end,
-          transitions: events.filter((e) => e.entity_id === st.id).map((e) => ({ at: e.occurred_at, summary: e.summary })).sort((a, b) => (a.at < b.at ? -1 : 1)),
+          nonOverridable: st.non_overridable,
+          transitions: events.filter((e) => e.entity_id === st.id).map(toTransition).sort((a, b) => (a.at < b.at ? -1 : 1)),
         })
       }
     }
-    const dates = rows.flatMap((r) => [r.plannedStart, r.plannedEnd, r.actualStart?.slice(0, 10), r.actualEnd?.slice(0, 10)]).filter(Boolean) as string[]
+    const milestones: TimelineMilestone[] = []
+    for (const e of events) {
+      if (e.event_type === 'agreement.accepted') milestones.push({ kind: 'agreement', label: 'Agreement accepted', at: e.occurred_at })
+      if (e.event_type === 'opinion.issued') milestones.push({ kind: e.summary.includes('replaces') ? 'revised' : 'issued', label: e.summary.includes('replaces') ? 'Revised opinion issued' : 'Opinion issued', at: e.occurred_at })
+      if (e.event_type === 'statement.withdrawn') milestones.push({ kind: 'withdrawn', label: 'Statement withdrawn', at: e.occurred_at })
+      if (e.event_type === 'statement.post_issuance_decided' && e.summary.includes(': revise')) milestones.push({ kind: 'revised', label: 'Revision opened', at: e.occurred_at })
+    }
+    const dates = [...rows.flatMap((r) => [r.plannedStart, r.plannedEnd, r.actualStart?.slice(0, 10), r.actualEnd?.slice(0, 10)]), ...milestones.map((m) => m.at.slice(0, 10))].filter(Boolean) as string[]
     const today = todayIso()
-    return { rows, rangeStart: [...dates, today].sort()[0], rangeEnd: [...dates, today].sort().at(-1)!, today }
+    return { rows, milestones: milestones.sort((a, b) => (a.at < b.at ? -1 : 1)), rangeStart: [...dates, today].sort()[0], rangeEnd: [...dates, today].sort().at(-1)!, today }
   })
 }
 

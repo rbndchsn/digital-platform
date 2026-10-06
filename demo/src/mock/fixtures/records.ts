@@ -73,7 +73,7 @@ function northwindLines(scale: number, year: number): LineSpec[] {
   ]
 }
 
-export function buildRecords(serviceIds: { nwInv2023: string; nwInv2024: string; nwInv2025: string; nwDecarb2024: string; nwDecarb2025: string; atlasDecarb2025: string; atlasPcf2025: string | null; nwPcf2024: string }): RecordTables {
+export function buildRecords(serviceIds: { nwInv2023: string; nwInv2024: string; nwInv2025: string; nwDecarb2024: string; nwDecarb2025: string; atlasDecarb2025: string; atlasPcf2025: string | null; nwPcf2024: string; nwPcf2025: string }): RecordTables {
   const t: RecordTables = { inventories: [], inventoryLines: [], inventoryLineGases: [], emissionFactors: [], profiles: [], profileGases: [], decarbRecords: [], documents: [], documentVersions: [], evidenceLinks: [] }
 
   // ---------------------------------------------------------------- evidence helper
@@ -133,6 +133,9 @@ export function buildRecords(serviceIds: { nwInv2023: string; nwInv2024: string;
   evidence(ORG.northwind, serviceIds.nwPcf2024, 'Milk PCF study 2024', 'Northwind_PCF_milk_2024.pdf', daysAgo(395), USR.nwAdmin, 'emission_factor', milk2024.id)
   ef({ org_id: ORG.northwind, product_name: 'Gouda 48+, 1 kg wheel', product_code: 'NW-GDA-1K', functional_unit: 'per kg', boundary: 'cradle_to_gate', method: 'iso14067', year: 2024, declared_value: 8.9, value_unit: 'kgCO2e/kg', verified_value: 8.7, status: 'verified', service_id: serviceIds.nwPcf2024, assurance_ref: 'itr_nw_pcf_2024', superseded_by_id: null, notes: null }, 400, USR.nwAdmin)
   ef({ org_id: ORG.northwind, product_name: 'Whey protein concentrate 80', product_code: 'NW-WPC-80', functional_unit: 'per kg', boundary: 'cradle_to_gate', method: 'iso14067', year: 2025, declared_value: 6.4, value_unit: 'kgCO2e/kg', verified_value: null, status: 'draft', service_id: null, assurance_ref: null, superseded_by_id: null, notes: 'Awaiting 2025 energy data for the drying line.' }, 20, USR.nwAdmin)
+  // PRD v0.3 chapter 13: the Gouda 2025 factor under verification; the manager entered a verified value above the declared one.
+  const gouda2025 = ef({ org_id: ORG.northwind, product_name: 'Gouda 48+, 1 kg wheel', product_code: 'NW-GDA-1K', functional_unit: 'per kg', boundary: 'cradle_to_gate', method: 'iso14067', year: 2025, declared_value: 8.9, value_unit: 'kgCO2e/kg', verified_value: 9.4, status: 'under_verification', service_id: serviceIds.nwPcf2025, assurance_ref: null, superseded_by_id: null, notes: 'Rennet, cultures and brine inputs added to the boundary after the 2024 review.' }, 45, USR.nwAdmin)
+  evidence(ORG.northwind, serviceIds.nwPcf2025, 'Gouda PCF study 2025', 'Northwind_PCF_gouda_2025.pdf', daysAgo(40), USR.nwAdmin, 'emission_factor', gouda2025.id)
   ef({ org_id: ORG.atlas, product_name: 'Sourdough loaf 500 g', product_code: 'AF-SRD-500', functional_unit: 'per unit', boundary: 'cradle_to_gate', method: 'iso14067', year: 2025, declared_value: 0.52, value_unit: 'kgCO2e/unit', verified_value: null, status: 'submitted', service_id: serviceIds.atlasPcf2025, assurance_ref: null, superseded_by_id: null, notes: null }, 5, USR.atlasAdmin)
 
   // ---------------------------------------------------------------- decarb_unit records

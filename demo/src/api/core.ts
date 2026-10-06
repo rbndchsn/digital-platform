@@ -2,11 +2,12 @@
  * Shared plumbing for the mock api layer: auth context, latency, audit, notifications, ids, errors.
  * Pages import `@/api/*` only. In Phase II every function here is replaced by `fetch` calls.
  */
-import type { NotificationType, OrgRole, ServiceRole } from '@/domain/enums'
+import type { NotificationType, OrgRole, ServiceRole, ServiceType } from '@/domain/enums'
 import type { AuthContext } from '@/domain/policy'
 import { ForbiddenError, assertCan, type Action, type Resource } from '@/domain/policy'
 import type { AuditColumns, AuditEvent, Notification, User } from '@/domain/schemas'
 import { TransitionError } from '@/domain/workflow/machines'
+import type { WorkflowTemplate } from '@/domain/workflow/template.schema'
 import { UnitError } from '@/domain/units'
 import { nowIso } from '@/mock/clock'
 import { buildSeed } from '@/mock/fixtures'
@@ -34,9 +35,9 @@ export class ApiError extends Error {
 
 export function toApiError(e: unknown): ApiError {
   if (e instanceof ApiError) return e
-  if (e instanceof ForbiddenError) return new ApiError('forbidden', e.reason ? `You cannot do that: ${e.reason}.` : 'You do not have permission for this action.')
+  if (e instanceof ForbiddenError) return new ApiError('forbidden', e.reason ? `You cannot do that: ${e.reason}.` : 'You do not have permission for this action.', { code: e.code })
   if (e instanceof NotFoundError) return new ApiError('not_found', `${e.table} ${e.id} was not found.`)
-  if (e instanceof TransitionError) return new ApiError('conflict', `This action is not available in the current state (${e.from}).`)
+  if (e instanceof TransitionError) return new ApiError('conflict', e.code === 'step_non_overridable' ? 'This step cannot be forced to completed or skipped: the template marks it non-overridable (impartiality, agreement, independent review and issuance cannot be skipped). Reopening is allowed.' : `This action is not available in the current state (${e.from}).`, e.code ? { code: e.code } : undefined)
   if (e instanceof UnitError) return new ApiError('validation', e.message, { code: e.code })
   if (e instanceof MockNetworkError) return new ApiError('network', 'The request could not reach the server. Try again.')
   if (e instanceof Error) return new ApiError('validation', e.message)
@@ -99,6 +100,32 @@ export function authorize(action: Action, resource: Resource = {}): AuthContext 
 export function serviceResource(serviceId: string): Resource {
   const svc = getStore().get('services', serviceId)
   return { orgId: svc.org_id, serviceId: svc.id, teamLeaderUserId: svc.team_leader_user_id }
+}
+
+/** The active template of a service type as stored (manager edits create new versions, PRD FR-10). */
+export function activeTemplateFor(serviceType: ServiceType): WorkflowTemplate {
+  const rows = getStore().where('templates', (t) => t.service_type === serviceType && t.is_active)
+  const t = rows.sort((a, b) => b.version - a.version)[0]
+  if (!t) throw new ApiError('not_found', `No active template for ${serviceType}`)
+  return t
+}
+
+/** Working days after a date (weekends skipped), as an ISO timestamp (PRD FR-91 targets). */
+export function addWorkingDays(fromIso: string, days: number): string {
+  const d = new Date(fromIso)
+  let left = days
+  while (left > 0) {
+    d.setUTCDate(d.getUTCDate() + 1)
+    const wd = d.getUTCDay()
+    if (wd !== 0 && wd !== 6) left--
+  }
+  return d.toISOString()
+}
+
+/** Active decision-capable managers of the verifier organisation. */
+export function managerUserIds(): string[] {
+  const s = getStore()
+  return s.where('memberships', (m) => m.org_id === 'org_verifassur' && m.role === 'verifier_manager' && m.status === 'active').map((m) => m.user_id).filter((id) => s.get('users', id).status === 'active')
 }
 
 // ---------------------------------------------------------------- rows

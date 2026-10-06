@@ -1,6 +1,8 @@
-/** Organisations, users, memberships, projects and feature flags for the investor storyline (plan_v1 §2.3–2.4). */
-import type { Announcement, AuditColumns, FeatureFlag, Membership, Organisation, PlatformSettings, Project, User } from '@/domain/schemas'
-import { daysAgo } from '../clock'
+/** Organisations, users, memberships, projects, feature flags, competence and legacy history for the investor storyline (plan_v1 §2.3–2.4). */
+import type { QualificationKind } from '@/domain/enums'
+import type { Announcement, AuditColumns, CompetenceProfile, CompetenceQualification, FeatureFlag, LegacyEngagement, Membership, Organisation, PlatformSettings, Project, User } from '@/domain/schemas'
+import { daysAgo, daysFromNow } from '../clock'
+import { seedId } from '../ids'
 
 export const ORG = {
   verifassur: 'org_verifassur',
@@ -139,6 +141,74 @@ export function featureFlags(): FeatureFlag[] {
     { key: 'agent_verification', default_state: 'preview', title: 'Agent-to-agent verification', description: 'Your agent and the VERIFASSUR auditor agent negotiate data requests and findings over MCP.', horizon: 'later', area: 'integrations' },
     { key: 'multi_verifier', default_state: 'preview', title: 'Multi-verifier recognition', description: 'Import opinions from other verification bodies with a trust level.', horizon: 'later', area: 'platform' },
     { key: 'portfolios', default_state: 'preview', title: 'Portfolios', description: 'A senior manager owns a handful of clients and their auditors; work queues, triage and rollups scoped by portfolio.', horizon: 'next', area: 'platform' },
+    { key: 'public_complaints', default_state: 'preview', title: 'Public complaint form', description: 'External parties file a complaint about VERIFASSUR through a public form and follow it with a case token.', horizon: 'next', area: 'platform' },
+  ]
+}
+
+// ---------------------------------------------------------------- competence (PRD v0.3 FR-94)
+const SCOPES = { dairyProc: 'dairy_processing', dairyFarm: 'dairy_farming', arable: 'arable_farming', renewables: 'renewable_energy', food: 'food_manufacturing' }
+const AREAS = { inventory: 'ghg_inventory', pcf: 'product_footprint', projects: 'project_reductions', soil: 'soil_carbon', refrigerants: 'refrigerants' }
+const ALL_PROGRAMMES = ['iso14064', 'iso14067', 'insetting', 'verra_vcs', 'gold_standard']
+
+interface QualSpec {
+  kind: QualificationKind
+  scopes: string[]
+  areas: string[]
+  programmes: string[]
+  from: string
+  until: string
+  note?: string
+}
+
+const QUALS: Record<string, QualSpec[]> = {
+  [USR.mgr]: [{ kind: 'lead_verifier', scopes: [SCOPES.dairyProc, SCOPES.dairyFarm, SCOPES.food], areas: [AREAS.inventory, AREAS.pcf], programmes: ['iso14064', 'iso14067', 'insetting'], from: '2024-01-01', until: '2027-12-31', note: 'IRCA GHG lead verifier; VERIFASSUR witness audit 2024.' }],
+  [USR.mgr2]: [
+    { kind: 'lead_verifier', scopes: [SCOPES.renewables, SCOPES.dairyFarm, SCOPES.arable], areas: [AREAS.inventory, AREAS.projects], programmes: ALL_PROGRAMMES, from: '2025-01-01', until: '2028-12-31' },
+    { kind: 'independent_reviewer', scopes: [SCOPES.renewables, SCOPES.dairyFarm, SCOPES.arable, SCOPES.dairyProc, SCOPES.food], areas: [AREAS.inventory, AREAS.projects, AREAS.pcf], programmes: ALL_PROGRAMMES, from: '2025-01-01', until: '2028-12-31' },
+  ],
+  [USR.tl]: [
+    { kind: 'lead_verifier', scopes: [SCOPES.dairyProc, SCOPES.dairyFarm, SCOPES.arable, SCOPES.renewables], areas: [AREAS.inventory, AREAS.pcf, AREAS.projects], programmes: ALL_PROGRAMMES, from: '2023-03-01', until: '2028-02-28', note: 'Lead on 11 engagements since 2021.' },
+    { kind: 'verifier', scopes: [SCOPES.dairyProc, SCOPES.dairyFarm, SCOPES.arable, SCOPES.renewables], areas: [AREAS.inventory, AREAS.pcf, AREAS.projects], programmes: ALL_PROGRAMMES, from: '2021-06-01', until: '2028-02-28' },
+  ],
+  [USR.aud]: [
+    { kind: 'verifier', scopes: [SCOPES.dairyProc, SCOPES.dairyFarm, SCOPES.food], areas: [AREAS.inventory, AREAS.pcf], programmes: ['iso14064', 'iso14067', 'insetting'], from: '2024-05-01', until: '2028-04-30' },
+    // Expiring soon: drives the reminder and the "expiring" badge (PRD FR-94, FR-55).
+    { kind: 'technical_expert', scopes: [SCOPES.dairyProc], areas: [AREAS.refrigerants], programmes: ['iso14064'], from: '2023-11-01', until: daysFromNow(45), note: 'F-gas handling certificate (category I).' },
+  ],
+  [USR.ir]: [{ kind: 'independent_reviewer', scopes: [SCOPES.dairyProc, SCOPES.dairyFarm, SCOPES.renewables, SCOPES.arable, SCOPES.food], areas: [AREAS.inventory, AREAS.pcf, AREAS.projects], programmes: ALL_PROGRAMMES, from: '2023-01-01', until: '2027-12-31' }],
+}
+
+const LANGUAGES: Record<string, string[]> = { [USR.mgr]: ['en', 'de', 'nl'], [USR.mgr2]: ['en', 'fr'], [USR.tl]: ['en', 'yo', 'fr'], [USR.aud]: ['en', 'ta', 'hi'], [USR.ir]: ['en', 'sv'], [USR.coord]: ['en', 'pt'], [USR.fin]: ['en', 'de'] }
+const SUMMARY: Record<string, string> = {
+  [USR.mgr]: 'Scheme manager; ISO 14064-1 and ISO 14067 lead verifier for food and dairy.',
+  [USR.mgr2]: 'Technical manager; project-based programmes (VCS, Gold Standard) and independent review.',
+  [USR.tl]: 'Lead verifier across inventories, product footprints and value-chain interventions.',
+  [USR.aud]: 'GHG auditor; refrigerant and energy data specialist.',
+  [USR.ir]: 'Independent reviewer; no engagement delivery role since 2023.',
+  [USR.coord]: 'Engagement coordinator; no verifier qualification (administrative role).',
+  [USR.fin]: 'Finance; no verifier qualification.',
+}
+
+/** One profile per staff member (not the platform administrator); managers maintain each other's (plan_v1 §8 D21). */
+export function competenceFixtures(): { profiles: CompetenceProfile[]; qualifications: CompetenceQualification[] } {
+  const a = auditAt(daysAgo(200), USR.mgr)
+  const profiles: CompetenceProfile[] = []
+  const qualifications: CompetenceQualification[] = []
+  for (const p of PEOPLE.filter((x) => x.org === ORG.verifassur && x.role !== 'platform_admin')) {
+    const editor = p.id === USR.mgr ? USR.mgr2 : USR.mgr
+    const profile: CompetenceProfile = { ...a, id: seedId('cmp'), user_id: p.id, verifier_org_id: ORG.verifassur, languages_json: LANGUAGES[p.id] ?? ['en'], summary: SUMMARY[p.id] ?? '', last_edited_by: editor, last_edited_at: daysAgo(60 + (p.id.length % 30), 11, 0) }
+    profiles.push(profile)
+    for (const q of QUALS[p.id] ?? []) qualifications.push({ ...a, id: seedId('qual'), profile_id: profile.id, kind: q.kind, sector_scopes_json: q.scopes, technical_areas_json: q.areas, programmes_json: q.programmes, valid_from: q.from, valid_until: q.until, evidence_document_id: null, note: q.note ?? null })
+  }
+  return { profiles, qualifications }
+}
+
+/** Pre-platform Northwind inventory verifications led by Marcus, so the rotation count is complete (PRD FR-98). */
+export function legacyEngagements(): LegacyEngagement[] {
+  const a = auditAt(daysAgo(150), USR.mgr)
+  return [
+    { ...a, id: seedId('leg'), verifier_org_id: ORG.verifassur, client_org_id: ORG.northwind, project_id: PRJ.nwCorp, user_id: USR.tl, service_role: 'verifier_team_leader', service_type: 'iso14064_1_inventory_verification', reference: 'VX-2022-0081', period_start: '2021-01-01', period_end: '2021-12-31', entered_by: USR.mgr, note: 'Pre-platform engagement, archived in the legacy file share.' },
+    { ...a, id: seedId('leg'), verifier_org_id: ORG.verifassur, client_org_id: ORG.northwind, project_id: PRJ.nwCorp, user_id: USR.tl, service_role: 'verifier_team_leader', service_type: 'iso14064_1_inventory_verification', reference: 'VX-2023-0094', period_start: '2022-01-01', period_end: '2022-12-31', entered_by: USR.mgr, note: 'Pre-platform engagement, archived in the legacy file share.' },
   ]
 }
 

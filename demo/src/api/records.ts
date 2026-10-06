@@ -690,30 +690,32 @@ export function writeBackVerifiedRecords(serviceId: string, statementId: string,
   const statement = s.get('statements', statementId)
   const level = statement.level_of_assurance
   const previousStatementIds = s.where('statements', (st) => st.service_id === serviceId && st.id !== statementId).map((st) => st.id)
+  // A supersession is written one second before the new write-back so the history reads newest first without ties.
+  const before = new Date(new Date(at).getTime() - 1000).toISOString()
   const supersedeOld = (type: RecordAssuranceHistory['record_type'], orgId: string, id: string, newId_: string, oldLevel: LevelOfAssurance | null, oldRef: string | null) => {
     s.update(type === 'inventory' ? 'inventories' : type === 'emission_factor' ? 'emissionFactors' : 'decarbRecords', id, { status: 'superseded', assurance_status: 'superseded', superseded_by_id: newId_ } as never, actorId)
-    if (oldRef) historyRow(orgId, type, id, oldRef, oldLevel ?? 'reasonable', 'superseded', at)
+    if (oldRef) historyRow(orgId, type, id, oldRef, oldLevel ?? 'reasonable', 'superseded', before)
   }
   for (const inv of s.where('inventories', (i) => i.service_id === serviceId)) {
     const lines = s.where('inventoryLines', (l) => l.inventory_id === inv.id && !l.deleted_at)
     const verifiedTotals = inv.verified_totals_json ?? totalsOf(lines, true)
     for (const older of s.where('inventories', (x) => x.org_id === inv.org_id && x.id !== inv.id && x.year === inv.year && x.status === 'verified')) supersedeOld('inventory', inv.org_id, older.id, inv.id, older.level_of_assurance, older.assurance_ref)
     const revising = inv.assurance_ref && previousStatementIds.includes(inv.assurance_ref)
-    if (revising) historyRow(inv.org_id, 'inventory', inv.id, inv.assurance_ref!, inv.level_of_assurance ?? level, 'superseded', at)
+    if (revising) historyRow(inv.org_id, 'inventory', inv.id, inv.assurance_ref!, inv.level_of_assurance ?? level, 'superseded', before)
     s.update('inventories', inv.id, { status: 'verified', verified_totals_json: verifiedTotals, assurance_ref: statementId, level_of_assurance: level, assurance_status: 'verified', verified_at: at }, actorId)
     historyRow(inv.org_id, 'inventory', inv.id, statementId, level, 'written_back', at)
     audit(null, { orgId: inv.org_id, serviceId, eventType: 'inventory.verified', entityType: 'inventory', entityId: inv.id, summary: `GHG inventory ${inv.year} marked verified (${level} assurance, statement ${statement.public_code})`, after: { status: 'verified', level_of_assurance: level, assurance_ref: statementId } })
   }
   for (const ef of s.where('emissionFactors', (e) => e.service_id === serviceId)) {
     for (const older of s.where('emissionFactors', (x) => x.org_id === ef.org_id && x.id !== ef.id && x.product_name === ef.product_name && x.year === ef.year && x.status === 'verified')) supersedeOld('emission_factor', ef.org_id, older.id, ef.id, older.level_of_assurance, older.assurance_ref)
-    if (ef.assurance_ref && previousStatementIds.includes(ef.assurance_ref)) historyRow(ef.org_id, 'emission_factor', ef.id, ef.assurance_ref, ef.level_of_assurance ?? level, 'superseded', at)
+    if (ef.assurance_ref && previousStatementIds.includes(ef.assurance_ref)) historyRow(ef.org_id, 'emission_factor', ef.id, ef.assurance_ref, ef.level_of_assurance ?? level, 'superseded', before)
     s.update('emissionFactors', ef.id, { status: 'verified', verified_value: ef.verified_value ?? ef.declared_value, assurance_ref: statementId, level_of_assurance: level, assurance_status: 'verified' }, actorId)
     historyRow(ef.org_id, 'emission_factor', ef.id, statementId, level, 'written_back', at)
     audit(null, { orgId: ef.org_id, serviceId, eventType: 'emission_factor.verified', entityType: 'emission_factor', entityId: ef.id, summary: `${ef.product_name} ${ef.year} marked verified (${level} assurance)`, after: { status: 'verified', level_of_assurance: level, assurance_ref: statementId } })
   }
   for (const d of s.where('decarbRecords', (r) => r.service_id === serviceId)) {
     for (const older of s.where('decarbRecords', (x) => x.org_id === d.org_id && x.id !== d.id && x.good === d.good && x.period_end.slice(0, 4) === d.period_end.slice(0, 4) && JSON.stringify(x.supply_shed_json) === JSON.stringify(d.supply_shed_json) && x.status === 'verified')) supersedeOld('decarb_unit_record', d.org_id, older.id, d.id, older.level_of_assurance, older.assurance_ref)
-    if (d.assurance_ref && previousStatementIds.includes(d.assurance_ref)) historyRow(d.org_id, 'decarb_unit_record', d.id, d.assurance_ref, d.level_of_assurance ?? level, 'superseded', at)
+    if (d.assurance_ref && previousStatementIds.includes(d.assurance_ref)) historyRow(d.org_id, 'decarb_unit_record', d.id, d.assurance_ref, d.level_of_assurance ?? level, 'superseded', before)
     s.update('decarbRecords', d.id, { status: 'verified', verified_reduction_units: d.verified_reduction_units ?? d.declared_reduction_units, verified_removal_units: d.verified_removal_units ?? d.declared_removal_units, assurance_ref: statementId, level_of_assurance: level, assurance_status: 'verified' }, actorId)
     historyRow(d.org_id, 'decarb_unit_record', d.id, statementId, level, 'written_back', at)
     audit(null, { orgId: d.org_id, serviceId, eventType: 'decarb_record.verified', entityType: 'decarb_unit_record', entityId: d.id, summary: `decarb_unit record ${d.good} ${d.period_start.slice(0, 4)} marked verified (${level} assurance)`, after: { status: 'verified', level_of_assurance: level, assurance_ref: statementId } })

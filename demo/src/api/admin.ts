@@ -10,6 +10,7 @@ import { isPlatformAdmin } from '@/domain/policy'
 import type { Announcement, AuditEvent, Membership, Organisation, PlatformSettings, User } from '@/domain/schemas'
 import { todayIso } from '@/mock/clock'
 import { ApiError, audit, auditNow, authContext, authorize, call, getStore, newId, notify, nowIsoString, orgName, userName } from './core'
+import { eligibleManagersSync } from './involved'
 import { requireReason } from './steps'
 
 const ACTIVE_SERVICE: readonly string[] = ['contracting', 'planning', 'execution', 'opinion_review', 'on_hold']
@@ -641,6 +642,24 @@ export interface AdminStats {
   concentration: { topClientName: string | null; topClientShareEngagementsPct: number; topClientShareRevenuePct: number; clientsWithOngoing: number }
   /** Money is returned only to the platform administrator (plan_v1 §8 D7). */
   money: MoneyByCurrency[] | null
+  /** PRD v0.3 FR-71: governance statistics. */
+  governance: {
+    decisionRefusals: number
+    checkOverrides: number
+    nonOverridableRefusals: number
+    materialityWarningsRaised: number
+    materialityWarningsAcknowledged: number
+    statementsRevised: number
+    statementsWithdrawn: number
+    casesReceived: number
+    casesOpen: number
+    casesOverdue: number
+    casesDecidedWithinTarget: number
+    casesDecided: number
+    qualificationsExpiring90: number
+    qualificationsExpired: number
+    pendingDecisionsWithoutEligibleManager: { serviceId: string; serviceReference: string; iterationNo: number }[]
+  }
 }
 
 function median(xs: number[]): number | null {
@@ -770,7 +789,37 @@ export async function stats(filter: StatsFilter = {}): Promise<AdminStats> {
     const topByEng = [...byClient].sort((a, b) => b.started + b.ongoing - (a.started + a.ongoing))[0]
     const engagementsTotal = byClient.reduce((a, c) => a + c.started + c.ongoing, 0) || 1
 
+    // PRD v0.3 governance statistics (FR-71), computed live from the audit log and the registers.
+    const ev = (type: string) => s.where('auditEvents', (e) => e.event_type === type && inYear(e.occurred_at) && (!svcIds.size || !e.service_id || svcIds.has(e.service_id))).length
+    const openCase = (c: { status: string }) => ['received', 'acknowledged', 'under_investigation'].includes(c.status)
+    const nowIso = nowIsoString()
+    const cases = s.where('cases', (c) => inYear(c.received_at))
+    const decidedCases = cases.filter((c) => c.decided_at)
+    const quals = s.all('competenceQualifications')
+    const daysTo = (d: string) => Math.round((new Date(`${d}T00:00:00Z`).getTime() - new Date(`${today}T00:00:00Z`).getTime()) / 86_400_000)
+    const pendingDecisions = s
+      .where('iterations', (i) => i.status === 'manager_review' && svcIds.has(i.service_id))
+      .filter((i) => eligibleManagersSync(i.service_id).length === 0)
+      .map((i) => ({ serviceId: i.service_id, serviceReference: s.get('services', i.service_id).reference, iterationNo: i.iteration_no }))
+
     return {
+      governance: {
+        decisionRefusals: ev('iteration.decision_refused'),
+        checkOverrides: ev('team.check_overridden'),
+        nonOverridableRefusals: s.where('auditEvents', (e) => e.event_type === 'step.override_refused' && inYear(e.occurred_at)).length,
+        materialityWarningsRaised: ev('materiality.warning_raised'),
+        materialityWarningsAcknowledged: ev('materiality.warning_acknowledged'),
+        statementsRevised: ev('statement.superseded'),
+        statementsWithdrawn: ev('statement.withdrawn'),
+        casesReceived: cases.length,
+        casesOpen: cases.filter(openCase).length,
+        casesOverdue: cases.filter((c) => openCase(c) && ((c.status === 'received' && c.acknowledge_target_at < nowIso) || c.decide_target_at < nowIso)).length,
+        casesDecided: decidedCases.length,
+        casesDecidedWithinTarget: decidedCases.filter((c) => c.decided_at! <= c.decide_target_at).length,
+        qualificationsExpiring90: quals.filter((q) => daysTo(q.valid_until) >= 0 && daysTo(q.valid_until) <= 90).length,
+        qualificationsExpired: quals.filter((q) => daysTo(q.valid_until) < 0).length,
+        pendingDecisionsWithoutEligibleManager: pendingDecisions,
+      },
       filters: { years, clients: clientOrgs.map((o) => ({ orgId: o.id, name: o.name })), serviceTypes: types },
       totals: {
         started: started.length,
@@ -782,7 +831,7 @@ export async function stats(filter: StatsFilter = {}): Promise<AdminStats> {
         organisations: clientOrgs.length,
         users: s.all('users').length,
         activeUsers: s.where('users', (u) => u.status === 'active').length,
-        overrideCount: s.where('auditEvents', (e) => (e.event_type === 'step.overridden' || e.event_type === 'service.overridden' || e.event_type === 'team.reassigned') && inYear(e.occurred_at)).length,
+        overrideCount: s.where('auditEvents', (e) => (e.event_type === 'step.overridden' || e.event_type === 'service.overridden' || e.event_type === 'team.reassigned' || e.event_type === 'team.check_overridden' || e.event_type === 'service.assurance_level_changed') && inYear(e.occurred_at)).length,
       },
       byYear,
       byClient,
