@@ -1,11 +1,12 @@
 /** Documents tab: grouped by category, counts, version history, download-all (PRD §7.2). */
-import { createFileRoute } from '@tanstack/react-router'
-import { Search, Upload } from 'lucide-react'
+import { Link, createFileRoute } from '@tanstack/react-router'
+import { Search, Sparkles, Upload } from 'lucide-react'
 import { useState } from 'react'
 import type { DocumentView } from '@/api/documents'
 import { DocumentRow } from '@/components/document-row'
 import { DownloadAllButton } from '@/components/download-all'
 import { EmptyState } from '@/components/empty-state'
+import { ComingBadge } from '@/components/preview-overlay'
 import { UploadDialog } from '@/components/upload-dialog'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -52,6 +53,11 @@ function Documents() {
               <Upload /> Upload supporting document
             </Button>
           ) : null}
+          <Button variant="ghost" size="sm" asChild>
+            <Link to="/preview/$key" params={{ key: 'ai_assistant' }}>
+              <Sparkles /> AI assistant <ComingBadge flagKey="ai_assistant" />
+            </Link>
+          </Button>
           <DownloadAllButton serviceId={serviceId} />
         </div>
       </div>

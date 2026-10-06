@@ -223,11 +223,12 @@ Tick sub-items as you go; tick the step only when its "Done when" holds.
   - [x] Playwright `records.spec.ts` runs chapter 7 including the L-vs-t refusal and the kg recompute (= 400 units).
   - Done when: chapter 7 runs, including the deliberate unit-mismatch error and its fix. ✔
 
-- [ ] **Step 12 — Future features in preview**
-  - [ ] Integrations: API keys, MCP server (sample tool list and a sample call transcript), webhooks, spreadsheet import — all in `PreviewOverlay` with "I'm interested".
-  - [ ] AI evidence assistant, e-signature, reports export (ISO 14064-1, ESRS E1), registry links, continuous assurance, dMRV, verifiable credentials, digital product passport — each a real-looking page in preview.
-  - [ ] Staff Clients page: flags per client (editable in demo), interest signals table.
-  - Done when: chapter 10 runs and the interest record shows on the staff page.
+- [x] **Step 12 — Future features in preview**
+  - [x] Integrations: API keys, MCP server (tool list), webhooks, spreadsheet import in `PreviewOverlay` with "I'm interested" (step 4); "further out" cards now link to their preview pages.
+  - [x] Generic `/preview/$key` page with tailored mock layouts (AI assistant with proposed slots and completeness check, e-signature sessions, report exports, registry connectors, continuous assurance, generic connected-sources mock for dMRV/VC/DPP/agents), always greyed with the Coming badge and interest capture. Entry points: "AI assistant" on the Documents tab, "Export reports" on GHG inventories, "See the preview" on the Integrations page.
+  - [x] Staff Clients page: per-client stats, feature state matrix editable by managers (hidden / preview / enabled per client, with interest counts), interest signals list with notes. Staff Templates page: read-only template browser (phases, steps, owners, durations, slots, approvals, checklists) with a show-don't-do "Edit template" dialog.
+  - [x] Playwright `previews.spec.ts` runs chapter 10.
+  - Done when: chapter 10 runs and the interest record shows on the staff page. ✔
 
 - [ ] **Step 13 — Investor polish**
   - [ ] `demo/DEMO_SCRIPT.md`: the ten chapters with exact clicks, persona switches, what to say, and recovery tips (reset, fail-next-call demo).
@@ -334,7 +335,8 @@ Tick sub-items as you go; tick the step only when its "Done when" holds.
 | 2026-10-06 | 8 | 08dd57d | Staff pages: My Work, triage queue, all services, finance; staff e2e tests. | — |
 | 2026-10-06 | 9 | 9b1eda5 | Findings list and thread with attachments and transitions; findings e2e test. | — |
 | 2026-10-06 | 10 | 95f643c | Opinion tab, review/approval dialogs, animated issuance, statement card, public verification page; opinion e2e test. | QR is a deterministic decorative pattern; Phase II renders a real QR |
-| 2026-10-06 | 11 | (this commit) | Records: inventories (list, chart, editor with gas editor and evidence), product emission factors, decarb_units portfolio and editor with what-if; records e2e test. | — |
+| 2026-10-06 | 11 | e22aa0e | Records: inventories (list, chart, editor with gas editor and evidence), product emission factors, decarb_units portfolio and editor with what-if; records e2e test. | — |
+| 2026-10-06 | 12 | (this commit) | Preview pages for future features, staff Clients (flag matrix, interest signals) and Templates pages; previews e2e test. | — |
 
 ---
 

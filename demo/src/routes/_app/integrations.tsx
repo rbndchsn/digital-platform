@@ -1,6 +1,6 @@
 /** Integrations hub: API keys, MCP, webhooks and import, all in preview (plan_v1 step 4/12). */
 import { useQuery } from '@tanstack/react-query'
-import { createFileRoute } from '@tanstack/react-router'
+import { Link, createFileRoute } from '@tanstack/react-router'
 import { Bot, FileSpreadsheet, KeyRound, Webhook } from 'lucide-react'
 import { features } from '@/api'
 import { PageHeader } from '@/components/page-header'
@@ -96,8 +96,13 @@ function Integrations() {
             {later.map((f) => (
               <Card key={f.key} className="flex flex-col">
                 <CardHeader title={f.title} description={f.description} actions={<Badge tone="primary">Coming later</Badge>} />
-                <CardContent className="mt-auto">
+                <CardContent className="mt-auto flex flex-wrap gap-2">
                   <InterestButton flagKey={f.key} size="sm" />
+                  <Button size="sm" variant="ghost" asChild>
+                    <Link to="/preview/$key" params={{ key: f.key }}>
+                      See the preview
+                    </Link>
+                  </Button>
                 </CardContent>
               </Card>
             ))}

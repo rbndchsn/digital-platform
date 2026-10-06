@@ -8,6 +8,7 @@ import { records } from '@/api'
 import type { ConsolidationApproach, GwpSet } from '@/domain/enums'
 import { EmptyState } from '@/components/empty-state'
 import { PageHeader } from '@/components/page-header'
+import { ComingBadge } from '@/components/preview-overlay'
 import { StatusChip } from '@/components/status-chip'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -34,7 +35,24 @@ function Inventories() {
   const chart = (cmp.data?.years ?? []).map((y) => ({ year: y.year, 'Scope 1': y.verified?.by_scope['1'] ?? y.declared?.by_scope['1'] ?? 0, 'Scope 2': y.verified?.by_scope['2'] ?? y.declared?.by_scope['2'] ?? 0, 'Scope 3': y.verified?.by_scope['3'] ?? y.declared?.by_scope['3'] ?? 0, verified: Boolean(y.verified) }))
   return (
     <>
-      <PageHeader title="GHG inventories" description="One inventory per reporting year, entered per scope, category and gas with evidence on every figure. Verified values are written back when an opinion is issued." actions={canEdit ? <Button onClick={() => setCreate(true)}><Plus /> New inventory</Button> : null} />
+      <PageHeader
+        title="GHG inventories"
+        description="One inventory per reporting year, entered per scope, category and gas with evidence on every figure. Verified values are written back when an opinion is issued."
+        actions={
+          <>
+            <Button variant="secondary" asChild>
+              <Link to="/preview/$key" params={{ key: 'reports_export' }}>
+                Export reports <ComingBadge flagKey="reports_export" />
+              </Link>
+            </Button>
+            {canEdit ? (
+              <Button onClick={() => setCreate(true)}>
+                <Plus /> New inventory
+              </Button>
+            ) : null}
+          </>
+        }
+      />
       {!q.data ? (
         <Skeleton className="h-64" />
       ) : q.data.length === 0 ? (

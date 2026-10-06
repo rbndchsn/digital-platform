@@ -19,6 +19,7 @@ import { Route as VerifyCodeRouteImport } from './routes/verify.$code'
 import { Route as AppEngagementsIndexRouteImport } from './routes/_app/engagements/index'
 import { Route as AppEngagementsServiceIdRouteImport } from './routes/_app/engagements/$serviceId'
 import { Route as AppEngagementsNewRouteImport } from './routes/_app/engagements/new'
+import { Route as AppPreviewKeyRouteImport } from './routes/_app/preview.$key'
 import { Route as AppProjectsIndexRouteImport } from './routes/_app/projects/index'
 import { Route as AppProjectsProjectIdRouteImport } from './routes/_app/projects/$projectId'
 import { Route as AppRecordsEmissionFactorsRouteImport } from './routes/_app/records/emission-factors'
@@ -88,6 +89,11 @@ const AppEngagementsServiceIdRoute = AppEngagementsServiceIdRouteImport.update({
 const AppEngagementsNewRoute = AppEngagementsNewRouteImport.update({
   id: '/engagements/new',
   path: '/engagements/new',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppPreviewKeyRoute = AppPreviewKeyRouteImport.update({
+  id: '/preview/$key',
+  path: '/preview/$key',
   getParentRoute: () => AppRoute,
 } as any)
 const AppProjectsIndexRoute = AppProjectsIndexRouteImport.update({
@@ -218,6 +224,7 @@ export interface FileRoutesByFullPath {
   '/verify/$code': typeof VerifyCodeRoute
   '/engagements/$serviceId': typeof AppEngagementsServiceIdRouteWithChildren
   '/engagements/new': typeof AppEngagementsNewRoute
+  '/preview/$key': typeof AppPreviewKeyRoute
   '/projects/$projectId': typeof AppProjectsProjectIdRoute
   '/records/emission-factors': typeof AppRecordsEmissionFactorsRoute
   '/staff/clients': typeof AppStaffClientsRoute
@@ -249,6 +256,7 @@ export interface FileRoutesByTo {
   '/verify/$code': typeof VerifyCodeRoute
   '/': typeof AppIndexRoute
   '/engagements/new': typeof AppEngagementsNewRoute
+  '/preview/$key': typeof AppPreviewKeyRoute
   '/projects/$projectId': typeof AppProjectsProjectIdRoute
   '/records/emission-factors': typeof AppRecordsEmissionFactorsRoute
   '/staff/clients': typeof AppStaffClientsRoute
@@ -283,6 +291,7 @@ export interface FileRoutesById {
   '/_app/': typeof AppIndexRoute
   '/_app/engagements/$serviceId': typeof AppEngagementsServiceIdRouteWithChildren
   '/_app/engagements/new': typeof AppEngagementsNewRoute
+  '/_app/preview/$key': typeof AppPreviewKeyRoute
   '/_app/projects/$projectId': typeof AppProjectsProjectIdRoute
   '/_app/records/emission-factors': typeof AppRecordsEmissionFactorsRoute
   '/_app/staff/clients': typeof AppStaffClientsRoute
@@ -317,6 +326,7 @@ export interface FileRouteTypes {
     | '/verify/$code'
     | '/engagements/$serviceId'
     | '/engagements/new'
+    | '/preview/$key'
     | '/projects/$projectId'
     | '/records/emission-factors'
     | '/staff/clients'
@@ -348,6 +358,7 @@ export interface FileRouteTypes {
     | '/verify/$code'
     | '/'
     | '/engagements/new'
+    | '/preview/$key'
     | '/projects/$projectId'
     | '/records/emission-factors'
     | '/staff/clients'
@@ -381,6 +392,7 @@ export interface FileRouteTypes {
     | '/_app/'
     | '/_app/engagements/$serviceId'
     | '/_app/engagements/new'
+    | '/_app/preview/$key'
     | '/_app/projects/$projectId'
     | '/_app/records/emission-factors'
     | '/_app/staff/clients'
@@ -481,6 +493,13 @@ declare module '@tanstack/react-router' {
       path: '/engagements/new'
       fullPath: '/engagements/new'
       preLoaderRoute: typeof AppEngagementsNewRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/preview/$key': {
+      id: '/_app/preview/$key'
+      path: '/preview/$key'
+      fullPath: '/preview/$key'
+      preLoaderRoute: typeof AppPreviewKeyRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/projects/': {
@@ -671,6 +690,7 @@ interface AppRouteChildren {
   AppIndexRoute: typeof AppIndexRoute
   AppEngagementsServiceIdRoute: typeof AppEngagementsServiceIdRouteWithChildren
   AppEngagementsNewRoute: typeof AppEngagementsNewRoute
+  AppPreviewKeyRoute: typeof AppPreviewKeyRoute
   AppProjectsProjectIdRoute: typeof AppProjectsProjectIdRoute
   AppRecordsEmissionFactorsRoute: typeof AppRecordsEmissionFactorsRoute
   AppStaffClientsRoute: typeof AppStaffClientsRoute
@@ -694,6 +714,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppIndexRoute: AppIndexRoute,
   AppEngagementsServiceIdRoute: AppEngagementsServiceIdRouteWithChildren,
   AppEngagementsNewRoute: AppEngagementsNewRoute,
+  AppPreviewKeyRoute: AppPreviewKeyRoute,
   AppProjectsProjectIdRoute: AppProjectsProjectIdRoute,
   AppRecordsEmissionFactorsRoute: AppRecordsEmissionFactorsRoute,
   AppStaffClientsRoute: AppStaffClientsRoute,
