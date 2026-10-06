@@ -13,12 +13,17 @@ const base = `http://localhost:4174`
 const browser = await chromium.launch()
 const page = await browser.newPage({ viewport: { width: 1440, height: 900 }, colorScheme: 'light' })
 
-const shots = [
+const all = [
   { name: '01-sign-in', path: '/sign-in' },
-  { name: '02-client-shell', persona: 'Ingrid Vos', path: '/' },
+  { name: '02-client-home', persona: 'Ingrid Vos', path: '/' },
   { name: '03-staff-shell', persona: 'Helena Brandt', path: '/staff' },
   { name: '04-integrations-preview', persona: 'Ingrid Vos', path: '/integrations' },
+  { name: '05-engagements', persona: 'Ingrid Vos', path: '/engagements' },
+  { name: '06-engagements-past', persona: 'Ingrid Vos', path: '/engagements?tab=past' },
+  { name: '07-projects', persona: 'Ingrid Vos', path: '/projects' },
 ]
+const only = process.env.SHOTS?.split(',')
+const shots = only ? all.filter((s) => only.some((o) => s.name.startsWith(o))) : all
 
 for (const s of shots) {
   if (s.persona) {

@@ -20,6 +20,7 @@ import { Route as AppEngagementsIndexRouteImport } from './routes/_app/engagemen
 import { Route as AppEngagementsServiceIdRouteImport } from './routes/_app/engagements/$serviceId'
 import { Route as AppEngagementsNewRouteImport } from './routes/_app/engagements/new'
 import { Route as AppProjectsIndexRouteImport } from './routes/_app/projects/index'
+import { Route as AppProjectsProjectIdRouteImport } from './routes/_app/projects/$projectId'
 import { Route as AppRecordsEmissionFactorsRouteImport } from './routes/_app/records/emission-factors'
 import { Route as AppStaffIndexRouteImport } from './routes/_app/staff/index'
 import { Route as AppStaffClientsRouteImport } from './routes/_app/staff/clients'
@@ -84,6 +85,11 @@ const AppProjectsIndexRoute = AppProjectsIndexRouteImport.update({
   path: '/projects/',
   getParentRoute: () => AppRoute,
 } as any)
+const AppProjectsProjectIdRoute = AppProjectsProjectIdRouteImport.update({
+  id: '/projects/$projectId',
+  path: '/projects/$projectId',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppRecordsEmissionFactorsRoute =
   AppRecordsEmissionFactorsRouteImport.update({
     id: '/records/emission-factors',
@@ -142,6 +148,7 @@ export interface FileRoutesByFullPath {
   '/verify/$code': typeof VerifyCodeRoute
   '/engagements/$serviceId': typeof AppEngagementsServiceIdRoute
   '/engagements/new': typeof AppEngagementsNewRoute
+  '/projects/$projectId': typeof AppProjectsProjectIdRoute
   '/records/emission-factors': typeof AppRecordsEmissionFactorsRoute
   '/staff/clients': typeof AppStaffClientsRoute
   '/staff/finance': typeof AppStaffFinanceRoute
@@ -163,6 +170,7 @@ export interface FileRoutesByTo {
   '/': typeof AppIndexRoute
   '/engagements/$serviceId': typeof AppEngagementsServiceIdRoute
   '/engagements/new': typeof AppEngagementsNewRoute
+  '/projects/$projectId': typeof AppProjectsProjectIdRoute
   '/records/emission-factors': typeof AppRecordsEmissionFactorsRoute
   '/staff/clients': typeof AppStaffClientsRoute
   '/staff/finance': typeof AppStaffFinanceRoute
@@ -186,6 +194,7 @@ export interface FileRoutesById {
   '/_app/': typeof AppIndexRoute
   '/_app/engagements/$serviceId': typeof AppEngagementsServiceIdRoute
   '/_app/engagements/new': typeof AppEngagementsNewRoute
+  '/_app/projects/$projectId': typeof AppProjectsProjectIdRoute
   '/_app/records/emission-factors': typeof AppRecordsEmissionFactorsRoute
   '/_app/staff/clients': typeof AppStaffClientsRoute
   '/_app/staff/finance': typeof AppStaffFinanceRoute
@@ -209,6 +218,7 @@ export interface FileRouteTypes {
     | '/verify/$code'
     | '/engagements/$serviceId'
     | '/engagements/new'
+    | '/projects/$projectId'
     | '/records/emission-factors'
     | '/staff/clients'
     | '/staff/finance'
@@ -230,6 +240,7 @@ export interface FileRouteTypes {
     | '/'
     | '/engagements/$serviceId'
     | '/engagements/new'
+    | '/projects/$projectId'
     | '/records/emission-factors'
     | '/staff/clients'
     | '/staff/finance'
@@ -252,6 +263,7 @@ export interface FileRouteTypes {
     | '/_app/'
     | '/_app/engagements/$serviceId'
     | '/_app/engagements/new'
+    | '/_app/projects/$projectId'
     | '/_app/records/emission-factors'
     | '/_app/staff/clients'
     | '/_app/staff/finance'
@@ -350,6 +362,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppProjectsIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/projects/$projectId': {
+      id: '/_app/projects/$projectId'
+      path: '/projects/$projectId'
+      fullPath: '/projects/$projectId'
+      preLoaderRoute: typeof AppProjectsProjectIdRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/records/emission-factors': {
       id: '/_app/records/emission-factors'
       path: '/records/emission-factors'
@@ -423,6 +442,7 @@ interface AppRouteChildren {
   AppIndexRoute: typeof AppIndexRoute
   AppEngagementsServiceIdRoute: typeof AppEngagementsServiceIdRoute
   AppEngagementsNewRoute: typeof AppEngagementsNewRoute
+  AppProjectsProjectIdRoute: typeof AppProjectsProjectIdRoute
   AppRecordsEmissionFactorsRoute: typeof AppRecordsEmissionFactorsRoute
   AppStaffClientsRoute: typeof AppStaffClientsRoute
   AppStaffFinanceRoute: typeof AppStaffFinanceRoute
@@ -443,6 +463,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppIndexRoute: AppIndexRoute,
   AppEngagementsServiceIdRoute: AppEngagementsServiceIdRoute,
   AppEngagementsNewRoute: AppEngagementsNewRoute,
+  AppProjectsProjectIdRoute: AppProjectsProjectIdRoute,
   AppRecordsEmissionFactorsRoute: AppRecordsEmissionFactorsRoute,
   AppStaffClientsRoute: AppStaffClientsRoute,
   AppStaffFinanceRoute: AppStaffFinanceRoute,

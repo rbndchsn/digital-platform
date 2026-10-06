@@ -169,11 +169,11 @@ Tick sub-items as you go; tick the step only when its "Done when" holds.
   - [x] Playwright smoke tests: persona enters the client portal; verifier lands on `/staff`. `scripts/screenshot.mjs` captures key screens from the build.
   - Done when: a presenter can sign in as any persona, navigate every nav entry (pages may be placeholders), and reset the demo. ✔
 
-- [ ] **Step 5 — Client home, engagements lists, projects**
-  - [ ] Client Home: progress bars (ongoing vs completed this year), "Needs your action" cards (one next action per service, orange pill, due), latest notifications, records shortcuts.
-  - [ ] Engagements: Ongoing list (status, phase | step chip, next action, team leader), Past table (filters, paid status, opinion type, download-all mock), Requests drafts.
-  - [ ] Projects list and detail (programme, country, registry ID, services under it).
-  - Done when: storyline chapter 1 runs without a dead click.
+- [x] **Step 5 — Client home, engagements lists, projects**
+  - [x] Client Home: progress bars (ongoing vs completed this year), latest notifications, "Needs your action" cards with the orange pill and due date, "Waiting on VERIFASSUR" list, verified-records tiles (latest verified scopes with statement link, verified decarb_units) and shortcuts.
+  - [x] Engagements: Ongoing / Past / Drafts tabs with search and type filter; shared `ServiceTable` (status, phase | step chip, next action, team leader; past: period, issued, paid); renewal picker on the Past tab creates a pre-filled draft and opens the wizard.
+  - [x] Projects list with a functional "New project" dialog; project detail with programme, country, registry ID, ongoing and past engagements, "Request work on this project".
+  - Done when: storyline chapter 1 runs without a dead click. ✔ (download-all lives on the service workspace, step 7)
 
 - [ ] **Step 6 — Request wizard and renewal**
   - [ ] 5-step wizard (Project → Service type & standard → Scope & period → Attachments → Review & submit) with zod validation per step, autosave to the store as a draft, resume from Requests.
@@ -306,7 +306,8 @@ Tick sub-items as you go; tick the step only when its "Done when" holds.
 | 2026-10-05 | 1 | a3134a2 | `demo/` scaffolded: Vite 8, React 19, TS 6, Tailwind 4, TanStack Router, tokens, tests, Playwright, deploy workflow; GitHub Pages enabled. CI run 37409270913 green; https://rbndchsn.github.io/digital-platform/ returns 200. | Cloudflare Pages job skipped until repo secrets `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID` exist |
 | 2026-10-05 | 2 | 21ad0c7 | Domain layer: enums, zod schemas, units + GWP, inventory and decarb compute, 8 workflow templates, instantiate, 7 state machines, next-action, policy. 46 unit tests. | Schema coverage counted in step 3 via fixture validation |
 | 2026-10-06 | 3 | 7f72cac | Mock backend: store with sessionStorage snapshot, latency toggles, programmatic seed for the whole storyline, 15 api modules, fixture validation and end-to-end storyline tests. 69 tests. | Storyline §2.4 adjusted: the opinion chapter (8) runs on the insetting service `svc_nw_decarb_2025`, the evidence and findings chapters (5, 6) on the inventory service `svc_nw_inv_2025` |
-| 2026-10-06 | 4 | (this commit) | App shell, sign-in with persona picker, navigation for both portals, notifications bell, demo panel, UI primitives and domain components, feature previews, Integrations/Account/Organisation pages, placeholder routes for every nav entry, Playwright smoke tests in Chromium. | Lint reports 5 fast-refresh warnings (hooks exported next to components); harmless, left as warnings |
+| 2026-10-06 | 4 | c27b0b7 | App shell, sign-in with persona picker, navigation for both portals, notifications bell, demo panel, UI primitives and domain components, feature previews, Integrations/Account/Organisation pages, placeholder routes for every nav entry, Playwright smoke tests in Chromium. | Lint reports 5 fast-refresh warnings (hooks exported next to components); harmless, left as warnings |
+| 2026-10-06 | 5 | (this commit) | Client home, engagements lists (ongoing/past/drafts, renewal), projects list/detail with create dialog, shared service table. | — |
 
 ---
 
