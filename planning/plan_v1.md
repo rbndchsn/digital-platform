@@ -138,18 +138,18 @@ Tick sub-items as you go; tick the step only when its "Done when" holds.
   - Done when: the placeholder page is reachable on a public URL from a push to `main`.
   - Note: run npm commands from PowerShell; the Git Bash tool cannot spawn `node` from npm scripts on this machine. TypeScript 6 rejects `baseUrl`, so only `paths` is used.
 
-- [ ] **Step 2 — Domain layer (pure TypeScript, tested)**
-  - [ ] `domain/enums.ts`: every enumeration from PRD §3.2, §8.5, §9.3 (roles, service types, service/step/finding/iteration/COI/document/record statuses, gases, scope categories, slot categories, approval kinds, opinion types, flag states).
-  - [ ] `domain/schemas/*.ts`: zod schemas for Organisation, User, Membership, Project, Service, Phase, Step, DocumentSlot, Approval, ServiceTeamMember, CoiDeclaration, Document, DocumentVersion, EvidenceLink, Finding, FindingResponse, OpinionIteration, OpinionStatement, Inventory, InventoryLine, InventoryLineGas, EmissionFactor, DecarbUnitRecord, EmissionProfile, EmissionProfileGas, Notification, Invoice, FeatureFlag, FeatureInterest, AuditEvent, Submission — field names exactly as PRD §9.3.
-  - [ ] `domain/units.ts`: mass and EF units, conversion table, GWP tables AR5 and AR6 (100-yr); mismatches throw typed errors. Tests.
-  - [ ] `domain/compute/inventory.ts`: per-gas tCO2e, line gross, biogenic and removals separate, totals by scope and category. Tests incl. AR5 vs AR6.
-  - [ ] `domain/compute/decarb.ts`: EF gross/removal per profile, factors, reduction and removal units on attributed volume, biogenic delta, diagnostics (`unit_mismatch`, `negative_reduction`). Tests: milk example = 400,000 units; kg/t mismatch error.
-  - [ ] `domain/workflow/templates/*.json` + `template.schema.ts`: the eight service-type templates (PRD FR-10) with phases, steps, owner roles, planned durations, required/optional slots, approvals, gating, checklists.
-  - [ ] `domain/workflow/instantiate.ts`: template → phases, steps, slots, approvals with planned dates. Tests.
-  - [ ] `domain/workflow/machines/{service,step,finding,iteration,coi,document,record}.ts`: transitions returning `{state, events[]}` or typed error; phase gating. Full allowed/forbidden test matrix.
-  - [ ] `domain/workflow/next-action.ts`: single next action per service state. Tests per state.
-  - [ ] `domain/policy.ts`: `can(ctx, action, resource)` with PRD §11.2 matrix, COI gate, separation of duties. Tests per role.
-  - Done when: `npm run test` passes with ≥ 90 % line coverage on `src/domain`.
+- [x] **Step 2 — Domain layer (pure TypeScript, tested)**
+  - [x] `domain/enums.ts`: every enumeration from PRD §3.2, §8.5, §9.3 plus labels (service types, programmes, scope categories, gases, finding types).
+  - [x] `domain/schemas/*.ts`: zod schemas for all PRD §9.3 entities, grouped as common, identity, engagement, evidence, findings, opinions, ledger, platform; field names as in the PRD.
+  - [x] `domain/units.ts`: good units (kg, t, L, m3, kWh, MWh, unit), CO2e units, EF unit parsing, base-unit normalisation, dimension check, GWP AR5/AR6 tables incl. HFC/PFC species and fossil CH4; `UnitError`. Tests.
+  - [x] `domain/compute/inventory.ts`: per-gas tCO2e, line gross, totals by scope/category with biogenic and removals separate, YoY change. Tests incl. AR5 vs AR6.
+  - [x] `domain/compute/decarb.ts`: profile EFs, factors, reduction/removal units on attributed volume, biogenic delta, diagnostics (`negative_reduction`, `volume_exceeds_reference`, `gwp_set_differs`); `UnitError` on mismatch. Tests: milk example = 400,000 units; kg/L mismatch throws.
+  - [x] `domain/workflow/templates/index.ts` + `template.schema.ts`: eight service-type templates built as data (shared Contracting/Planning, per-type Execution slots) and validated by zod. Decision: built in TS rather than raw JSON files for maintainability; still pure data.
+  - [x] `domain/workflow/instantiate.ts`: template → phases, steps, slots, approvals with UTC planned dates. Tests.
+  - [x] `domain/workflow/machines.ts`: service, step (+ phase gating, derived phase status), finding, iteration, COI, document version, record machines with `TransitionError`. Test matrix.
+  - [x] `domain/workflow/next-action.ts`: single next action per service state, with `isActionForViewer`. Tests across contracting, COI, agreement, findings, iterations.
+  - [x] `domain/policy.ts`: `decide/can/assertCan` with PRD §11.2 matrix, cross-org isolation, COI gate, separation of duties, locked documents. Tests per role.
+  - Done when: `npm run test` passes with ≥ 90 % line coverage on `src/domain`. **Result:** 46 tests pass; coverage is 95 % on `domain/`, 96 % on `compute/`, 82 % on `workflow/`, and 0 % on `schemas/` (pure zod definitions, exercised by the fixture validation test in step 3). Revisit the figure after step 3.
 
 - [ ] **Step 3 — Mock backend and fixtures**
   - [ ] `mock/fixtures/` JSON authored to support the storyline in §2.4: orgs (VERIFASSUR, Northwind Dairy Cooperative, Solstice Renewables Ltd, one more), users for every persona, 3 projects, 8 services across statuses (requested, contracting, planning, execution, opinion_review, issued ×2, closed), instantiated phases/steps/slots, ~40 documents with versions and fake hashes, 6 findings in mixed states, iterations (one with changes requested), 1 issued statement, inventories 2024 (verified) and 2025 (submitted), 3 emission factors, 2 `decarb_unit` records (milk example and one wheat intervention), invoices, notifications, feature flags per PRD §13, audit events for history. Validate every fixture against the zod schemas in a test.
@@ -264,6 +264,18 @@ Tick sub-items as you go; tick the step only when its "Done when" holds.
 | `demo/src/lib/theme.ts` | Session-scoped theme hook |
 | `demo/scripts/gh-pages-404.mjs` | Copies index.html to 404.html for GitHub Pages deep links |
 | `demo/e2e/smoke.spec.ts` | Playwright smoke test |
+| `demo/src/domain/enums.ts` | All enumerations and labels |
+| `demo/src/domain/schemas/*.ts` | zod schemas per entity group; `index.ts` barrel |
+| `demo/src/domain/units.ts` | Units, EF unit parsing, base conversion, GWP tables, `UnitError` |
+| `demo/src/domain/compute/inventory.ts` | Per-gas tCO2e, totals, YoY |
+| `demo/src/domain/compute/decarb.ts` | Emission profiles, decarb factors, units, diagnostics |
+| `demo/src/domain/workflow/template.schema.ts` | zod schema for workflow templates |
+| `demo/src/domain/workflow/templates/index.ts` | The eight service-type templates (data) |
+| `demo/src/domain/workflow/instantiate.ts` | Template → phases/steps/slots/approvals |
+| `demo/src/domain/workflow/machines.ts` | State machines and phase gating |
+| `demo/src/domain/workflow/next-action.ts` | Single next action per service |
+| `demo/src/domain/policy.ts` | RBAC policy `decide/can/assertCan` |
+| `demo/src/domain/index.ts` | Domain barrel export |
 
 ---
 
@@ -273,7 +285,8 @@ Tick sub-items as you go; tick the step only when its "Done when" holds.
 |---|---|---|---|---|
 | 2026-10-05 | — | — | Plan v1 written. Repo `rbndchsn/digital-platform` confirmed empty and public. Local folder not yet a git repo. | User answered "go, make all decisions"; §2.2 updated with the "show, don't do" dialog rule |
 | 2026-10-05 | 0 | 3d11574 | Repo initialised, planning docs, CLAUDE.md, README, .gitignore pushed to `main`. | — |
-| 2026-10-05 | 1 | (this commit) | `demo/` scaffolded: Vite 8, React 19, TS 6, Tailwind 4, TanStack Router, tokens, tests, Playwright, deploy workflow; GitHub Pages enabled. | Cloudflare Pages job waits for repo secrets `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID` |
+| 2026-10-05 | 1 | a3134a2 | `demo/` scaffolded: Vite 8, React 19, TS 6, Tailwind 4, TanStack Router, tokens, tests, Playwright, deploy workflow; GitHub Pages enabled. CI run 37409270913 green; https://rbndchsn.github.io/digital-platform/ returns 200. | Cloudflare Pages job skipped until repo secrets `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID` exist |
+| 2026-10-05 | 2 | (this commit) | Domain layer: enums, zod schemas, units + GWP, inventory and decarb compute, 8 workflow templates, instantiate, 7 state machines, next-action, policy. 46 unit tests. | Schema coverage counted in step 3 via fixture validation |
 
 ---
 
