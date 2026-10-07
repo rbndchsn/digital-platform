@@ -1,0 +1,96 @@
+VERIFASSUR_X — TEASER — NARRATION ONLY
+Read at about 130 words per minute. Pause at each blank line. A line in [brackets] is a cue, not spoken.
+
+
+T1 — COLD OPEN — THREE QUESTIONS   [0:00 · 18 s]
+
+Who verified this number? To what level of assurance? And can anyone check?
+
+Most verification statements live in an inbox. They cannot answer.
+
+This one can.
+
+
+T2 — TITLE   [0:18 · 7 s]
+
+[no narration — music only]
+
+T3 — THE PROBLEM   [0:25 · 33 s]
+
+An assurance engagement today runs on e-mail, shared folders and spreadsheets.
+
+For the client, it is a black box: what is missing, what is blocking, when will the opinion arrive.
+
+For the verifier, accreditation is a paper exercise.
+
+And downstream, a claim is only as good as its proof.
+
+
+T4 — WHAT IT IS   [0:58 · 37 s]
+
+VERIFASSUR_X replaces the black box with one workspace.
+
+A client portal, where a company requests, follows and archives the verification of its GHG inventory, its product footprints and its value-chain decarbonisation.
+
+A verified-data ledger, where every opinion writes its figures back as records you can prove.
+
+And behind both, a verifier workflow that is accreditation-grade by construction.
+
+The platform shows. People decide.
+
+
+T5 — MONTAGE — REQUEST AND RUN   [1:35 · 24 s]
+
+Request in five steps.
+
+One next action, always.
+
+Evidence in versioned slots, each with a hash.
+
+An agreement accepted with a name, a time and a hash.
+
+Findings that block the opinion until they are closed.
+
+
+T6 — MONTAGE — DECIDE   [1:59 · 26 s]
+
+Materiality, aggregated against every misstatement.
+
+A warning that must be acknowledged in writing.
+
+A decision refused to anyone who touched the figures.
+
+And issuance in eight visible steps: lock, hash, render, code, write back, notify.
+
+
+T7 — MONTAGE — KEEP AND PROVE   [2:25 · 26 s]
+
+Verified numbers live as records. Four hundred thousand decarb units, computed on the volume you actually bought, with a unit mismatch refused on sight.
+
+Anyone can check a statement. Including the ones that were withdrawn.
+
+Nothing disappears.
+
+
+T8 — MONTAGE — ACCREDITATION-GRADE   [2:51 · 16 s]
+
+Competence and rotation, checked at nomination.
+
+Complaints, handled outside the involved set.
+
+An administrator who sees everything and changes nothing.
+
+
+T9 — THE ROADMAP IS IN THE PRODUCT   [3:07 · 22 s]
+
+And the roadmap is in the product. API, MCP server, AI evidence assistant, report exports, then continuous assurance.
+
+Visible today. Switched on when you are ready. A flag, not a rewrite.
+
+
+T10 — CLOSE   [3:29 · 14 s]
+
+VERIFASSUR_X. Sustainability assurance, verified in one workspace.
+
+See it live.
+

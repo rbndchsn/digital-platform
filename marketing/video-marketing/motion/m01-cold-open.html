@@ -1,0 +1,68 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>motion</title><style>
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Source+Sans+3:wght@400;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1920px;height:1080px;overflow:hidden}
+body{background:#0b1f1e;color:#e6f0ef;font-family:"Source Sans 3","Segoe UI",system-ui,sans-serif;font-size:34px;line-height:1.35;-webkit-font-smoothing:antialiased}
+body.transparent{background:transparent}
+.frame{position:relative;width:1920px;height:1080px;padding:120px 140px;display:flex;flex-direction:column;justify-content:center}
+.frame.center{align-items:center;text-align:center}
+.grain{position:absolute;inset:0;pointer-events:none;background:
+  radial-gradient(1200px 700px at 20% 110%, rgba(45,212,191,.14), transparent 60%),
+  radial-gradient(900px 600px at 95% -10%, rgba(45,212,191,.08), transparent 60%)}
+.rule{position:absolute;left:140px;right:140px;bottom:96px;height:2px;background:linear-gradient(90deg,#2dd4bf,transparent 70%)}
+.display{font-family:Fraunces,Georgia,serif;font-weight:600;letter-spacing:-.01em;line-height:1.08}
+.h1{font-size:112px}.h2{font-size:84px}.h3{font-size:60px}.h4{font-size:44px}
+.lead{font-size:40px;color:#a3b5b4}
+.eyebrow{font-family:"IBM Plex Mono",monospace;font-size:26px;letter-spacing:.14em;text-transform:uppercase;color:#2dd4bf}
+.mono{font-family:"IBM Plex Mono",monospace}
+.muted{color:#a3b5b4}.teal{color:#2dd4bf}.orange{color:#fb923c}
+.chip{display:inline-flex;align-items:center;gap:14px;border-radius:999px;padding:10px 28px;font-weight:600;font-size:30px;border:2px solid #274140;background:#122020}
+.chip.teal{border-color:#2dd4bf;background:#11312e;color:#2dd4bf}
+.chip.amber{border-color:#fbbf24;background:#3a2d10;color:#fbbf24}
+.chip.red{border-color:#f87171;background:#3b1717;color:#f87171}
+.chip.green{border-color:#34d399;background:#0f2f26;color:#34d399}
+.card{background:#122020;border:2px solid #274140;border-radius:28px;padding:44px 48px}
+.logo{display:inline-flex;align-items:center;gap:26px}
+.logo .mark{width:92px;height:92px;border-radius:24px;background:#0f766e;display:grid;place-items:center;box-shadow:0 10px 40px rgba(45,212,191,.25)}
+.logo .mark svg{width:56px;height:56px}
+.logo .word{font-weight:700;font-size:64px;letter-spacing:.02em}
+.logo .word span{color:#2dd4bf}
+.cols{display:grid;gap:36px}
+.cols.three{grid-template-columns:repeat(3,1fr)}
+.cols.two{grid-template-columns:repeat(2,1fr)}
+ul.clean{list-style:none}
+ul.clean li{position:relative;padding-left:44px;margin:10px 0;font-size:31px;color:#e6f0ef}
+ul.clean li::before{content:"";position:absolute;left:0;top:.52em;width:18px;height:18px;border-radius:50%;background:#2dd4bf}
+.flow{display:flex;align-items:center;gap:18px;justify-content:center}
+.flow .step{display:flex;flex-direction:column;align-items:center;gap:14px}
+.flow .step .n{font-family:"IBM Plex Mono",monospace;font-size:26px;color:#7f9492;letter-spacing:.1em}
+.flow .step .w{font-family:Fraunces,Georgia,serif;font-weight:600;font-size:54px;padding:16px 38px;border-radius:22px;border:2px solid #274140;background:#122020}
+.flow .step.on .w{border-color:#2dd4bf;color:#2dd4bf;background:#11312e}
+.flow .arrow{width:52px;height:2px;background:#274140}
+.lt{position:absolute;right:120px;bottom:110px;display:flex;align-items:stretch;border-radius:18px;overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,.35)}
+.lt .bar{width:14px;background:#2dd4bf}
+.lt .body{background:rgba(11,31,30,.94);padding:22px 36px 24px 30px}
+.lt .name{font-family:Fraunces,Georgia,serif;font-weight:600;font-size:44px;line-height:1.1;color:#e6f0ef}
+.lt .role{font-size:28px;color:#a3b5b4;margin-top:4px}
+.label{position:absolute;left:120px;bottom:110px;display:inline-flex;align-items:center;gap:18px;background:rgba(11,31,30,.94);border:2px solid #2dd4bf;color:#e6f0ef;border-radius:999px;padding:16px 38px 16px 30px;font-size:34px;font-weight:600;box-shadow:0 12px 40px rgba(0,0,0,.35)}
+.label::before{content:"";width:16px;height:16px;border-radius:50%;background:#2dd4bf;box-shadow:0 0 0 8px #11312e}
+.foot{position:absolute;left:140px;right:140px;bottom:120px;display:flex;justify-content:space-between;align-items:center;font-size:28px;color:#7f9492}
+
+.a{opacity:0;animation:rise .9s cubic-bezier(.2,.7,.2,1) both;animation-delay:var(--d,0s)}
+.a.fast{animation-duration:.6s}
+.a.pop{animation-name:pop}
+.a.left{animation-name:fromLeft}.a.right{animation-name:fromRight}
+.a.fade{animation-name:fade}
+@keyframes rise{from{opacity:0;transform:translateY(40px)}to{opacity:1;transform:none}}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+@keyframes pop{from{opacity:0;transform:scale(.86)}to{opacity:1;transform:none}}
+@keyframes fromLeft{from{opacity:0;transform:translateX(-70px)}to{opacity:1;transform:none}}
+@keyframes fromRight{from{opacity:0;transform:translateX(70px)}to{opacity:1;transform:none}}
+@keyframes grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+.ruleA{position:absolute;left:140px;right:140px;bottom:96px;height:2px;background:linear-gradient(90deg,#2dd4bf,transparent 70%);transform-origin:left;transform:scaleX(0);animation:grow 1.4s cubic-bezier(.2,.7,.2,1) both;animation-delay:var(--d,0s)}
+.flow .arrow{transform-origin:left;transform:scaleX(0);animation:grow .5s ease-out both;animation-delay:var(--d,0s)}
+</style></head><body><div class="frame"><div class="grain"></div>
+    <div class="display h2 a" style="--d:0.5s" style="max-width:1400px">Who verified this number?</div>
+    <div class="display h2 muted a" style="--d:2.8s" style="margin-top:36px">To what level of assurance?</div>
+    <div class="display h2 teal a" style="--d:5.1s" style="margin-top:36px">Can anyone check?</div>
+    <div class="ruleA" style="--d:6.6s"></div></div></body></html>

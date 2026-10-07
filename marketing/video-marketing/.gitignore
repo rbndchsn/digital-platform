@@ -1,0 +1,9 @@
+# Recordings, narration, music and rendered motion are large and regenerable or personal; keep only the READMEs.
+clips/*
+!clips/README.md
+audio/*
+!audio/README.md
+images/*
+!images/README.md
+motion/out/
+captions/

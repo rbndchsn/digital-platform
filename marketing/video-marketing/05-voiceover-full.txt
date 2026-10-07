@@ -1,0 +1,167 @@
+VERIFASSUR_X — FULL PRODUCT FILM — NARRATION ONLY
+Read at about 130 words per minute. Pause at each blank line. A line in [brackets] is a cue, not spoken.
+
+
+F1 — COLD OPEN — THREE QUESTIONS   [0:00 · 22 s]
+
+Who verified this number? To what level of assurance? And can anyone check?
+
+Today, most verification statements live in an inbox. They cannot answer.
+
+This one can. A code, a status, the figures, and the hash of every document behind them.
+
+
+F2 — TITLE   [0:22 · 8 s]
+
+[no narration — music only]
+
+F3 — THE PROBLEM — THREE AUDIENCES   [0:30 · 50 s]
+
+An assurance engagement today runs on e-mail, shared folders and spreadsheets.
+
+For the client, it is a black box. Which document is missing? Which finding is blocking the opinion? When will the statement arrive? Nobody can say without asking.
+
+For the verifier, accreditation is a paper exercise. Impartiality, competence, independent review, separation of decisions: proven after the fact, with checklists and filing. A rule that lives in a procedure can be skipped.
+
+And for everyone downstream, buyers, lenders, programmes, regulators, a claim is only as good as its proof. A PDF cannot answer the question "is this still current?"
+
+
+F4 — WHAT VERIFASSUR_X IS   [1:20 · 50 s]
+
+VERIFASSUR_X replaces the black box with one workspace.
+
+It is two things in one product. A client portal, where a company requests, follows and archives the independent verification of its GHG inventory, its product carbon footprints, its value-chain decarbonisation and its carbon projects.
+
+And a verified-data ledger, where every opinion writes its figures back as records the company can prove, year after year.
+
+Behind both sits the verifier workflow that makes the work accreditation-grade by construction.
+
+VERIFASSUR_X verifies. It never issues or trades carbon units, and it never computes a client's emissions.
+
+The platform shows. People decide.
+
+
+F5 — CHAPTER 1 — REQUEST   [2:10 · 45 s]
+
+Chapter one. Request.
+
+A five-step wizard turns a need into a structured engagement: project, service type and standard, scope and period, level of assurance, attachments. The template already lists the documents it will require.
+
+A generated pre-engagement form lets the verifier triage immediately.
+
+Technical scope and impartiality are approved. The team is nominated, and every member declares conflicts of interest before the service even opens for them.
+
+The service agreement is accepted in the platform: name, time, and the hash of the document.
+
+And next year, the renewal is pre-filled from this year.
+
+
+F6 — CHAPTER 2 — RUN   [2:55 · 50 s]
+
+Chapter two. Run.
+
+Three phases, Contracting, Planning, Execution, driven by a workflow template for the service type.
+
+There is always exactly one next action per engagement. Orange means it is on you. Blue means VERIFASSUR is working on it. It is computed from the workflow, never typed by hand.
+
+Every step has its required document slots. Here the auditor rejected a sample pack with a reason. The client re-uploads: version two, new hash, provenance line. Nothing is ever overwritten.
+
+Findings run as threads with attachments. A corrective action request blocks the opinion until it is closed.
+
+And the timeline shows planned against actual, with a tick for every transition.
+
+
+F7 — CHAPTER 3 — DECIDE   [3:45 · 75 s]
+
+Chapter three. Decide. This is where accreditation stops being paperwork.
+
+Materiality is set in planning and approved by a manager. Every difference the team finds is aggregated against it. Here the misstatement exceeds the threshold while the draft opinion is unqualified, so the platform raises a warning. A warning, not a block. The independent reviewer must acknowledge it in writing. The judgement stays human.
+
+Now the decision. Helena is a manager, but she entered a verified value on this engagement. That puts her in the involved set, so the decision is refused to her. The button is not hidden. It is disabled, with the reason, and the name of the manager who can decide.
+
+Marc, outside the involved set, acknowledges, approves, and issues.
+
+Lock the documents. Hash them. Render the statement. Create the public code. Write the verified figures to the client's records. Notify everyone. Eight steps, each visibly completing.
+
+Every decision lands in the Service Log: who, when, why.
+
+
+F8 — CHAPTER 4 — KEEP   [5:00 · 50 s]
+
+Chapter four. Keep.
+
+Verified numbers live as records, not as PDFs. GHG inventories by year, scope, category and gas, with biogenic CO2 and removals reported separately, declared next to verified, evidence on every line.
+
+A decarb unit is one tonne of CO2e between a baseline and a project outcome in the value chain, computed on the volume the client actually bought. Baseline three point four, project three point zero, one million tonnes: four hundred thousand units.
+
+Units are explicit. Change tonnes to litres and the platform refuses. A kilo-to-tonne slip can never inflate a claim by a thousand.
+
+Every record carries its level of assurance, its statement, and its history.
+
+
+F9 — CHAPTER 5 — PROVE   [5:50 · 47 s]
+
+Chapter five. Prove.
+
+Anyone can check a statement without an account: opinion type, level of assurance, materiality, the verified figures, the hash of every locked document.
+
+And the page tells the truth about time. This statement was withdrawn because of an error. The banner says so, the figures are gone, the code still resolves. This one was superseded by a revision, and links to its replacement.
+
+A statement never disappears. The records that relied on it are re-marked the same way.
+
+
+F10 — ACCREDITATION-GRADE BY CONSTRUCTION   [6:37 · 76 s]
+
+ISO 17029, 14065 and 14066 ask for impartiality, competence, independent review, rotation, and complaint handling. In VERIFASSUR_X those rules live in the workflow, not in a binder.
+
+Every nomination runs the competence and rotation checks from the template. A gap is a warning the manager can override with a written reason, counted in the statistics. A missing independent-reviewer qualification is a block that no reason can lift.
+
+Complaints and appeals have targets, overdue flags, and a handler who is never in the involved set of the decision being appealed.
+
+When the normal flow is stuck, a manager can override a step, but only with a reason, only in the log, and never on the gates the template locks: impartiality, the agreement, independent review, issuance.
+
+Platform administration is separated from assurance. The administrator sees everything, including the money, and changes nothing. Every event is appended to an audit log.
+
+The rules themselves are data: versioned templates, edited with a reason.
+
+This is what an accreditation body audits.
+
+
+F11 — WHAT MAKES IT DIFFERENT   [7:53 · 36 s]
+
+Six things make it different.
+
+Client-first: it leads with what you must do, what you got, and what it cost.
+
+Numbers, not PDFs.
+
+Rules in the workflow, not in a binder.
+
+Conflicts are shown, not hidden.
+
+Nothing disappears.
+
+And the roadmap is in the product.
+
+
+F12 — THE FUTURE — NOW, NEXT, LATER   [8:29 · 66 s]
+
+Now, next, later.
+
+Now: a complete, accreditation-grade engagement and ledger.
+
+Next, visible today as previews: spreadsheet import, a REST API with per-client keys, and an MCP server so a client's carbon-accounting software, or its AI agent, can submit data and answer findings directly. An AI evidence assistant that classifies uploads and drafts findings for the auditor to decide. Legal e-signature. CSRD and ISO report exports. Registry links. Every preview has an "I'm interested" button, so demand is measured before anything is built.
+
+Later: continuous assurance on monthly data streams, digital MRV connectors, verifiable credentials for opinions, a digital product passport export. Assurance becomes a live signal instead of an annual event, and a verified figure travels with the product.
+
+Every form is already backed by a published schema the API accepts unchanged. Switching a capability on is a flag, not a rewrite.
+
+
+F13 — PROOF YOU CAN CLICK, AND CLOSE   [9:35 · 32 s]
+
+Everything you have seen is live, in a clickable demo with fictional data: sixteen chapters, thirteen personas, three client companies and one verification body.
+
+VERIFASSUR_X. The digital platform for sustainability assurance. GHG inventories, product footprints and value-chain decarbonisation, verified in one workspace.
+
+Your digital platform, for now and the future.
+
