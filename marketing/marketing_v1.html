@@ -1,0 +1,413 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="VERIFASSUR_X marketing brief: what it is, why it is needed, what it does, who it serves, key functionalities and the roadmap.">
+<title>VERIFASSUR_X Brief</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Source+Sans+3:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --ink: #0b1f1e;
+    --ink-muted: #4f5f5e;
+    --ink-subtle: #7b8a89;
+    --ground: #f4f7f7;
+    --surface: #ffffff;
+    --surface-muted: #e9efef;
+    --line: #dbe3e3;
+    --teal: #0f766e;
+    --teal-strong: #115e59;
+    --teal-soft: #d8efec;
+    --needs-you: #9a3412;
+    --needs-you-soft: #fde8dc;
+    --danger: #b91c1c;
+    --danger-soft: #fde2e2;
+    --warning: #92400e;
+    --warning-soft: #fdf1d8;
+    --shadow: 0 1px 2px rgba(11, 31, 30, 0.06), 0 8px 24px rgba(11, 31, 30, 0.06);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ink: #e6f0ef; --ink-muted: #a3b5b4; --ink-subtle: #7f9492;
+      --ground: #0b1514; --surface: #122020; --surface-muted: #1a2c2b; --line: #274140;
+      --teal: #2dd4bf; --teal-strong: #5eead4; --teal-soft: #11312e;
+      --needs-you: #fb923c; --needs-you-soft: #3a2113;
+      --danger: #f87171; --danger-soft: #3b1717;
+      --warning: #fbbf24; --warning-soft: #3a2d10;
+      --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="dark"] {
+    --ink: #e6f0ef; --ink-muted: #a3b5b4; --ink-subtle: #7f9492;
+    --ground: #0b1514; --surface: #122020; --surface-muted: #1a2c2b; --line: #274140;
+    --teal: #2dd4bf; --teal-strong: #5eead4; --teal-soft: #11312e;
+    --needs-you: #fb923c; --needs-you-soft: #3a2113;
+    --danger: #f87171; --danger-soft: #3b1717;
+    --warning: #fbbf24; --warning-soft: #3a2d10;
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+    font-size: 17px;
+    line-height: 1.55;
+    padding-inline: 16px;
+    padding-block: 0 64px;
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; }
+  h1, h2, h3 { font-family: Fraunces, Georgia, "Times New Roman", serif; text-wrap: balance; margin: 0; }
+  h1 { font-size: clamp(2.2rem, 5vw, 3.6rem); font-weight: 600; line-height: 1.05; letter-spacing: -0.01em; }
+  h2 { font-size: clamp(1.6rem, 2.6vw, 2.1rem); font-weight: 600; line-height: 1.15; }
+  h3 { font-size: 1.2rem; font-weight: 600; line-height: 1.25; font-family: "Source Sans 3", system-ui, sans-serif; }
+  p { margin: 0; }
+  a { color: var(--teal-strong); }
+  code, .mono { font-family: "IBM Plex Mono", ui-monospace, Consolas, monospace; font-size: 0.9em; }
+  .eyebrow { font-size: 0.78rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--teal); }
+
+  /* masthead */
+  .mast { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 24px; padding-block: 22px 18px; border-bottom: 1px solid var(--line); }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 600; letter-spacing: 0.01em; }
+  .brand .mark { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 9px; background: var(--teal); color: #fff; font-weight: 700; }
+  .brand small { display: block; font-weight: 400; color: var(--ink-subtle); font-size: 0.8rem; letter-spacing: 0; }
+  .mast .right { display: grid; justify-items: end; gap: 6px; }
+  .mast .meta { color: var(--ink-subtle); font-size: 0.85rem; }
+  .tagline {
+    position: relative; display: inline-block; padding: 12px 18px; border-radius: 8px; overflow: hidden;
+    border: 2px solid var(--teal); background: var(--teal-soft);
+    font-family: Fraunces, Georgia, serif; font-weight: 700; font-size: 1.05rem; line-height: 1.25;
+    text-transform: uppercase; letter-spacing: 0.12em; text-wrap: balance; text-align: right;
+    color: var(--teal-strong);
+    background-image: linear-gradient(110deg, var(--teal-strong) 0%, var(--teal-strong) 38%, #ffffff 50%, var(--teal-strong) 62%, var(--teal-strong) 100%);
+    background-size: 240% 100%; background-position: 120% 0;
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+    box-shadow: 0 0 0 0 rgba(15, 118, 110, 0.35);
+    animation: tag-shine 4.5s ease-in-out 1.2s infinite, tag-pulse 4.5s ease-in-out 1.2s infinite;
+  }
+  .tagline::after { content: ""; position: absolute; inset: 0; border-radius: 6px; background: linear-gradient(110deg, transparent 40%, rgba(255,255,255,0.55) 50%, transparent 60%); background-size: 240% 100%; background-position: 120% 0; animation: tag-shine 4.5s ease-in-out 1.2s infinite; pointer-events: none; mix-blend-mode: soft-light; }
+  @keyframes tag-shine { 0%, 55% { background-position: 120% 0; } 85%, 100% { background-position: -120% 0; } }
+  @keyframes tag-pulse { 0%, 55% { box-shadow: 0 0 0 0 rgba(15, 118, 110, 0.0); } 70% { box-shadow: 0 0 22px 2px rgba(15, 118, 110, 0.35); } 100% { box-shadow: 0 0 0 0 rgba(15, 118, 110, 0.0); } }
+  @media (prefers-reduced-motion: reduce) { .tagline, .tagline::after { animation: none; } .tagline { background-image: none; -webkit-text-fill-color: currentColor; } }
+  @media (max-width: 600px) { .mast .right { justify-items: start; } .tagline { text-align: left; } }
+
+  /* hero */
+  .hero { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 32px 48px; align-items: center; padding-block: 44px 28px; }
+  .hero .thesis { font-size: 1.2rem; max-width: 36rem; color: var(--ink-muted); margin-top: 18px; }
+  .hero .thesis strong { color: var(--ink); font-weight: 600; }
+  .shot { display: block; width: 100%; max-width: 100%; height: auto; aspect-ratio: 1440 / 900; object-fit: cover; object-position: top left; border-radius: 10px; border: 1px solid var(--line); box-shadow: var(--shadow); background: var(--surface); }
+  .pill-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 22px; }
+  .pill { font-size: 0.8rem; font-weight: 600; padding: 4px 10px; border-radius: 999px; background: var(--teal-soft); color: var(--teal-strong); }
+  .pill.needs { background: var(--needs-you-soft); color: var(--needs-you); }
+
+  /* sections */
+  section { padding-block: 40px; border-top: 1px solid var(--line); }
+  .sec { display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 16px 40px; }
+  .sec > .side { position: sticky; top: env(safe-area-inset-top, 0px); align-self: start; }
+  .side h2 { margin-top: 6px; }
+  .prose { max-width: 66ch; display: grid; gap: 14px; }
+  .prose p strong { font-weight: 600; }
+  .lead { font-size: 1.1rem; }
+
+  /* figures */
+  figure { margin: 0; display: grid; gap: 8px; }
+  figcaption { font-size: 0.85rem; color: var(--ink-muted); }
+  figcaption b { color: var(--ink); font-weight: 600; }
+  .figs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px 24px; margin-top: 10px; }
+  .figs.one { grid-template-columns: minmax(0, 1fr); }
+
+  /* three verbs */
+  .verbs { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--surface); }
+  .verb { padding: 18px 16px 20px; border-left: 1px solid var(--line); display: grid; gap: 8px; align-content: start; }
+  .verb:first-child { border-left: 0; }
+  .verb h3 { font-family: Fraunces, Georgia, serif; font-size: 1.35rem; color: var(--teal-strong); }
+  .verb p { font-size: 0.95rem; color: var(--ink-muted); }
+
+  /* who table */
+  table { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
+  .tbl { overflow-x: auto; }
+  th, td { text-align: left; vertical-align: top; padding: 11px 12px; border-bottom: 1px solid var(--line); }
+  th { font-size: 0.78rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-subtle); font-weight: 600; }
+  td:first-child { font-weight: 600; white-space: nowrap; }
+  tr:last-child td { border-bottom: 0; }
+
+  /* functions */
+  .func { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px 40px; }
+  .func h3 { padding-bottom: 6px; border-bottom: 2px solid var(--teal); display: inline-block; }
+  .func ul { margin: 10px 0 0; padding-left: 18px; display: grid; gap: 6px; font-size: 0.97rem; color: var(--ink-muted); }
+  .func li::marker { color: var(--teal); }
+  .func li b { color: var(--ink); font-weight: 600; }
+
+  /* differentiators */
+  .diff { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+  .diff div { padding: 16px 18px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; display: grid; gap: 6px; align-content: start; }
+  .diff h3 { font-size: 1.05rem; }
+  .diff p { font-size: 0.95rem; color: var(--ink-muted); }
+
+  /* horizon */
+  .horizon { display: grid; gap: 0; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--surface); }
+  .hz { display: grid; grid-template-columns: 120px minmax(0, 1.4fr) minmax(0, 1fr); gap: 14px 24px; padding: 18px 20px; border-top: 1px solid var(--line); }
+  .hz:first-child { border-top: 0; }
+  .hz .when { font-family: Fraunces, Georgia, serif; font-size: 1.3rem; font-weight: 600; color: var(--teal-strong); }
+  .hz .when small { display: block; font-family: "Source Sans 3", system-ui, sans-serif; font-size: 0.78rem; color: var(--ink-subtle); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; margin-top: 2px; }
+  .hz p { font-size: 0.95rem; }
+  .hz .unlock { color: var(--ink-muted); font-size: 0.95rem; }
+  .rule { margin-top: 16px; padding: 14px 18px; border-left: 3px solid var(--teal); background: var(--teal-soft); border-radius: 0 10px 10px 0; font-size: 0.97rem; }
+
+  /* proof / contact */
+  .proof { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+  .proof div { display: grid; gap: 4px; }
+  .proof .big { font-family: Fraunces, Georgia, serif; font-size: 2rem; font-weight: 600; color: var(--teal-strong); line-height: 1; }
+  .proof .lbl { font-size: 0.92rem; color: var(--ink-muted); }
+  .contact { margin-top: 28px; padding: 22px 24px; background: var(--ink); color: var(--ground); border-radius: 12px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px 24px; }
+  .contact .cta { font-family: Fraunces, Georgia, serif; font-size: 1.4rem; font-weight: 600; }
+  .contact a { color: #5eead4; }
+  .contact small { color: #a3b5b4; }
+  footer { padding-top: 24px; color: var(--ink-subtle); font-size: 0.82rem; }
+
+  @media (max-width: 860px) {
+    .hero { grid-template-columns: minmax(0, 1fr); }
+    .sec { grid-template-columns: minmax(0, 1fr); }
+    .sec > .side { position: static; }
+    .verbs { grid-template-columns: minmax(0, 1fr); }
+    .verb { border-left: 0; border-top: 1px solid var(--line); }
+    .verb:first-child { border-top: 0; }
+    .figs, .func, .diff, .proof { grid-template-columns: minmax(0, 1fr); }
+    .hz { grid-template-columns: minmax(0, 1fr); }
+  }
+  @media print {
+    body { background: #fff; color: #000; font-size: 11pt; }
+    .shot { box-shadow: none; }
+    section { break-inside: avoid-page; }
+    .contact { background: #0b1f1e; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
+  @media (prefers-reduced-motion: no-preference) { a:focus-visible, .pill:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; } }
+  a:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
+</style>
+</head>
+<body>
+
+
+<div class="wrap">
+  <header class="mast">
+    <div class="brand">
+      <span class="mark" aria-hidden="true">✓</span>
+      <span>VERIFASSUR_X<small>Digital assurance platform · VERIFASSUR Assurance S.A.</small></span>
+    </div>
+    <div class="right">
+      <div class="tagline">Your digital platform<br>for now and the future</div>
+      <div class="meta">Marketing brief v1 · October 2026</div>
+    </div>
+  </header>
+
+  <div class="hero">
+    <div>
+      <p class="eyebrow">A digital platform for sustainability assurance services</p>
+      <h1 style="margin-top:10px">GHG inventories, product footprints and value-chain decarbonisation, verified in one workspace.</h1>
+      <p class="thesis">VERIFASSUR_X is where a company requests, follows and archives the independent verification of its <strong>GHG inventory</strong>, its <strong>product carbon footprints</strong>, its <strong>value-chain decarbonisation (<code>decarb_units</code>)</strong> and its <strong>carbon projects</strong>, and keeps every verified number as a record it can prove. <strong>Verified numbers you can prove. One next action. Every figure traceable to its evidence and its opinion.</strong></p>
+      <div class="pill-row">
+        <span class="pill">ISO 14064-1 · ISO 14067 · ISO 14064-2</span>
+        <span class="pill">VCS · Gold Standard</span>
+        <span class="pill">ISO/IEC 17029 · ISO 14065 · ISO 14066 by construction</span>
+        <span class="pill needs">Verify only. No registry.</span>
+      </div>
+    </div>
+    <figure>
+      <img class="shot" src="marketingimages/01-client-home.png" alt="Client home page showing progress bars, a 'Needs your action' card and verified records tiles" loading="eager">
+      <figcaption><b>Client home.</b> What is running, what is blocking you, what has been verified.</figcaption>
+    </figure>
+  </div>
+
+  <section id="what">
+    <div class="sec">
+      <div class="side"><p class="eyebrow">1</p><h2>What it is</h2></div>
+      <div class="prose">
+        <p class="lead">VERIFASSUR_X is the digital platform of VERIFASSUR, an independent validation and verification body in the carbon market. It is two things in one product.</p>
+        <p><strong>A client portal.</strong> A company that needs an ISO 14064-1 inventory verification, an ISO 14067 product footprint verification, a VCS or Gold Standard validation, or a <code>decarb_units</code> verification requests the work, follows it step by step, answers findings, accepts the service agreement, and receives an opinion it can prove to anyone.</p>
+        <p><strong>A verified-data ledger.</strong> Every opinion writes its verified figures back into the client's records: GHG inventories by year, scope and gas; product emission factors; <code>decarb_units</code> computed on the volume the client actually bought. Each figure carries the level of assurance and a reference to the statement that verified it. Next year starts from this year.</p>
+        <p>Behind both sits the verifier workflow that makes the work accreditation-grade by construction: impartiality and technical-scope approvals, team nomination with conflict-of-interest declarations and competence checks, independent review, a final decision taken by someone who did no verification work, and an immutable audit trail.</p>
+        <p>VERIFASSUR_X verifies. It never issues, transfers, retires or claims carbon units, and it never computes a client's emissions for them. <strong>The platform shows; people decide.</strong></p>
+      </div>
+    </div>
+  </section>
+
+  <section id="why">
+    <div class="sec">
+      <div class="side"><p class="eyebrow">2</p><h2>Why it is needed</h2></div>
+      <div class="prose">
+        <p><strong>For clients, assurance is a black box.</strong> Today an engagement runs on e-mail, shared folders and spreadsheets. The sustainability lead does not know which document is missing, which finding is blocking the opinion, or when the statement will arrive. The output is a PDF whose numbers must be re-typed into next year's report, the CSRD disclosure and the buyer's questionnaire.</p>
+        <p><strong>For verifiers, accreditation is a paper exercise.</strong> ISO/IEC 17029, ISO 14065 and ISO 14066 demand impartiality, competence, independent review, separation between those who verify and those who decide, materiality judgement, complaint handling and rotation. Most bodies prove this after the fact with checklists and filing. A rule that lives in a procedure can be skipped; a rule that lives in the workflow cannot.</p>
+        <p><strong>For everyone downstream, a claim is only as good as its proof.</strong> Buyers, lenders, programmes and regulators increasingly ask "who verified this, to what level, and can I check?" A statement that lives in an inbox cannot answer. A public page with a code, a hash and a current status can, even after the statement is revised or withdrawn.</p>
+        <p>VERIFASSUR_X replaces the black box with one workspace where every obligation, document, decision and verified number has an owner, a status, a timestamp and a link to its evidence.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="does">
+    <div class="sec">
+      <div class="side"><p class="eyebrow">3</p><h2>What it does</h2></div>
+      <div>
+        <div class="verbs">
+          <div class="verb"><h3>Request</h3><p>A five-step wizard turns a need into a structured engagement with a generated pre-engagement form. Renewals are pre-filled from last year.</p></div>
+          <div class="verb"><h3>Run</h3><p>Three phases driven by a template per service type. Required-document slots, versioned uploads with hashes, findings threads, one next action, a timeline, a Service Log.</p></div>
+          <div class="verb"><h3>Decide</h3><p>Iterations go from team leader to independent reviewer to a manager outside the involved set. Materiality is set in planning and every misstatement is aggregated against it.</p></div>
+          <div class="verb"><h3>Keep</h3><p>Verified inventories, factors and <code>decarb_units</code> live as records with a status, a level of assurance and an assurance history, reused next year.</p></div>
+          <div class="verb"><h3>Prove</h3><p>Anyone can open the public page: opinion type, level, materiality, hashes, and whether the statement is still current. Nothing disappears.</p></div>
+        </div>
+        <div class="figs">
+          <figure><img class="shot" src="marketingimages/02-engagement-workspace.png" alt="Engagement overview with the phase rail, the next action banner and the team" loading="lazy"><figcaption><b>Engagement workspace.</b> Phase rail, the single next action, the team, the level of assurance and the commercial status.</figcaption></figure>
+          <figure><img class="shot" src="marketingimages/03-evidence-step.png" alt="Step detail with required document slots, versions and a rejection reason" loading="lazy"><figcaption><b>Evidence vault.</b> Required slots per step, immutable versions, hashes, a rejection with its reason and the re-upload.</figcaption></figure>
+          <figure><img class="shot" src="marketingimages/04-opinion-issued.png" alt="Issued opinion with verification code, locked document hashes and verified figures" loading="lazy"><figcaption><b>Issued opinion.</b> Verification code, level of assurance, materiality line, locked documents and their hashes.</figcaption></figure>
+          <figure><img class="shot" src="marketingimages/05-public-verification.png" alt="Public verification page with the genuine opinion header and figures" loading="lazy"><figcaption><b>Public verification.</b> A page anyone can check without an account.</figcaption></figure>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="who">
+    <div class="sec">
+      <div class="side"><p class="eyebrow">4</p><h2>Who it serves</h2></div>
+      <div class="tbl">
+        <table>
+          <thead><tr><th>Who</th><th>What they get</th></tr></thead>
+          <tbody>
+            <tr><td>Sustainability and carbon leads</td><td>One home page with what is blocking them, what VERIFASSUR is doing and what has been verified; requests and renewals without e-mail; the service agreement accepted in the platform with name, time and document hash.</td></tr>
+            <tr><td>Site managers and data owners</td><td>Upload evidence to the exact slot that asked for it; answer findings in a thread with attachments.</td></tr>
+            <tr><td>CFOs, boards, investors</td><td>Read-only dashboards, verified totals year over year, signed statements with a public code.</td></tr>
+            <tr><td>VERIFASSUR managers</td><td>Triage with rotation history, approvals, team nomination with competence and rotation checks, decisions outside the involved set, overrides with a mandatory reason, post-issuance events, complaints and appeals, templates as data.</td></tr>
+            <tr><td>Team leaders, auditors, reviewers</td><td>A work queue, step detail with slots and checklists, line review statuses, the misstatement register, iteration bundles, checklists with the materiality consistency item.</td></tr>
+            <tr><td>Platform administrator</td><td>Sees everything including money rollups, manages users, organisations and settings, reads the global audit and COI registers, and can change nothing on an engagement.</td></tr>
+            <tr><td>Buyers, programmes, auditors of the auditor</td><td>The public verification page and, next, verified data through the API.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section id="functions">
+    <div class="sec">
+      <div class="side"><p class="eyebrow">5</p><h2>Key functionalities</h2></div>
+      <div>
+        <div class="func">
+          <div><h3>Engagement engine</h3><ul>
+            <li><b>Request wizard</b> with autosave, draft resume, renewal from a past engagement and a generated pre-engagement form.</li>
+            <li><b>Templates as data</b>: phases, steps, owner roles, durations, slots, approvals, checklists, locks, materiality defaults, competence requirements, rotation rules, complaint targets. Edited with a reason; every save is a new version.</li>
+            <li><b>One computed next action</b> per engagement: orange when it is on you, blue when it is on the other side.</li>
+            <li><b>Timeline</b>: planned versus actual, a tick per transition with actor and time, milestones, override markers, keyboard navigation, table view.</li>
+            <li><b>Service Log</b>: append-only, filterable by event family, exportable.</li>
+          </ul></div>
+          <div><h3>Evidence vault</h3><ul>
+            <li>Required and supporting slots per step, party-aware upload, version history, provenance line, SHA-256 per version, accept or reject with a reason, request-from-client, download-all manifest.</li>
+            <li>Evidence linked to figures: every inventory line, factor and <code>decarb_unit</code> profile shows its evidence chips.</li>
+          </ul></div>
+          <div><h3>Findings</h3><ul>
+            <li>CAR, CL, FAR and OBS with severity, step, assignee and due date; threaded responses with attachments.</li>
+            <li>Corrective action requests block the opinion until closed; a client can appeal a closure.</li>
+          </ul></div>
+          <div><h3>Opinion and issuance</h3><ul>
+            <li>Iteration bundles reviewed by the independent reviewer and decided by a manager outside the involved set.</li>
+            <li><b>Materiality</b> set in Planning and approved by a manager; a <b>misstatement register</b> fed by adjusted lines, verified totals and findings; an <b>aggregation panel</b> with gross and net against the threshold; an inconsistency warning that must be acknowledged, never bypassed silently.</li>
+            <li>Animated issuance: lock, hash, render, code, write-back, status, notify.</li>
+            <li>Post-issuance events: <b>revision</b> (the whole chain runs again, conflicts re-confirmed) and <b>withdrawal</b> (records re-marked, public banner, reason category).</li>
+          </ul></div>
+          <div><h3>Public verification</h3><ul>
+            <li><code>/verify/{code}</code>: opinion type, level, materiality, verified figures, document hashes, signatories.</li>
+            <li>Amber banner when superseded with a link to the replacement; red banner when withdrawn. The client can hide the figures; the banner never hides.</li>
+          </ul></div>
+          <div><h3>Verified-data ledger</h3><ul>
+            <li>GHG inventories per year, scope, category and gas (AR5 and AR6), biogenic CO2 and removals reported separately, declared versus verified, line review status, year-over-year change.</li>
+            <li>Product emission factors per product, functional unit, boundary, method and year, with history.</li>
+            <li><code>decarb_units</code>: baseline and project profiles per gas, attributed volume, decarb factor and units with explicit units (a kg/t slip is refused, never silently multiplied), diagnostics, portfolio by year.</li>
+            <li>Every record: level badge, assurance status, statement link, assurance history.</li>
+          </ul></div>
+          <div><h3>Accreditation-grade controls</h3><ul>
+            <li><b>Involved set</b> derived from the team, the verified-value edits and the independent review; the decision control is disabled with the reasons and the eligible manager named.</li>
+            <li><b>Non-overridable steps</b> as template data: impartiality, scope, contract, agreement, independent review and issuance cannot be forced; a refused attempt is logged.</li>
+            <li><b>Competence</b> profiles with validity and expiry reminders; checks at nomination (warnings overridable with a reason, the independent-reviewer qualification a hard block); <b>rotation</b> rules per role and for the body itself.</li>
+            <li><b>Complaints and appeals</b> register with targets, overdue flags, handlers outside the involved set, internal notes the complainant never sees.</li>
+            <li><b>Manager overrides</b> with a mandatory reason, highlighted in the log and counted in the governance statistics.</li>
+          </ul></div>
+          <div><h3>Administration</h3><ul>
+            <li>Users and organisations (deactivate, never delete), feature flags, announcements, maintenance mode, global audit and authentication logs, COI register, break-glass access with a reason, governance statistics, money rollups visible only here.</li>
+          </ul></div>
+        </div>
+        <div class="figs">
+          <figure><img class="shot" src="marketingimages/07-materiality-panel.png" alt="Opinion tab with the uncorrected misstatements gauge against materiality and the inconsistency warning" loading="lazy"><figcaption><b>Materiality.</b> Gross and net uncorrected misstatements against the threshold, and the warning the reviewer and decision-maker must acknowledge.</figcaption></figure>
+          <figure><img class="shot" src="marketingimages/09-competence-check.png" alt="Team nomination dialog running the competence and rotation check with an override reason field" loading="lazy"><figcaption><b>Competence and rotation.</b> Every nomination is checked live; a warning needs a reason, a missing reviewer qualification is a block.</figcaption></figure>
+          <figure><img class="shot" src="marketingimages/08-withdrawn-statement.png" alt="Public page of a withdrawn statement with a red banner and hidden figures" loading="lazy"><figcaption><b>Nothing disappears.</b> A withdrawn statement keeps its page, its code and its reason category.</figcaption></figure>
+          <figure><img class="shot" src="marketingimages/06-decarb-record.png" alt="decarb_unit record with baseline and project emission profiles and the computed units" loading="lazy"><figcaption><b><code>decarb_units</code>.</b> Baseline 3.400 and project 3.000 tCO2e per tonne on 1,000,000 t attributed: 400,000 units, with explicit units.</figcaption></figure>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="different">
+    <div class="sec">
+      <div class="side"><p class="eyebrow">6</p><h2>What makes it different</h2></div>
+      <div class="diff">
+        <div><h3>Client-first</h3><p>It leads with "what do I need to do, what did I get, what did it cost", not with the auditor's queue.</p></div>
+        <div><h3>Numbers, not PDFs</h3><p>Verified figures become records with an assurance reference, a level and a history, reused next year and exposed to machines.</p></div>
+        <div><h3>Rules in the workflow</h3><p>Separation of decision, non-overridable gates, materiality, competence and rotation are enforced by the system and visible on screen, not kept in a binder.</p></div>
+        <div><h3>Conflicts are shown</h3><p>A manager who cannot decide sees why and who can; a warning asks for an acknowledgement rather than picking the answer.</p></div>
+        <div><h3>Nothing disappears</h3><p>Revisions and withdrawals keep the public page, re-mark the records and leave the trail intact.</p></div>
+        <div><h3>The roadmap is in the product</h3><p>Future capabilities are visible as previews with an "I'm interested" button, so demand is measured before anything is built.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="future">
+    <div class="sec">
+      <div class="side"><p class="eyebrow">7</p><h2>The future: how we stay ahead</h2></div>
+      <div>
+        <div class="horizon">
+          <div class="hz">
+            <div class="when">Now<small>Release 1</small></div>
+            <p>Everything in section 5: engagement engine, evidence vault, findings, opinion and issuance, public verification, the ledger, the accreditation-grade controls and the administration console.</p>
+            <p class="unlock">A complete, accreditation-grade engagement and a ledger of verified data.</p>
+          </div>
+          <div class="hz">
+            <div class="when">Next<small>Release 2 · previews today</small></div>
+            <p>Spreadsheet import. REST API with per-client keys. <b>MCP server</b> exposing the same operations as tools. AI evidence assistant: classify uploads into slots, completeness check, figure extraction, draft findings for the auditor. Legal e-signature. CSRD/ESRS E1 and ISO 14064-1 report exports. Registry links (Verra, Gold Standard). Portfolios for senior managers. Public complaint form.</p>
+            <p class="unlock">A client's carbon-accounting software, or its agent, submits data and answers findings directly; verified data flows into disclosures without re-typing.</p>
+          </div>
+          <div class="hz">
+            <div class="when">Later<small>Release 3+</small></div>
+            <p>Continuous assurance on monthly data streams. dMRV connectors. Verifiable credentials for opinions. Digital product passport export. Agent-to-agent verification. Multi-verifier recognition.</p>
+            <p class="unlock">Assurance becomes a live signal rather than an annual event, and a verified figure travels with the product.</p>
+          </div>
+        </div>
+        <div class="rule">Two design rules keep this credible. Every form is backed from day one by a published JSON schema the future API accepts unchanged, so switching a capability on is a flag, not a rewrite. And every preview is either fully working or clearly marked as coming, never half-working.</div>
+        <div class="figs one" style="margin-top:22px">
+          <figure><img class="shot" src="marketingimages/12-integrations-preview.png" alt="Integrations page showing API keys, MCP server and webhooks as previews with an 'I'm interested' button" loading="lazy"><figcaption><b>Previews with a demand signal.</b> API, MCP and webhooks are visible today; VERIFASSUR sees who is interested before building.</figcaption></figure>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="proof">
+    <div class="sec">
+      <div class="side"><p class="eyebrow">8</p><h2>Proof you can click</h2></div>
+      <div>
+        <div class="proof">
+          <div><span class="big">16</span><span class="lbl">guided chapters, about 35 minutes, from the first request to a withdrawn statement</span></div>
+          <div><span class="big">13</span><span class="lbl">personas across three client companies and VERIFASSUR, including two decision-capable managers</span></div>
+          <div><span class="big">0</span><span class="lbl">bytes leave the browser: fictional organisations, people and figures; reset at any time</span></div>
+        </div>
+        <div class="contact">
+          <div>
+            <div class="cta">See it live, then let's talk.</div>
+            <small>Demo: <a href="https://rbndchsn.github.io/digital-platform/">rbndchsn.github.io/digital-platform</a> · press Ctrl + . for the presenter panel</small>
+          </div>
+          <div><small>VERIFASSUR Assurance S.A. · Luxembourg<br>Contact: add name, e-mail and phone before sending</small></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>VERIFASSUR_X marketing brief v1 · October 2026 · All organisations, people and figures shown are fictional. VERIFASSUR_X verifies; it never issues, transfers, retires or claims carbon units.</footer>
+</div>
+
+</body>
+</html>

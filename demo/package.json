@@ -6,7 +6,8 @@
   "description": "VERIFASSUR_X assurance platform — Phase I clickable mock (no backend)",
   "scripts": {
     "dev": "vite",
-    "build": "npm run routes:gen && tsc -b && vite build",
+    "about:sync": "node scripts/sync-about.mjs",
+    "build": "npm run about:sync && npm run routes:gen && tsc -b && vite build",
     "build:ghpages": "cross-env VITE_BASE=/digital-platform/ npm run build && node scripts/gh-pages-404.mjs",
     "preview": "vite preview",
     "lint": "eslint .",

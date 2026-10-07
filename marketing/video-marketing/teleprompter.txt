@@ -1,0 +1,86 @@
+VERIFASSUR_X — NARRATION ONLY (read at about 130 words per minute; pause at each blank line)
+
+
+SCENE 1 — THE PROBLEM
+
+An assurance engagement today runs on e-mail, shared folders and spreadsheets.
+
+The client does not know which document is missing, which finding is blocking the opinion, or when the statement will arrive.
+
+And when it arrives, it is a PDF. Every number in it gets re-typed into next year's report, the CSRD disclosure, and the buyer's questionnaire.
+
+VERIFASSUR_X replaces that with one workspace. This is what a client sees when they log in.
+
+
+SCENE 2 — ONE NEXT ACTION
+
+Three things, in order: what is running, what is blocking me, what has been verified.
+
+Orange means it is on you. Blue means we are working on it. There is always exactly one next action per engagement, and it is computed from the workflow, never typed by hand.
+
+At the bottom, last year's verified scope one, two and three totals and the verified decarb units, each with its level of assurance and the public code of the statement that verified it.
+
+
+SCENE 3 — THE WORKSPACE AND THE EVIDENCE VAULT
+
+Every engagement runs through three phases, Contracting, Planning and Execution, driven by a template for the service type. The template defines the steps, who owns them, the documents each step requires, the approvals and the checklists.
+
+Here the auditor rejected a sample pack with a reason. The client re-uploads. Version two, new hash, provenance line. Nothing is ever overwritten.
+
+On the verifier side, the auditor accepts the new version and the step can close. Every version, every decision, every timestamp is in the Service Log.
+
+
+SCENE 4 — MATERIALITY AND THE DECISION
+
+This is where accreditation stops being paperwork.
+
+Materiality was set in planning: five percent of the declared factor. Every difference the team found is aggregated against it. Here the misstatement exceeds the threshold while the draft opinion is unqualified, so the platform raises a warning. It is a warning, not a block. The reviewer must acknowledge it in writing. The judgement stays human.
+
+Now the decision. Helena is a manager, but she entered a verified value on this engagement. That puts her in the involved set, so the decision is refused to her. The button is not hidden; it is disabled, with the reason and the name of the manager who can decide. Nothing silent.
+
+Marc, outside the involved set, acknowledges the warning, approves, and issues. Lock the documents, hash them, render the statement, create the public code, write the verified figures back to the client's records, notify everyone. Eight steps, each visibly completing.
+
+
+SCENE 5 — PROVE IT TO ANYONE
+
+Anyone can check a statement without an account: opinion type, level of assurance, materiality, the verified figures, the hash of every locked document.
+
+And the page tells the truth about time. This statement was withdrawn last month because of an error in the statement. The banner says so, the figures are gone, the code still resolves. This one was superseded by a revision; the banner links to the replacement. A statement never disappears. The records that relied on it are re-marked the same way.
+
+
+SCENE 6 — THE LEDGER
+
+Verified numbers live as records, not as PDFs. Inventories by year, scope and gas, with biogenic CO2 and removals reported separately, declared next to verified.
+
+A decarb unit is one tonne of CO2e between a baseline and a project outcome in the value chain, computed on the volume the client actually bought. Baseline three point four, project three point zero, one million tonnes: four hundred thousand units.
+
+Units are explicit. Change tonnes to litres and the platform refuses; a kilo-to-tonne slip can never inflate a claim by a thousand.
+
+Every record carries its level of assurance, its statement, and its history, including the moment an assurance was withdrawn.
+
+
+SCENE 7 — COMPETENCE, ROTATION, COMPLAINTS
+
+Who may do the work is checked before the work starts. Every nomination runs the competence and rotation rules from the template. A gap is a warning the manager can override with a written reason, counted in the statistics. A missing independent-reviewer qualification is a block no reason can lift.
+
+Competence profiles, validity, expiry reminders, rotation history, including engagements from before the platform.
+
+And when a client disagrees, there is a formal route: complaints and appeals with targets, overdue flags, and a handler who is never in the involved set of the decision being appealed. The complainant sees every stage and the outcome; the investigation notes stay internal.
+
+
+SCENE 8 — ADMINISTRATION AND THE AUDIT TRAIL
+
+Platform administration is separated from assurance decisions. Sam sees the whole firm, including the money, and cannot touch a single engagement.
+
+The governance tiles are live: refused decisions, refused overrides on locked steps, materiality warnings and their acknowledgements, revisions and withdrawals, open and overdue cases, expiring qualifications.
+
+And every one of those is a line in an append-only log, with who, when, and why. This is what an accreditation body audits.
+
+
+SCENE 9 — THE FUTURE, AND THE CLOSE
+
+The roadmap is in the product. API keys, an MCP server so a client's carbon-accounting software or its agent can submit data and answer findings, webhooks, an evidence assistant, report exports, registry links. Visible today, switched on when a client is ready, and demand is measured before anything is built.
+
+Every form is already backed by a published schema the API will accept unchanged. Switching a capability on is a flag, not a rewrite.
+
+VERIFASSUR_X. The digital platform for sustainability assurance: GHG inventories, product footprints and value-chain decarbonisation, verified in one workspace. See it live at the address on screen.

@@ -1,7 +1,7 @@
 /** Presenter panel: persona switch, storyline chapters, network toggles, reset. Not part of the real product. */
 import { useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
-import { FlaskConical, MoonStar, RefreshCw, SunMedium, UserRoundCheck, Wifi, WifiOff, Zap } from 'lucide-react'
+import { FlaskConical, Info, MoonStar, RefreshCw, SunMedium, UserRoundCheck, Wifi, WifiOff, Zap } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { auth, demo } from '@/api'
@@ -66,14 +66,20 @@ export function DemoPanel({ currentUserId }: { currentUserId: string | null }) {
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="bg-fg text-bg fixed right-4 bottom-4 z-30 inline-flex items-center gap-2 rounded-full px-3.5 py-2 text-xs font-semibold shadow-card hover:opacity-90"
-        aria-label="Open demo panel (Ctrl+.)"
-      >
-        <FlaskConical className="size-4" /> Demo
-      </button>
+      <div className="fixed right-4 bottom-4 z-30 flex items-center gap-2">
+        <a
+          href={`${import.meta.env.BASE_URL}about/`}
+          target="_blank"
+          rel="noreferrer"
+          className="bg-primary text-primary-fg inline-flex items-center gap-2 rounded-full px-3.5 py-2 text-xs font-semibold shadow-card hover:opacity-90"
+          aria-label="About VERIFASSUR_X (opens the marketing page in a new tab)"
+        >
+          <Info className="size-4" /> About
+        </a>
+        <button type="button" onClick={() => setOpen(true)} className="bg-fg text-bg inline-flex items-center gap-2 rounded-full px-3.5 py-2 text-xs font-semibold shadow-card hover:opacity-90" aria-label="Open demo panel (Ctrl+.)">
+          <FlaskConical className="size-4" /> Demo
+        </button>
+      </div>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent title="Demo panel" description="Presenter controls. Nothing here exists in the real product." size="xl">
           <div className="grid gap-6 md:grid-cols-[1.1fr_1fr]">
