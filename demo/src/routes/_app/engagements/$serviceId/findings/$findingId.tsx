@@ -1,10 +1,11 @@
 /** Finding thread: responses with attachments, client respond, verifier review/close/reopen/withdraw. */
 import { useQuery } from '@tanstack/react-query'
 import { createFileRoute } from '@tanstack/react-router'
-import { CheckCircle2, Paperclip, RotateCcw, Send, Trash2, Undo2 } from 'lucide-react'
+import { CheckCircle2, Paperclip, RotateCcw, Scale, Send, Trash2, Undo2 } from 'lucide-react'
 import { useState } from 'react'
 import { findings } from '@/api'
 import type { DocumentView } from '@/api/documents'
+import { AppealButton } from '@/components/appeal-button'
 import { DocumentRow } from '@/components/document-row'
 import { PageHeader } from '@/components/page-header'
 import { StatusChip } from '@/components/status-chip'
@@ -14,7 +15,8 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Textarea } from '@/components/ui/input'
 import { Alert, Avatar, Skeleton } from '@/components/ui/misc'
-import { useServicePermissions } from '@/features/service/step-detail'
+import { MisstatementDialog } from '@/features/service/materiality'
+import { useServicePermissions } from '@/features/service/permissions'
 import { cn } from '@/lib/cn'
 import { useMe } from '@/lib/auth'
 import { fmtDate, fmtDateTime } from '@/lib/format'
@@ -35,6 +37,7 @@ function FindingDetail() {
   const [body, setBody] = useState('')
   const [attachments, setAttachments] = useState<DocumentView[]>([])
   const [upload, setUpload] = useState(false)
+  const [raise, setRaise] = useState(false)
   const respond = useAppMutation(() => findings.respond(findingId, body, attachments.map((a) => a.current!.id)), { successMessage: 'Response posted.', onSuccess: () => { setBody(''); setAttachments([]) } })
   const transition = useAppMutation(({ action, comment }: { action: 'review' | 'close' | 'reopen' | 'withdraw'; comment?: string }) => findings.transition(findingId, action, comment), { successMessage: (f) => `${f.type} #${f.number} ${f.status.replace('_', ' ')}.`, onSuccess: () => setBody('') })
   if (!q.data || !d.data) return <Skeleton className="h-64" />
@@ -64,27 +67,36 @@ function FindingDetail() {
           </>
         }
         actions={
-          perms.canTransition && !closed ? (
-            <div className="flex flex-wrap gap-1">
-              {f.status === 'responded' ? (
-                <Button variant="secondary" onClick={() => transition.mutate({ action: 'review' })} loading={transition.isPending}>
-                  Mark under review
+          <div className="flex flex-wrap gap-1">
+            {perms.canManageMisstatements && d.data.assuranceApplies && (f.type === 'CAR' || f.type === 'OBS') ? (
+              <Button variant="secondary" onClick={() => setRaise(true)}>
+                <Scale /> Raise misstatement
+              </Button>
+            ) : null}
+            {perms.canTransition && !closed ? (
+              <>
+                {f.status === 'responded' ? (
+                  <Button variant="secondary" onClick={() => transition.mutate({ action: 'review' })} loading={transition.isPending}>
+                    Mark under review
+                  </Button>
+                ) : null}
+                <Button onClick={() => transition.mutate({ action: 'close', comment: body || undefined })} loading={transition.isPending}>
+                  <CheckCircle2 /> Close finding
                 </Button>
-              ) : null}
-              <Button onClick={() => transition.mutate({ action: 'close', comment: body || undefined })} loading={transition.isPending}>
-                <CheckCircle2 /> Close finding
+                <Button variant="ghost" onClick={() => transition.mutate({ action: 'withdraw', comment: body || undefined })}>
+                  <Trash2 /> Withdraw
+                </Button>
+              </>
+            ) : perms.canTransition && f.status === 'closed' ? (
+              <Button variant="secondary" onClick={() => transition.mutate({ action: 'reopen' })}>
+                <RotateCcw /> Reopen
               </Button>
-              <Button variant="ghost" onClick={() => transition.mutate({ action: 'withdraw', comment: body || undefined })}>
-                <Trash2 /> Withdraw
-              </Button>
-            </div>
-          ) : perms.canTransition && f.status === 'closed' ? (
-            <Button variant="secondary" onClick={() => transition.mutate({ action: 'reopen' })}>
-              <RotateCcw /> Reopen
-            </Button>
-          ) : null
+            ) : null}
+            {f.status === 'closed' ? <AppealButton serviceId={serviceId} decisionEntityType="finding" decisionEntityId={f.id} subject={`Closure of ${f.type} #${f.number}: ${f.title}`} size="md" /> : null}
+          </div>
         }
       />
+      {raise ? <MisstatementDialog serviceId={serviceId} findingId={f.id} onClose={() => setRaise(false)} /> : null}
       <div className="grid gap-5 lg:grid-cols-[1fr_320px]">
         <div className="space-y-4">
           <Card>

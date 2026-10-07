@@ -1,4 +1,4 @@
-import { BarChart3, Briefcase, Building2, ClipboardCheck, FileSpreadsheet, FolderKanban, Gauge, Home, Inbox, Layers, Leaf, Plug, Receipt, ScrollText, Settings2, ShieldCheck, Users, UsersRound, type LucideIcon } from 'lucide-react'
+import { Award, BarChart3, Briefcase, Building2, ClipboardCheck, FileSpreadsheet, FolderKanban, Gauge, Home, Inbox, Layers, Leaf, Plug, Receipt, Scale, ScrollText, Settings2, ShieldCheck, Users, UsersRound, type LucideIcon } from 'lucide-react'
 
 export interface NavItem {
   label: string
@@ -39,12 +39,20 @@ export const CLIENT_NAV: NavGroup[] = [
   },
 ]
 
+/** Verifier portal (PRD §7.1 v0.3): the complaints register and the competence page sit beside the work queues. */
 export const STAFF_NAV: NavGroup[] = [
   {
     items: [
       { label: 'My work', to: '/staff', icon: ClipboardCheck, exact: true },
       { label: 'Triage queue', to: '/staff/triage', icon: Inbox },
       { label: 'All services', to: '/staff/services', icon: Briefcase },
+    ],
+  },
+  {
+    label: 'Governance',
+    items: [
+      { label: 'Complaints and appeals', to: '/staff/cases', icon: Scale },
+      { label: 'Competence', to: '/staff/competence', icon: Award },
     ],
   },
   {
@@ -73,6 +81,8 @@ export const ADMIN_NAV: NavGroup[] = [
     label: 'Read-only views',
     items: [
       { label: 'All services', to: '/staff/services', icon: Briefcase },
+      { label: 'Complaints and appeals', to: '/staff/cases', icon: Scale },
+      { label: 'Competence', to: '/staff/competence', icon: Award },
       { label: 'Clients', to: '/staff/clients', icon: Users },
       { label: 'Templates', to: '/staff/templates', icon: Layers },
       { label: 'Finance', to: '/staff/finance', icon: Receipt },

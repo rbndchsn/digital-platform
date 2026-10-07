@@ -245,7 +245,8 @@ export function announcements(): Announcement[] {
       body: 'VERIFASSUR_X will be read-only on Sunday 02:00–04:00 UTC while the evidence vault is migrated to the new EU region. Uploads and approvals resume automatically afterwards.',
       tone: 'info',
       audience: 'all',
-      starts_at: daysAgo(0, 6, 0),
+      // Yesterday, so the announcement is already "started" whatever the time of day the seed is built (the storyline test switches it on).
+      starts_at: daysAgo(1, 6, 0),
       ends_at: null,
       active: false,
       created_by: USR.admin,

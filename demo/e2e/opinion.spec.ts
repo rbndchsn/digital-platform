@@ -25,7 +25,7 @@ test('ch.8 — iteration 2 is reviewed, approved and issued; the public statemen
   // Manager approves and issues
   await enterAs(page, /Helena Brandt/)
   await page.goto('/engagements/svc_nw_decarb_2025/opinion')
-  await page.getByRole('button', { name: 'Manager approval', exact: true }).click()
+  await page.getByRole('button', { name: 'Manager decision', exact: true }).click()
   for (const box of await page.getByRole('checkbox').all()) await box.click()
   await page.getByRole('button', { name: 'Approve' }).click()
   await expect(page.getByText('Iteration 2: approved')).toBeVisible()

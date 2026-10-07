@@ -59,7 +59,9 @@ export function DemoPanel({ currentUserId }: { currentUserId: string | null }) {
     await auth.signIn(userId)
     await qc.invalidateQueries()
     setOpen(false)
-    navigate({ to: path ?? '/' })
+    // Chapter paths may carry a query string (e.g. `/organisation?tab=cases`): split it so the router keeps the search.
+    const [pathname, query] = (path ?? '/').split('?')
+    navigate({ to: pathname, search: query ? Object.fromEntries(new URLSearchParams(query)) : {} })
   }
 
   return (

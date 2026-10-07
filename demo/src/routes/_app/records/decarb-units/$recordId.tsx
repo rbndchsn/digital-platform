@@ -1,14 +1,16 @@
 /** decarb_unit record editor (PRD FR-48..FR-52): baseline/project profiles, computed panel with diagnostics, what-if, submit. */
 import { useQuery } from '@tanstack/react-query'
 import { Link, createFileRoute } from '@tanstack/react-router'
-import { AlertTriangle, ArrowRight, BadgeCheck, Calculator, Pencil, Send } from 'lucide-react'
+import { AlertTriangle, ArrowRight, BadgeCheck, Calculator, Lock, Pencil, Send } from 'lucide-react'
 import { useState } from 'react'
 import { records } from '@/api'
 import type { DecarbView, ProfileInputDto, ProfileView } from '@/api/records'
 import type { GwpSet, ProfileKind } from '@/domain/enums'
 import type { GasEntry } from '@/domain/schemas'
 import { GOOD_UNIT_KEYS } from '@/domain/units'
+import { AssuranceBadge, AssuranceHistoryButton, recordAssuranceState } from '@/components/assurance-badge'
 import { DeclaredVerifiedPair } from '@/components/declared-verified'
+import { InvolvedNote } from '@/components/eligibility-notice'
 import { EvidenceChips } from '@/components/evidence-chips'
 import { PageHeader } from '@/components/page-header'
 import { StatusChip } from '@/components/status-chip'
@@ -46,6 +48,7 @@ function RecordEditor() {
   const canEdit = isClient && me.role !== 'client_viewer' && d.status === 'draft'
   // Verifier roles and the manager (PRD FR-77) enter verified units; the platform administrator never does.
   const canVerify = !isClient && !me.isAdmin && (d.status === 'submitted' || d.status === 'under_verification') && Boolean(c)
+  const immutable = ['verified', 'superseded', 'withdrawn'].includes(d.status)
   const blockers: string[] = []
   if (!d.baseline) blockers.push('Enter the baseline emission profile.')
   if (!d.project) blockers.push('Enter the project emission profile.')
@@ -60,6 +63,7 @@ function RecordEditor() {
         meta={
           <>
             <StatusChip status={d.status} />
+            <AssuranceBadge level={d.level_of_assurance} status={recordAssuranceState(d)} />
             <Badge tone="outline">Baseline: {d.baseline_method}</Badge>
             <Badge tone="outline">
               Period {fmtDate(d.period_start)} – {fmtDate(d.period_end)}
@@ -88,9 +92,31 @@ function RecordEditor() {
                 <BadgeCheck /> Verified values
               </Button>
             ) : null}
+            {!isClient && !me.isAdmin && immutable ? (
+              <Button variant="secondary" disabled title="Verified figures of an issued opinion are immutable (issued_immutable)">
+                <Lock /> Verified values
+              </Button>
+            ) : null}
+            <AssuranceHistoryButton history={d.assurance.history} />
           </>
         }
       />
+      {d.status === 'verified' ? (
+        <Alert tone="success" className="mb-5" title={`Verified · ${d.level_of_assurance === 'limited' ? 'limited' : 'reasonable'} assurance · statement ${d.statementCode ?? ''}`}>
+          The opinion covers the verified reduction and removal units of this record. They cannot change after issuance; a post-issuance revision produces a new statement and re-points the record.
+        </Alert>
+      ) : null}
+      {d.assurance_status === 'withdrawn' ? (
+        <Alert tone="danger" className="mb-5" title="Assurance withdrawn">
+          The statement this record relied on was withdrawn. The units below are declared only; the former verified units remain in the assurance history.
+        </Alert>
+      ) : null}
+      {recordAssuranceState(d) === 'under_review' ? (
+        <Alert tone="warning" className="mb-5" title="Under review: a revision of the issued opinion is in progress">
+          The current statement {d.statementCode ?? ''} stays valid until the replacement is issued. The team may re-enter verified values while the service is in revision.
+        </Alert>
+      ) : null}
+      {!isClient && !me.isAdmin ? <InvolvedNote serviceId={d.service_id} immutable={immutable} className="mb-5" /> : null}
       <div className="grid gap-5 lg:grid-cols-2">
         <ProfileCard kind="baseline" profile={d.baseline} canEdit={canEdit} onEdit={() => setEditProfile('baseline')} serviceId={d.service_id} />
         <ProfileCard kind="project" profile={d.project} canEdit={canEdit} onEdit={() => setEditProfile('project')} serviceId={d.service_id} />
@@ -126,11 +152,11 @@ function RecordEditor() {
                 <div className="mt-4 grid gap-3 sm:grid-cols-2">
                   <div>
                     <div className="text-fg-subtle mb-1 text-xs font-semibold uppercase tracking-wide">Reduction units</div>
-                    <DeclaredVerifiedPair declared={d.declared_reduction_units} verified={d.verified_reduction_units} unit="tCO2e" />
+                    <DeclaredVerifiedPair declared={d.declared_reduction_units} verified={d.assurance_status === 'withdrawn' ? null : d.verified_reduction_units} unit="tCO2e" verifiedLabel={d.assurance_status === 'withdrawn' ? 'Verified (withdrawn)' : 'Verified'} />
                   </div>
                   <div>
                     <div className="text-fg-subtle mb-1 text-xs font-semibold uppercase tracking-wide">Removal units</div>
-                    <DeclaredVerifiedPair declared={d.declared_removal_units} verified={d.verified_removal_units} unit="tCO2e" />
+                    <DeclaredVerifiedPair declared={d.declared_removal_units} verified={d.assurance_status === 'withdrawn' ? null : d.verified_removal_units} unit="tCO2e" verifiedLabel={d.assurance_status === 'withdrawn' ? 'Verified (withdrawn)' : 'Verified'} />
                   </div>
                 </div>
               )}
@@ -158,10 +184,13 @@ function RecordEditor() {
 function VerifyDecarbDialog({ d, computedReduction, computedRemoval, onClose }: { d: DecarbView; computedReduction: number; computedRemoval: number; onClose: () => void }) {
   const [reduction, setReduction] = useState(String(d.verified_reduction_units ?? computedReduction))
   const [removal, setRemoval] = useState(String(d.verified_removal_units ?? computedRemoval))
-  const m = useAppMutation(() => records.setVerifiedDecarb(d.id, { reduction: Number(reduction), removal: Number(removal) }), { successMessage: 'Verified values recorded.', onSuccess: onClose })
+  const m = useAppMutation(() => records.setVerifiedDecarb(d.id, { reduction: Number(reduction), removal: Number(removal) }), {
+    successMessage: (r) => `Verified values recorded.${Number(reduction) !== (d.declared_reduction_units ?? 0) ? ' A misstatement was proposed to the register.' : ''}${r.iterationReturnedToIr ? ' The open iteration went back to independent review.' : ''}${r.involvedSetJoined ? ' You are now in the involved set of this service.' : ''}`,
+    onSuccess: onClose,
+  })
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent title="Verified decarb_units" description={`Declared ${fmtNumber(d.declared_reduction_units)} reduction and ${fmtNumber(d.declared_removal_units)} removal units. Verified values are written back to the record and shown side by side.`} size="sm">
+      <DialogContent title="Verified decarb_units" description={`Declared ${fmtNumber(d.declared_reduction_units)} reduction and ${fmtNumber(d.declared_removal_units)} removal units. Verified values are assertion-level figures the opinion covers; entering them is verification work that places you in the involved set (PRD FR-79).`} size="sm">
         <div className="grid grid-cols-2 gap-3">
           <Field label="Verified reduction units (tCO2e)" required>
             <Input type="number" step="any" value={reduction} onChange={(e) => setReduction(e.target.value)} />

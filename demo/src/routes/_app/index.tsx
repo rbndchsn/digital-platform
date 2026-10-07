@@ -3,7 +3,9 @@ import { useQuery } from '@tanstack/react-query'
 import { Link, createFileRoute, redirect, useNavigate } from '@tanstack/react-router'
 import { ArrowRight, BarChart3, Clock, FileSpreadsheet, Leaf, Plus, ShieldCheck } from 'lucide-react'
 import { dashboard } from '@/api'
+import type { LevelOfAssurance } from '@/domain/enums'
 import { ActionPill } from '@/components/action-pill'
+import { AssuranceBadge } from '@/components/assurance-badge'
 import { EmptyState } from '@/components/empty-state'
 import { KpiBars, KpiNumber } from '@/components/kpi-tile'
 import { PageHeader } from '@/components/page-header'
@@ -153,18 +155,36 @@ function ClientHome() {
           ) : null}
 
           <section>
-            <h2 className="text-fg mb-3 text-base font-semibold">Verified records</h2>
+            <div className="mb-3 flex flex-wrap items-center gap-2">
+              <h2 className="text-fg text-base font-semibold">Verified records</h2>
+              {d.latestVerified ? <AssuranceBadge level={d.latestVerified.levelOfAssurance as LevelOfAssurance | null} /> : null}
+              {d.records.withdrawn ? <Badge tone="danger">{d.records.withdrawn} record{d.records.withdrawn === 1 ? '' : 's'} with assurance withdrawn</Badge> : null}
+            </div>
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
               {d.latestVerified ? (
                 <>
                   <KpiNumber value={d.latestVerified.scope1} unit="tCO2e" label={`Scope 1 · verified ${d.latestVerified.year}`} />
                   <KpiNumber value={d.latestVerified.scope2} unit="tCO2e" label={`Scope 2 · verified ${d.latestVerified.year}`} />
-                  <KpiNumber value={d.latestVerified.scope3} unit="tCO2e" label={`Scope 3 · verified ${d.latestVerified.year}`} hint={d.latestVerified.statementCode ? <Link to="/verify/$code" params={{ code: d.latestVerified.statementCode }} className="text-primary hover:underline">Statement {d.latestVerified.statementCode}</Link> : null} />
+                  <KpiNumber
+                    value={d.latestVerified.scope3}
+                    unit="tCO2e"
+                    label={`Scope 3 · verified ${d.latestVerified.year}`}
+                    hint={
+                      d.latestVerified.statementCode ? (
+                        <span className="inline-flex flex-wrap items-center gap-1.5">
+                          <Link to="/verify/$code" params={{ code: d.latestVerified.statementCode }} className="text-primary hover:underline">
+                            Statement {d.latestVerified.statementCode}
+                          </Link>
+                          <AssuranceBadge level={d.latestVerified.levelOfAssurance as LevelOfAssurance | null} />
+                        </span>
+                      ) : null
+                    }
+                  />
                 </>
               ) : (
                 <EmptyState title="No verified inventory yet" className="md:col-span-3" />
               )}
-              <KpiNumber value={d.records.verifiedUnits} unit="tCO2e" label="Verified decarb_units" tone="success" hint={`${d.records.decarbRecords} records`} />
+              <KpiNumber value={d.records.verifiedUnits} unit="tCO2e" label="Verified decarb_units" tone="success" hint={`${d.records.decarbRecords} records · each with its level of assurance`} />
             </div>
             <div className="mt-3 flex flex-wrap gap-2">
               <Button variant="secondary" size="sm" asChild>

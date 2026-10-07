@@ -1,7 +1,7 @@
 import { cn } from '@/lib/cn'
 import { statusLabel } from '@/lib/format'
 
-type Tone = 'completed' | 'in_progress' | 'pending' | 'on_hold' | 'blocked' | 'rejected' | 'planned' | 'info' | 'success'
+type Tone = 'completed' | 'in_progress' | 'pending' | 'on_hold' | 'blocked' | 'rejected' | 'planned' | 'info' | 'success' | 'in_revision'
 
 const TONE: Record<string, Tone> = {
   completed: 'completed',
@@ -12,6 +12,10 @@ const TONE: Record<string, Tone> = {
   accepted: 'completed',
   paid: 'completed',
   active: 'completed',
+  confirmed: 'completed',
+  decided: 'completed',
+  valid: 'completed',
+  upheld: 'completed',
   in_progress: 'in_progress',
   execution: 'in_progress',
   contracting: 'in_progress',
@@ -19,6 +23,7 @@ const TONE: Record<string, Tone> = {
   opinion_review: 'in_progress',
   under_verification: 'in_progress',
   under_review: 'in_progress',
+  under_investigation: 'in_progress',
   independent_review: 'in_progress',
   manager_review: 'in_progress',
   submitted: 'info',
@@ -30,6 +35,10 @@ const TONE: Record<string, Tone> = {
   triage: 'info',
   sent: 'info',
   nominated: 'info',
+  received: 'info',
+  acknowledged: 'info',
+  proposed: 'info',
+  revise: 'info',
   not_started: 'pending',
   draft: 'pending',
   pending: 'pending',
@@ -38,15 +47,25 @@ const TONE: Record<string, Tone> = {
   superseded: 'pending',
   void: 'pending',
   withdrawn: 'pending',
+  withdrawn_by_complainant: 'pending',
+  dismissed: 'pending',
+  no_action: 'pending',
+  not_upheld: 'pending',
   on_hold: 'on_hold',
   overdue: 'on_hold',
+  expiring: 'on_hold',
+  partly_upheld: 'on_hold',
   blocked: 'blocked',
   open: 'blocked',
   required: 'blocked',
   rejected: 'rejected',
   cancelled: 'rejected',
   changes_requested: 'rejected',
+  expired: 'rejected',
+  withdraw: 'rejected',
   planned: 'planned',
+  /** PRD v0.3 FR-89: an issued opinion whose chain runs again after a post-issuance event. */
+  in_revision: 'in_revision',
 }
 
 const STYLE: Record<Tone, string> = {
@@ -59,6 +78,7 @@ const STYLE: Record<Tone, string> = {
   planned: 'bg-[var(--vx-status-planned)] text-white',
   info: 'bg-info-soft text-info',
   success: 'bg-success-soft text-success',
+  in_revision: 'bg-warning-soft text-warning ring-1 ring-warning/50',
 }
 
 export function StatusChip({ status, className, size = 'sm', label }: { status: string; className?: string; size?: 'xs' | 'sm'; label?: string }) {

@@ -113,6 +113,28 @@ export function statusLabel(status: string): string {
     void: 'Void',
     nominated: 'Nominated',
     active: 'Active',
+    // PRD v0.3
+    in_revision: 'In revision',
+    received: 'Received',
+    acknowledged: 'Acknowledged',
+    under_investigation: 'Under investigation',
+    decided: 'Decided',
+    withdrawn_by_complainant: 'Withdrawn by complainant',
+    proposed: 'Proposed',
+    confirmed: 'Confirmed',
+    dismissed: 'Dismissed',
+    valid: 'Valid',
+    expiring: 'Expiring',
+    expired: 'Expired',
+    upheld: 'Upheld',
+    partly_upheld: 'Partly upheld',
+    not_upheld: 'Not upheld',
+    no_action: 'No action',
+    revise: 'Revise',
+    withdraw: 'Withdraw',
+    not_reviewed: 'Not reviewed',
+    adjusted: 'Adjusted',
+    not_individually_tested: 'Not individually tested',
   }
   return map[status] ?? titleCase(status)
 }

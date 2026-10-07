@@ -5,6 +5,7 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 import { admin, documents } from '@/api'
 import type { DocumentView, VersionView } from '@/api/documents'
+import { AppealButton } from '@/components/appeal-button'
 import { ConfirmTyped } from '@/components/confirm-typed'
 import { Hash, ProvenanceLine } from '@/components/provenance'
 import { ShowDontDoDialog } from '@/components/show-dont-do'
@@ -81,7 +82,12 @@ export function DocumentRow({ doc, serviceId, canReplace, canDelete, canCheck, c
             </>
           ) : null}
         </div>
-        {v.check_status === 'rejected' && v.reject_reason ? <p className="text-danger mt-1 text-xs">Rejected: {v.reject_reason}</p> : null}
+        {v.check_status === 'rejected' && v.reject_reason ? (
+          <div className="mt-1 flex flex-wrap items-center gap-2">
+            <p className="text-danger text-xs">Rejected: {v.reject_reason}</p>
+            {!compact ? <AppealButton serviceId={serviceId ?? doc.service_id} decisionEntityType="document_version" decisionEntityId={v.id} subject={`Rejection of ${v.filename} (v${v.version_no})`} variant="ghost" /> : null}
+          </div>
+        ) : null}
       </div>
       <div className="flex shrink-0 items-center gap-1">
         {canCheck && !locked && (v.check_status === 'uploaded' || v.check_status === 'checked') ? (

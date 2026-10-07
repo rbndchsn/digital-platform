@@ -331,6 +331,11 @@ describe('storyline', () => {
     const atlas = await services.get(SVC.atlasDecarb2025)
     const nomination = atlas.phases.flatMap((p) => p.steps).find((s) => s.key === 'team_nomination')!
     await expect(services.overrideStep(SVC.atlasDecarb2025, nomination.id, 'complete', 'Trying to skip the impartiality gate')).rejects.toMatchObject({ code: 'conflict' })
+    // The refusal is audited (PRD v0.3 FR-80) so the ADMIN counter of refused overrides is live.
+    const refused = await services.log(SVC.atlasDecarb2025, { types: ['step.override_refused'] })
+    expect(refused.length).toBeGreaterThanOrEqual(1)
+    expect(refused[0].summary).toMatch(/non-overridable/)
+    expect(refused[0].actor_user_id).toBe(USR.mgr)
     // Reassign the auditor role from Priya to Jonas; Jonas must declare COI. Jonas holds no verifier qualification,
     // so the competence check warns and the reassignment reason doubles as the override reason (PRD v0.3 FR-96).
     const priya = atlas.team.find((t) => t.userId === USR.aud)!

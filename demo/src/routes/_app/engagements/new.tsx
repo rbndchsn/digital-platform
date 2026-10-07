@@ -6,10 +6,11 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 import { z } from 'zod'
 import { documents, projects, services } from '@/api'
-import type { ServiceType } from '@/domain/enums'
-import { PROGRAMME_LABELS, SERVICE_TYPES, SERVICE_TYPE_LABELS } from '@/domain/enums'
+import type { LevelOfAssurance, ServiceType } from '@/domain/enums'
+import { LEVEL_OF_ASSURANCE_LABELS, PROGRAMME_LABELS, SERVICE_TYPES, SERVICE_TYPE_LABELS } from '@/domain/enums'
 import type { ServiceScope } from '@/domain/schemas'
 import { templateFor } from '@/domain/workflow/templates'
+import { AssuranceBadge } from '@/components/assurance-badge'
 import { PageHeader } from '@/components/page-header'
 import { Stepper } from '@/components/stepper'
 import { UploadDialog } from '@/components/upload-dialog'
@@ -38,6 +39,8 @@ interface FormState {
   periodStart: string
   periodEnd: string
   targetOpinionDate: string
+  /** PRD v0.3 FR-81: requested level of assurance; the template says whether it applies and its default. */
+  levelOfAssurance: LevelOfAssurance
   scope: ServiceScope
 }
 
@@ -49,7 +52,8 @@ const emptyForm = (projectId = ''): FormState => ({
   periodStart: `${thisYear - 1}-01-01`,
   periodEnd: `${thisYear - 1}-12-31`,
   targetOpinionDate: '',
-  scope: { summary: '', sites: [], boundary: '', products: [], interventions: [], materiality_pct: 5, sector_scopes: [], technical_areas: [] },
+  levelOfAssurance: 'reasonable',
+  scope: { summary: '', sites: [], boundary: '', products: [], interventions: [], materiality_pct: null, sector_scopes: [], technical_areas: [] },
 })
 
 /** Loads a draft (or renewal) when `?draft=` is present, then mounts the wizard with its initial values. */
@@ -66,7 +70,7 @@ function NewRequest() {
   }
   const s = draft.data?.service
   const initial: FormState = s
-    ? { projectId: s.project_id, serviceType: s.service_type, name: s.name, periodStart: s.period_start, periodEnd: s.period_end, targetOpinionDate: s.target_opinion_date ?? '', scope: s.scope_json }
+    ? { projectId: s.project_id, serviceType: s.service_type, name: s.name, periodStart: s.period_start, periodEnd: s.period_end, targetOpinionDate: s.target_opinion_date ?? '', levelOfAssurance: s.level_of_assurance, scope: s.scope_json }
     : emptyForm(projectParam ?? '')
   return <Wizard key={draftId ?? 'new'} initial={initial} initialStep={s ? 2 : 0} initialServiceId={draftId ?? null} draftReference={s?.reference ?? null} />
 }
@@ -167,12 +171,14 @@ function Wizard({ initial, initialStep, initialServiceId, draftReference }: { in
                     const tpl = templateFor(t)
                     const selected = form.serviceType === t
                     return (
-                      <button key={t} type="button" onClick={() => { update('serviceType', t); if (!form.name) update('name', `${SERVICE_TYPE_LABELS[t]} ${form.periodEnd.slice(0, 4)}`) }} className={cn('rounded-card border p-3 text-left transition-colors', selected ? 'border-primary bg-primary-soft/40' : 'border-border hover:bg-surface-muted')}>
+                      <button key={t} type="button" onClick={() => { update('serviceType', t); update('levelOfAssurance', tpl.assurance.applies ? tpl.assurance.default : 'not_applicable'); if (!form.name) update('name', `${SERVICE_TYPE_LABELS[t]} ${form.periodEnd.slice(0, 4)}`) }} className={cn('rounded-card border p-3 text-left transition-colors', selected ? 'border-primary bg-primary-soft/40' : 'border-border hover:bg-surface-muted')}>
                         <div className="flex items-start justify-between gap-2">
                           <span className="text-fg text-sm font-semibold">{SERVICE_TYPE_LABELS[t]}</span>
                           {selected ? <CheckCircle2 className="text-primary size-4 shrink-0" /> : null}
                         </div>
-                        <div className="text-fg-subtle mt-1 text-xs">{tpl.standard}</div>
+                        <div className="text-fg-subtle mt-1 text-xs">
+                          {tpl.standard} · {tpl.assurance.applies ? `${tpl.assurance.default} assurance by default` : 'validation, no assurance level'}
+                        </div>
                       </button>
                     )
                   })}
@@ -219,9 +225,22 @@ function Wizard({ initial, initialStep, initialServiceId, draftReference }: { in
                   <Field label="Interventions" hint="For decarb_units; comma-separated">
                     <Input value={form.scope.interventions.join(', ')} onChange={(e) => updateScope('interventions', splitList(e.target.value))} />
                   </Field>
-                  <Field label="Materiality threshold (%)">
-                    <Input type="number" min={0} max={100} step={0.5} value={form.scope.materiality_pct ?? ''} onChange={(e) => updateScope('materiality_pct', e.target.value === '' ? null : Number(e.target.value))} />
-                  </Field>
+                  {template?.assurance.applies ? (
+                    <Field label="Level of assurance" required hint={`Template default: ${template.assurance.default}. Confirmed on the pre-engagement form and locked when you accept the agreement; materiality is set by VERIFASSUR from it.`}>
+                      <NativeSelect value={form.levelOfAssurance} onChange={(e) => update('levelOfAssurance', e.target.value as LevelOfAssurance)}>
+                        <option value="limited">Limited assurance</option>
+                        <option value="reasonable">Reasonable assurance</option>
+                      </NativeSelect>
+                    </Field>
+                  ) : (
+                    <div>
+                      <div className="text-fg mb-1 block text-sm font-medium">Level of assurance</div>
+                      <div className="flex h-9 items-center">
+                        <AssuranceBadge level="not_applicable" />
+                      </div>
+                      <p className="text-fg-subtle text-xs">A validation gives a positive or negative conclusion, not a level of assurance.</p>
+                    </div>
+                  )}
                 </div>
               </div>
             ) : null}
@@ -267,7 +286,7 @@ function Wizard({ initial, initialStep, initialServiceId, draftReference }: { in
                   <Row k="Boundary" v={form.scope.boundary || '—'} />
                   <Row k="Products" v={form.scope.products.join(', ') || '—'} />
                   <Row k="Interventions" v={form.scope.interventions.join(', ') || '—'} />
-                  <Row k="Materiality" v={form.scope.materiality_pct != null ? `${form.scope.materiality_pct} %` : '—'} />
+                  <Row k="Level of assurance" v={LEVEL_OF_ASSURANCE_LABELS[form.levelOfAssurance]} />
                   <Row k="Attachments" v={`${docs.data?.length ?? 0}`} />
                   <Row k="Contact" v={`${me.user.name} (${me.user.email})`} />
                 </dl>
@@ -352,5 +371,5 @@ function splitList(s: string): string[] {
 }
 
 function toDraftInput(f: FormState) {
-  return { projectId: f.projectId, serviceType: f.serviceType as ServiceType, name: f.name, periodStart: f.periodStart, periodEnd: f.periodEnd, scope: f.scope, targetOpinionDate: f.targetOpinionDate || null }
+  return { projectId: f.projectId, serviceType: f.serviceType as ServiceType, name: f.name, periodStart: f.periodStart, periodEnd: f.periodEnd, scope: f.scope, targetOpinionDate: f.targetOpinionDate || null, levelOfAssurance: f.levelOfAssurance }
 }

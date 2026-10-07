@@ -2,7 +2,7 @@
 import { OVERRIDE_REASON_MIN_LENGTH, type ServiceStatus, type StepOverrideAction } from '@/domain/enums'
 import type { AuthContext } from '@/domain/policy'
 import type { Phase, Step } from '@/domain/schemas'
-import { applyStepOverride, canStartStep, derivePhaseStatus, stepMachine, type StepAction } from '@/domain/workflow/machines'
+import { TransitionError, applyStepOverride, canStartStep, derivePhaseStatus, stepMachine, type StepAction } from '@/domain/workflow/machines'
 import { ApiError, audit, getStore, notify, nowIsoString, serviceAudience, userName } from './core'
 
 /** Overrides and ADMIN actions need a real reason (PRD FR-73, §11.2). */
@@ -129,7 +129,16 @@ export function overrideStepInternal(ctx: AuthContext, serviceId: string, stepId
   if (step.service_id !== serviceId) throw new ApiError('not_found', 'Step not on this service')
   const phase = s.get('phases', step.phase_id)
   const svc = s.get('services', serviceId)
-  const { state } = applyStepOverride(step, action)
+  let state: Step['status']
+  try {
+    state = applyStepOverride(step, action).state
+  } catch (e) {
+    // PRD v0.3 FR-80: a refused override of a protected step is itself evidence (ADMIN statistics, FR-71).
+    if (e instanceof TransitionError && e.code === 'step_non_overridable') {
+      audit(ctx, { orgId: svc.org_id, serviceId, eventType: 'step.override_refused', entityType: 'step', entityId: stepId, summary: `Override refused: ${step.name} cannot be ${action === 'complete' ? 'forced to completed' : 'skipped'} (non-overridable step) — attempted by ${userName(ctx.userId)}`, reason, before: { status: step.status }, after: { action, code: 'step_non_overridable' } })
+    }
+    throw e
+  }
   const now = nowIsoString()
   const patch: Partial<Step> = { status: state }
   if (action === 'complete' || action === 'skip') {

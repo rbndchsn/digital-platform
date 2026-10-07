@@ -38,6 +38,7 @@ import { Route as AppStaffTriageRouteImport } from './routes/_app/staff/triage'
 import { Route as AppEngagementsServiceIdIndexRouteImport } from './routes/_app/engagements/$serviceId/index'
 import { Route as AppEngagementsServiceIdDocumentsRouteImport } from './routes/_app/engagements/$serviceId/documents'
 import { Route as AppEngagementsServiceIdLogRouteImport } from './routes/_app/engagements/$serviceId/log'
+import { Route as AppEngagementsServiceIdMisstatementsRouteImport } from './routes/_app/engagements/$serviceId/misstatements'
 import { Route as AppEngagementsServiceIdOpinionRouteImport } from './routes/_app/engagements/$serviceId/opinion'
 import { Route as AppEngagementsServiceIdPhasesRouteImport } from './routes/_app/engagements/$serviceId/phases'
 import { Route as AppEngagementsServiceIdTimelineRouteImport } from './routes/_app/engagements/$serviceId/timeline'
@@ -196,6 +197,12 @@ const AppEngagementsServiceIdLogRoute =
     path: '/log',
     getParentRoute: () => AppEngagementsServiceIdRoute,
   } as any)
+const AppEngagementsServiceIdMisstatementsRoute =
+  AppEngagementsServiceIdMisstatementsRouteImport.update({
+    id: '/misstatements',
+    path: '/misstatements',
+    getParentRoute: () => AppEngagementsServiceIdRoute,
+  } as any)
 const AppEngagementsServiceIdOpinionRoute =
   AppEngagementsServiceIdOpinionRouteImport.update({
     id: '/opinion',
@@ -279,6 +286,7 @@ export interface FileRoutesByFullPath {
   '/staff/': typeof AppStaffIndexRoute
   '/engagements/$serviceId/documents': typeof AppEngagementsServiceIdDocumentsRoute
   '/engagements/$serviceId/log': typeof AppEngagementsServiceIdLogRoute
+  '/engagements/$serviceId/misstatements': typeof AppEngagementsServiceIdMisstatementsRoute
   '/engagements/$serviceId/opinion': typeof AppEngagementsServiceIdOpinionRoute
   '/engagements/$serviceId/phases': typeof AppEngagementsServiceIdPhasesRoute
   '/engagements/$serviceId/timeline': typeof AppEngagementsServiceIdTimelineRoute
@@ -316,6 +324,7 @@ export interface FileRoutesByTo {
   '/staff': typeof AppStaffIndexRoute
   '/engagements/$serviceId/documents': typeof AppEngagementsServiceIdDocumentsRoute
   '/engagements/$serviceId/log': typeof AppEngagementsServiceIdLogRoute
+  '/engagements/$serviceId/misstatements': typeof AppEngagementsServiceIdMisstatementsRoute
   '/engagements/$serviceId/opinion': typeof AppEngagementsServiceIdOpinionRoute
   '/engagements/$serviceId/phases': typeof AppEngagementsServiceIdPhasesRoute
   '/engagements/$serviceId/timeline': typeof AppEngagementsServiceIdTimelineRoute
@@ -357,6 +366,7 @@ export interface FileRoutesById {
   '/_app/staff/': typeof AppStaffIndexRoute
   '/_app/engagements/$serviceId/documents': typeof AppEngagementsServiceIdDocumentsRoute
   '/_app/engagements/$serviceId/log': typeof AppEngagementsServiceIdLogRoute
+  '/_app/engagements/$serviceId/misstatements': typeof AppEngagementsServiceIdMisstatementsRoute
   '/_app/engagements/$serviceId/opinion': typeof AppEngagementsServiceIdOpinionRoute
   '/_app/engagements/$serviceId/phases': typeof AppEngagementsServiceIdPhasesRoute
   '/_app/engagements/$serviceId/timeline': typeof AppEngagementsServiceIdTimelineRoute
@@ -398,6 +408,7 @@ export interface FileRouteTypes {
     | '/staff/'
     | '/engagements/$serviceId/documents'
     | '/engagements/$serviceId/log'
+    | '/engagements/$serviceId/misstatements'
     | '/engagements/$serviceId/opinion'
     | '/engagements/$serviceId/phases'
     | '/engagements/$serviceId/timeline'
@@ -435,6 +446,7 @@ export interface FileRouteTypes {
     | '/staff'
     | '/engagements/$serviceId/documents'
     | '/engagements/$serviceId/log'
+    | '/engagements/$serviceId/misstatements'
     | '/engagements/$serviceId/opinion'
     | '/engagements/$serviceId/phases'
     | '/engagements/$serviceId/timeline'
@@ -475,6 +487,7 @@ export interface FileRouteTypes {
     | '/_app/staff/'
     | '/_app/engagements/$serviceId/documents'
     | '/_app/engagements/$serviceId/log'
+    | '/_app/engagements/$serviceId/misstatements'
     | '/_app/engagements/$serviceId/opinion'
     | '/_app/engagements/$serviceId/phases'
     | '/_app/engagements/$serviceId/timeline'
@@ -698,6 +711,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppEngagementsServiceIdLogRouteImport
       parentRoute: typeof AppEngagementsServiceIdRoute
     }
+    '/_app/engagements/$serviceId/misstatements': {
+      id: '/_app/engagements/$serviceId/misstatements'
+      path: '/misstatements'
+      fullPath: '/engagements/$serviceId/misstatements'
+      preLoaderRoute: typeof AppEngagementsServiceIdMisstatementsRouteImport
+      parentRoute: typeof AppEngagementsServiceIdRoute
+    }
     '/_app/engagements/$serviceId/opinion': {
       id: '/_app/engagements/$serviceId/opinion'
       path: '/opinion'
@@ -787,6 +807,7 @@ const AppAdminRouteWithChildren = AppAdminRoute._addFileChildren(
 interface AppEngagementsServiceIdRouteChildren {
   AppEngagementsServiceIdDocumentsRoute: typeof AppEngagementsServiceIdDocumentsRoute
   AppEngagementsServiceIdLogRoute: typeof AppEngagementsServiceIdLogRoute
+  AppEngagementsServiceIdMisstatementsRoute: typeof AppEngagementsServiceIdMisstatementsRoute
   AppEngagementsServiceIdOpinionRoute: typeof AppEngagementsServiceIdOpinionRoute
   AppEngagementsServiceIdPhasesRoute: typeof AppEngagementsServiceIdPhasesRoute
   AppEngagementsServiceIdTimelineRoute: typeof AppEngagementsServiceIdTimelineRoute
@@ -800,6 +821,8 @@ const AppEngagementsServiceIdRouteChildren: AppEngagementsServiceIdRouteChildren
     AppEngagementsServiceIdDocumentsRoute:
       AppEngagementsServiceIdDocumentsRoute,
     AppEngagementsServiceIdLogRoute: AppEngagementsServiceIdLogRoute,
+    AppEngagementsServiceIdMisstatementsRoute:
+      AppEngagementsServiceIdMisstatementsRoute,
     AppEngagementsServiceIdOpinionRoute: AppEngagementsServiceIdOpinionRoute,
     AppEngagementsServiceIdPhasesRoute: AppEngagementsServiceIdPhasesRoute,
     AppEngagementsServiceIdTimelineRoute: AppEngagementsServiceIdTimelineRoute,

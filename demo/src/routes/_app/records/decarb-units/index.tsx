@@ -8,6 +8,7 @@ import { records } from '@/api'
 import type { BaselineMethod, InterventionLayer } from '@/domain/enums'
 import { INTERVENTION_LAYERS } from '@/domain/enums'
 import { GOOD_UNIT_KEYS } from '@/domain/units'
+import { AssuranceBadge } from '@/components/assurance-badge'
 import { EmptyState } from '@/components/empty-state'
 import { KpiNumber } from '@/components/kpi-tile'
 import { PageHeader } from '@/components/page-header'
@@ -34,6 +35,7 @@ function Portfolio() {
   const canEdit = me.org.type === 'client' && me.role !== 'client_viewer'
   const verifiedTotal = q.data?.rows.filter((r) => r.status === 'verified').reduce((a, r) => a + (r.verifiedReduction ?? 0) + (r.verifiedRemoval ?? 0), 0) ?? 0
   const declaredTotal = q.data?.rows.filter((r) => r.status !== 'verified' && r.status !== 'superseded').reduce((a, r) => a + (r.declaredReduction ?? 0) + (r.declaredRemoval ?? 0), 0) ?? 0
+  const withdrawn = q.data?.rows.filter((r) => r.assuranceStatus === 'withdrawn').length ?? 0
   return (
     <>
       <PageHeader title="decarb_units" description="1 decarb_unit = 1 tCO2e of reduction or removal between a baseline and a project outcome in your value chain, computed on the volume attributed to you. VERIFASSUR verifies; it does not issue, transfer or claim." actions={canEdit ? <Button onClick={() => setCreate(true)}><Plus /> New record</Button> : null} />
@@ -47,7 +49,7 @@ function Portfolio() {
       ) : (
         <div className="space-y-5">
           <div className="grid gap-4 md:grid-cols-3">
-            <KpiNumber value={verifiedTotal} unit="tCO2e" label="Verified decarb_units" tone="success" />
+            <KpiNumber value={verifiedTotal} unit="tCO2e" label="Verified decarb_units" tone="success" hint={withdrawn ? `${withdrawn} record${withdrawn === 1 ? '' : 's'} with assurance withdrawn excluded` : 'each record carries its level of assurance'} />
             <KpiNumber value={declaredTotal} unit="tCO2e" label="Declared, awaiting verification" tone="fg" />
             <Card>
               <CardHeader title="By year" />
@@ -107,15 +109,18 @@ function Portfolio() {
                       <StatusChip status={r.status} />
                     </TD>
                     <TD className="text-xs">
-                      {r.statementCode ? (
-                        <Link to="/verify/$code" params={{ code: r.statementCode }} className="text-primary hover:underline" onClick={(e) => e.stopPropagation()}>
-                          {r.statementCode}
-                        </Link>
-                      ) : r.serviceReference ? (
-                        <span className="text-fg-muted">{r.serviceReference}</span>
-                      ) : (
-                        '—'
-                      )}
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <AssuranceBadge level={r.levelOfAssurance} status={r.assuranceStatus === 'withdrawn' ? 'withdrawn' : r.status === 'under_verification' && r.statementCode ? 'under_review' : r.assuranceStatus} />
+                        {r.statementCode ? (
+                          <Link to="/verify/$code" params={{ code: r.statementCode }} className="text-primary hover:underline" onClick={(e) => e.stopPropagation()}>
+                            {r.statementCode}
+                          </Link>
+                        ) : r.serviceReference ? (
+                          <span className="text-fg-muted">{r.serviceReference}</span>
+                        ) : (
+                          '—'
+                        )}
+                      </div>
                     </TD>
                   </TR>
                 ))}

@@ -6,6 +6,7 @@ import { useState } from 'react'
 import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { records } from '@/api'
 import type { ConsolidationApproach, GwpSet } from '@/domain/enums'
+import { AssuranceBadge, recordAssuranceState } from '@/components/assurance-badge'
 import { EmptyState } from '@/components/empty-state'
 import { PageHeader } from '@/components/page-header'
 import { ComingBadge } from '@/components/preview-overlay'
@@ -139,15 +140,18 @@ function Inventories() {
                         </div>
                       </TD>
                       <TD className="text-xs">
-                        {inv.statementCode ? (
-                          <Link to="/verify/$code" params={{ code: inv.statementCode }} className="text-primary hover:underline" onClick={(e) => e.stopPropagation()}>
-                            {inv.statementCode}
-                          </Link>
-                        ) : inv.serviceReference ? (
-                          <span className="text-fg-muted">{inv.serviceReference}</span>
-                        ) : (
-                          '—'
-                        )}
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <AssuranceBadge level={inv.level_of_assurance} status={recordAssuranceState(inv)} />
+                          {inv.statementCode ? (
+                            <Link to="/verify/$code" params={{ code: inv.statementCode }} className="text-primary hover:underline" onClick={(e) => e.stopPropagation()}>
+                              {inv.statementCode}
+                            </Link>
+                          ) : inv.serviceReference ? (
+                            <span className="text-fg-muted">{inv.serviceReference}</span>
+                          ) : (
+                            '—'
+                          )}
+                        </div>
                       </TD>
                     </TR>
                   )

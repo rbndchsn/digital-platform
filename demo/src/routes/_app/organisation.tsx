@@ -3,6 +3,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { UserPlus } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
+import { z } from 'zod'
 import { staff } from '@/api'
 import { PageHeader } from '@/components/page-header'
 import { ShowDontDoDialog } from '@/components/show-dont-do'
@@ -16,6 +17,7 @@ import { useMe } from '@/lib/auth'
 import { roleLabel } from '@/lib/format'
 
 export const Route = createFileRoute('/_app/organisation')({
+  validateSearch: z.object({ tab: z.enum(['members', 'cases']).optional() }),
   component: Organisation,
 })
 

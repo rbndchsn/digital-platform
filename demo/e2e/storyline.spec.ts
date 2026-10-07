@@ -90,7 +90,7 @@ test('the full twelve-chapter storyline runs without a dead click', async ({ pag
   await expect(page.getByText('Iteration 2: manager review')).toBeVisible()
   await enterAs(page, /Helena Brandt/)
   await page.goto('/engagements/svc_nw_decarb_2025/opinion')
-  await page.getByRole('button', { name: 'Manager approval', exact: true }).click()
+  await page.getByRole('button', { name: 'Manager decision', exact: true }).click()
   for (const box of await page.getByRole('checkbox').all()) await box.click()
   await page.getByRole('button', { name: 'Approve' }).click()
   await page.getByRole('button', { name: 'Issue opinion' }).first().click()

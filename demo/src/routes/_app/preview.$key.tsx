@@ -114,6 +114,33 @@ const MOCKS: Record<string, ReactNode> = {
       </CardContent>
     </Card>
   ),
+  public_complaints: (
+    <div className="grid gap-5 lg:grid-cols-[1fr_320px]">
+      <Card>
+        <CardHeader title="File a complaint about VERIFASSUR" description="Public form at /complaints (Release 2, PRD FR-93): any party may complain without an account. Turnstile protects the form; a case token lets you follow the status." />
+        <CardContent className="space-y-3">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Input placeholder="Your name" aria-label="Your name" />
+            <Input placeholder="E-mail for the acknowledgement" aria-label="E-mail" />
+            <Input placeholder="Verification code concerned (optional)" aria-label="Verification code" className="sm:col-span-2" />
+          </div>
+          <div className="border-border text-fg-subtle rounded-md border border-dashed px-3 py-6 text-center text-sm">Describe what happened, when, and what outcome you ask for.</div>
+          <div className="flex items-center justify-between">
+            <Badge tone="outline">Turnstile check</Badge>
+            <Button>Submit complaint</Button>
+          </div>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader title="What happens next" />
+        <CardContent className="text-fg-muted space-y-2 text-sm">
+          <p>Acknowledged within 5 working days; decided within 30, by a manager outside the involved set of any engagement concerned.</p>
+          <p>You receive a case token such as <code className="font-mono">CMP-7Q2K-91XA</code> to check the stage online.</p>
+          <p>Investigation notes stay internal; you see the stage dates and the outcome summary.</p>
+        </CardContent>
+      </Card>
+    </div>
+  ),
   continuous_assurance: (
     <Card>
       <CardHeader title="Continuous assurance" description="Monthly data streams verified on a rolling basis." />

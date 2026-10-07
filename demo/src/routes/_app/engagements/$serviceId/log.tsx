@@ -17,11 +17,30 @@ export const Route = createFileRoute('/_app/engagements/$serviceId/log')({
   component: ServiceLog,
 })
 
-const OVERRIDE_TYPES = ['step.overridden', 'service.overridden', 'team.reassigned', 'step.replanned']
+const OVERRIDE_TYPES = ['step.overridden', 'service.overridden', 'team.reassigned', 'step.replanned', 'team.check_overridden', 'service.assurance_level_changed', 'step.override_refused']
+/** PRD v0.3 event families (§9.3): grouped filters so the governance trail is one click away. */
+const GROUPS: Record<string, string[]> = {
+  override: OVERRIDE_TYPES,
+  materiality: ['materiality.', 'misstatement.'],
+  post_issuance: ['statement.', 'opinion.', 'record.assurance_withdrawn'],
+  cases: ['case.'],
+  competence: ['competence.', 'legacy_engagement.'],
+  team_checks: ['team.nominated', 'team.reassigned', 'team.check_overridden'],
+  decisions: ['iteration.decision_refused', 'iteration.returned_to_ir', 'iteration.manager_approved', 'iteration.manager_changes_requested'],
+  verified_values: ['record.verified_value_edited', 'inventory.verified', 'emission_factor.verified', 'decarb_record.verified'],
+}
+const HIGHLIGHT = new Set([...OVERRIDE_TYPES, 'iteration.decision_refused', 'materiality.warning_raised', 'statement.withdrawn', 'statement.superseded'])
 
 const TYPES = [
   ['', 'All events'],
   ['override', 'Manager overrides'],
+  ['decisions', 'Decisions and refusals'],
+  ['materiality', 'Materiality and misstatements'],
+  ['verified_values', 'Verified values'],
+  ['post_issuance', 'Statements and post-issuance'],
+  ['cases', 'Complaints and appeals'],
+  ['competence', 'Competence and rotation'],
+  ['team_checks', 'Team checks'],
   ['service.', 'Service status'],
   ['step.', 'Steps'],
   ['document.', 'Documents'],
@@ -31,7 +50,6 @@ const TYPES = [
   ['coi.', 'Conflicts of interest'],
   ['finding.', 'Findings'],
   ['iteration.', 'Opinion iterations'],
-  ['opinion.', 'Opinion issued'],
   ['inventory.', 'Inventory'],
   ['decarb_record.', 'decarb_units'],
 ]
@@ -40,7 +58,7 @@ function ServiceLog() {
   const { serviceId } = Route.useParams()
   const [type, setType] = useState('')
   const [search, setSearch] = useState('')
-  const q = useQuery({ queryKey: ['log', serviceId, type, search], queryFn: () => services.log(serviceId, { types: type === 'override' ? OVERRIDE_TYPES : type ? [type] : undefined, search: search || undefined }) })
+  const q = useQuery({ queryKey: ['log', serviceId, type, search], queryFn: () => services.log(serviceId, { types: GROUPS[type] ?? (type ? [type] : undefined), search: search || undefined }) })
   function exportCsv() {
     const rows = q.data ?? []
     const esc = (s: string) => `"${String(s ?? '').replace(/"/g, '""')}"`
@@ -96,11 +114,13 @@ function ServiceLog() {
             <TBody>
               {q.data.map((e) => {
                 const override = OVERRIDE_TYPES.includes(e.event_type) && e.event_type !== 'step.replanned'
+                const refusal = e.event_type === 'iteration.decision_refused' || e.event_type === 'step.override_refused'
+                const highlight = HIGHLIGHT.has(e.event_type) && e.event_type !== 'step.replanned'
                 return (
-                  <TR key={e.id} className={override ? 'bg-warning-soft/40' : undefined}>
+                  <TR key={e.id} className={refusal ? 'bg-danger-soft/40' : highlight ? 'bg-warning-soft/40' : undefined}>
                     <TD className="text-fg-muted text-xs whitespace-nowrap">{fmtDateTime(e.occurred_at)}</TD>
                     <TD>
-                      <Badge tone={override ? 'warning' : 'outline'}>{override ? `Override · ${e.event_type}` : e.event_type}</Badge>
+                      <Badge tone={refusal ? 'danger' : highlight ? 'warning' : 'outline'}>{override ? `Override · ${e.event_type}` : refusal ? `Refused · ${e.event_type}` : e.event_type}</Badge>
                     </TD>
                     <TD className="text-xs whitespace-nowrap">{e.actorName}</TD>
                     <TD className="text-sm">

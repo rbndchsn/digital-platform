@@ -1,8 +1,10 @@
-/** Overview tab: phase rail, next action, team, key dates, quote/invoice, counts, download-all. PRD §7.2. */
+/** Overview tab: phase rail, next action, team, key dates, quote/invoice, counts, download-all, level of assurance and materiality (PRD §7.2, v0.3 FR-81, FR-84). */
 import { Link, createFileRoute, useNavigate } from '@tanstack/react-router'
-import { Mail, Receipt } from 'lucide-react'
+import { Lock, Mail, Receipt, Scale } from 'lucide-react'
 import { toast } from 'sonner'
+import { ASSERTION_BASE_LABELS, LEVEL_OF_ASSURANCE_LABELS } from '@/domain/enums'
 import { ActionPill } from '@/components/action-pill'
+import { AssuranceBadge } from '@/components/assurance-badge'
 import { DownloadAllButton } from '@/components/download-all'
 import { PhaseRail } from '@/components/phase-rail'
 import { StatusChip } from '@/components/status-chip'
@@ -11,8 +13,8 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Avatar, Skeleton } from '@/components/ui/misc'
 import { useMe } from '@/lib/auth'
-import { fmtDate, fmtMoney, roleLabel } from '@/lib/format'
-import { useService } from '@/lib/service-hooks'
+import { fmtDate, fmtMoney, fmtNumber, roleLabel } from '@/lib/format'
+import { useMateriality, useService } from '@/lib/service-hooks'
 
 export const Route = createFileRoute('/_app/engagements/$serviceId/')({
   component: Overview,
@@ -23,12 +25,14 @@ function Overview() {
   const q = useService(serviceId)
   const me = useMe()
   const navigate = useNavigate()
+  const mat = useMateriality(serviceId)
   if (!q.data) return <Skeleton className="h-64" />
   const d = q.data
   const s = d.service
   const quote = d.invoices.find((i) => i.kind === 'quote')
   const invoice = d.invoices.find((i) => i.kind === 'invoice')
   const currentStepId = d.nextAction?.step_id ?? d.phases.flatMap((p) => p.steps).find((st) => st.status !== 'completed' && st.status !== 'skipped')?.id ?? null
+  const m = mat.data
   return (
     <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
       <div>
@@ -51,6 +55,46 @@ function Overview() {
               <Kv k="Contracted" v={fmtDate(s.contracted_at)} />
               <Kv k="Target opinion date" v={fmtDate(s.target_opinion_date)} />
               <Kv k="Issued" v={fmtDate(s.issued_at)} />
+            </dl>
+          </CardContent>
+        </Card>
+
+        <Card data-testid="assurance-card">
+          <CardHeader title={<span className="inline-flex items-center gap-2"><Scale className="size-4" /> Level of assurance and materiality</span>} description="Captured in the request, confirmed on the pre-engagement form, locked when the agreement is accepted (PRD FR-81). Materiality is set by the team leader and approved by a manager in Planning (FR-84)." />
+          <CardContent>
+            <dl className="grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
+              <div>
+                <dt className="text-fg-subtle text-xs">Level of assurance</dt>
+                <dd className="mt-0.5 flex flex-wrap items-center gap-1.5">
+                  <AssuranceBadge level={s.level_of_assurance} status={d.statementStatus === 'withdrawn' ? 'withdrawn' : null} />
+                  {s.assurance_level_locked_at ? (
+                    <span className="text-fg-subtle inline-flex items-center gap-1 text-xs">
+                      <Lock className="size-3" /> locked {fmtDate(s.assurance_level_locked_at)}
+                    </span>
+                  ) : (
+                    <span className="text-fg-subtle text-xs">not yet locked</span>
+                  )}
+                </dd>
+                <dd className="text-fg-subtle text-xs">{LEVEL_OF_ASSURANCE_LABELS[s.level_of_assurance]}</dd>
+              </div>
+              {d.assuranceApplies ? (
+                m ? (
+                  <>
+                    <Kv k="Materiality" v={`${m.threshold_pct} % of ${ASSERTION_BASE_LABELS[m.assertion_base].toLowerCase()}`} />
+                    <Kv k="Absolute threshold" v={m.threshold_abs != null ? `${fmtNumber(m.threshold_abs, Math.abs(m.threshold_abs) < 10 ? 3 : 0)} ${m.assertion_unit}` : 'awaiting the declared assertion'} />
+                    <div>
+                      <dt className="text-fg-subtle text-xs">Materiality status</dt>
+                      <dd className="mt-0.5">
+                        <StatusChip status={m.status} label={m.status === 'approved' ? `Approved by ${m.approvedByName}` : 'Draft'} />
+                      </dd>
+                    </div>
+                  </>
+                ) : (
+                  <Kv k="Materiality" v="Set in Planning on the audit-plan step" />
+                )
+              ) : (
+                <Kv k="Materiality" v="Not applicable to a validation" />
+              )}
             </dl>
           </CardContent>
         </Card>

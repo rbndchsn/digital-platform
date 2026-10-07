@@ -21,6 +21,8 @@ export function ReasonDialog({
   danger = false,
   children,
   note,
+  confirmDisabled = false,
+  size = 'sm',
   onConfirm,
 }: {
   open: boolean
@@ -36,6 +38,9 @@ export function ReasonDialog({
   children?: ReactNode
   /** Shown above the footer, e.g. who is notified. */
   note?: ReactNode
+  /** Extra condition from the parent (e.g. a blocked competence check). */
+  confirmDisabled?: boolean
+  size?: 'sm' | 'md' | 'lg'
   onConfirm: (reason: string) => Promise<unknown> | unknown
 }) {
   const [reason, setReason] = useState('')
@@ -61,7 +66,7 @@ export function ReasonDialog({
   }
   return (
     <Dialog open={open} onOpenChange={close}>
-      <DialogContent title={title} description={description} size="sm">
+      <DialogContent title={title} description={description} size={size}>
         {children}
         <Field label={reasonLabel} required hint={reasonOk ? 'Written to the audit log and shown to the people affected.' : `At least ${OVERRIDE_REASON_MIN_LENGTH} characters; it is written to the audit log.`} className={children ? 'mt-3' : undefined}>
           <Textarea value={reason} onChange={(e) => setReason(e.target.value)} placeholder={placeholder} autoFocus />
@@ -80,7 +85,7 @@ export function ReasonDialog({
           <Button variant="secondary" onClick={() => close(false)} disabled={busy}>
             Cancel
           </Button>
-          <Button variant={danger ? 'danger' : 'default'} onClick={go} disabled={!reasonOk || !phraseOk} loading={busy}>
+          <Button variant={danger ? 'danger' : 'default'} onClick={go} disabled={!reasonOk || !phraseOk || confirmDisabled} loading={busy}>
             {confirmLabel}
           </Button>
         </DialogFooter>

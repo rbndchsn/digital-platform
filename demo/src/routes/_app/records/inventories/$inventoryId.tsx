@@ -8,9 +8,10 @@ import type { InventoryView, LineView } from '@/api/records'
 import type { ReviewStatus, ScopeCategory } from '@/domain/enums'
 import { REVIEW_STATUSES, REVIEW_STATUS_LABELS, SCOPE_CATEGORIES, SCOPE_CATEGORY_LABELS, scopeOfCategory } from '@/domain/enums'
 import type { GasEntry } from '@/domain/schemas'
-import { AssuranceBadge, AssuranceHistory } from '@/components/assurance-badge'
+import { AssuranceBadge, AssuranceHistoryButton, recordAssuranceState } from '@/components/assurance-badge'
 import { ConfirmTyped } from '@/components/confirm-typed'
 import { DeclaredVerifiedPair } from '@/components/declared-verified'
+import { InvolvedNote } from '@/components/eligibility-notice'
 import { EvidenceChips } from '@/components/evidence-chips'
 import { KpiNumber } from '@/components/kpi-tile'
 import { PageHeader } from '@/components/page-header'
@@ -27,6 +28,7 @@ import { SubmitForVerificationDialog } from '@/features/records/submit-dialog'
 import { useMe } from '@/lib/auth'
 import { fmtNumber } from '@/lib/format'
 import { useAppMutation } from '@/lib/query'
+import { useMisstatements } from '@/lib/service-hooks'
 
 export const Route = createFileRoute('/_app/records/inventories/$inventoryId')({
   component: InventoryEditor,
@@ -48,6 +50,8 @@ function InventoryEditor() {
   const submitM = useAppMutation((t: Parameters<typeof records.submitInventory>[1]) => records.submitInventory(inventoryId, t), { successMessage: 'Inventory submitted for verification.' })
   const reopenM = useAppMutation(() => records.reopenInventory(inventoryId), { successMessage: 'Inventory reopened as a new revision.' })
   const delM = useAppMutation((lineId: string) => records.removeLine(inventoryId, lineId), { successMessage: 'Line removed.' })
+  const serviceId = q.data?.service_id ?? ''
+  const mis = useMisstatements(serviceId)
   if (!q.data) return <Skeleton className="h-64" />
   const inv = q.data
   const isClient = me.org.type === 'client'
@@ -55,6 +59,8 @@ function InventoryEditor() {
   const canReopen = isClient && me.role !== 'client_viewer' && inv.status === 'submitted'
   // Verifier roles and the manager (PRD FR-77) review lines and enter verified totals before issuance; the platform administrator never does.
   const canVerify = !isClient && !me.isAdmin && ['submitted', 'under_verification'].includes(inv.status)
+  const immutable = ['verified', 'superseded', 'withdrawn'].includes(inv.status)
+  const proposed = (mis.data ?? []).filter((m) => m.status === 'proposed' && m.record_id === inv.id)
   const lines = inv.lines.filter((l) => String(l.scope) === scope)
   const scopeTotal = (s: string) => inv.totals.by_scope[s] ?? 0
   const verifiedScope = (s: string) => inv.verifiedTotals?.by_scope[s] ?? null
@@ -69,7 +75,7 @@ function InventoryEditor() {
         meta={
           <>
             <StatusChip status={inv.status} />
-            <AssuranceBadge level={inv.level_of_assurance} status={inv.assurance_status} />
+            <AssuranceBadge level={inv.level_of_assurance} status={recordAssuranceState(inv)} />
             {inv.serviceReference ? (
               <Link to="/engagements/$serviceId" params={{ serviceId: inv.service_id! }} className="text-primary text-xs font-semibold hover:underline">
                 Engagement {inv.serviceReference}
@@ -99,9 +105,20 @@ function InventoryEditor() {
                 <BadgeCheck /> Verified totals
               </Button>
             ) : null}
+            <AssuranceHistoryButton history={inv.assurance.history} />
           </>
         }
       />
+      {proposed.length && inv.service_id ? (
+        <Alert tone="warning" className="mb-5" title={`${proposed.length} misstatement${proposed.length === 1 ? '' : 's'} proposed from line reviews`}>
+          {proposed.map((m) => m.description).join(' · ')}{' '}
+          <Link to="/engagements/$serviceId/misstatements" params={{ serviceId: inv.service_id }} className="font-semibold underline">
+            Open the misstatement register
+          </Link>{' '}
+          to confirm or dismiss them.
+        </Alert>
+      ) : null}
+      {!isClient && !me.isAdmin ? <InvolvedNote serviceId={inv.service_id} immutable={immutable} className="mb-5" /> : null}
       {inv.status === 'verified' ? (
         <Alert tone="success" className="mb-5" title={`Verified · ${inv.level_of_assurance === 'limited' ? 'limited' : 'reasonable'} assurance`}>
           The opinion covers the inventory totals as a whole. Each line shows how it was reviewed (accepted, adjusted or not individually tested); no line is individually assured. Later edits create a new revision that supersedes this one once verified.
@@ -136,7 +153,7 @@ function InventoryEditor() {
           </CardContent>
         </Card>
       </div>
-      {inv.assurance.history.length ? <AssuranceHistory history={inv.assurance.history} className="mb-5" /> : null}
+      {recordAssuranceState(inv) === 'under_review' ? <Alert tone="warning" className="mb-5" title="Under review: a revision of the issued opinion is in progress">Statement {inv.statementCode} stays valid until the replacement is issued; the team may review lines and re-enter verified totals meanwhile.</Alert> : null}
       <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
         <NavTabs
           value={scope}
