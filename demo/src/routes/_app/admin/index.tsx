@@ -1,7 +1,7 @@
 /** Administration dashboard (PRD FR-71): engagement, money, cycle-time, overdue, findings, COI, workload and concentration rollups. */
 import { useQuery } from '@tanstack/react-query'
 import { Link, createFileRoute } from '@tanstack/react-router'
-import { AlertTriangle, Gauge } from 'lucide-react'
+import { AlertTriangle, Gauge, Scale } from 'lucide-react'
 import { useState } from 'react'
 import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { admin } from '@/api'
@@ -9,7 +9,7 @@ import type { StatsFilter } from '@/api/admin'
 import type { ServiceType } from '@/domain/enums'
 import { SERVICE_TYPE_LABELS } from '@/domain/enums'
 import { EmptyState } from '@/components/empty-state'
-import { KpiNumber } from '@/components/kpi-tile'
+import { KpiBars, KpiNumber } from '@/components/kpi-tile'
 import { PageHeader } from '@/components/page-header'
 import { StatusChip } from '@/components/status-chip'
 import { Badge } from '@/components/ui/badge'
@@ -92,6 +92,54 @@ function AdminDashboard() {
               <KpiNumber value={d.openBlockingFindings.length} label="Open blocking findings" tone={d.openBlockingFindings.length ? 'blocking' : 'fg'} hint="CARs that block an opinion" />
               <KpiNumber value={d.coiPending.length} label="COI declarations pending" tone={d.coiPending.length ? 'blocking' : 'fg'} hint="required or awaiting approval" />
               <KpiNumber value={d.totals.overrideCount} label="Manager overrides" tone="fg" hint="each with a reason in the audit log" />
+            </div>
+          </section>
+
+          <section aria-label="Governance" data-testid="governance">
+            <div className="mb-2 flex items-center gap-2">
+              <h2 className="text-fg text-base font-semibold">Governance controls</h2>
+              <Badge tone="primary">PRD v0.3</Badge>
+              <span className="text-fg-muted text-xs">Refusals, warnings, revisions, cases and competence, computed live from the audit log and the registers (FR-71).</span>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+              <KpiNumber value={d.governance.decisionRefusals} label="Decision refusals" tone={d.governance.decisionRefusals ? 'blocking' : 'fg'} hint="decision_maker_conflict on manager decisions, issuance, revisions, withdrawals" />
+              <KpiNumber value={d.governance.nonOverridableRefusals} label="Overrides refused on locked steps" tone={d.governance.nonOverridableRefusals ? 'blocking' : 'fg'} hint="step.override_refused (non_overridable, FR-80)" />
+              <KpiNumber value={d.governance.materialityWarningsRaised} label="Materiality warnings raised" tone="fg" hint={`${d.governance.materialityWarningsAcknowledged} acknowledgement${d.governance.materialityWarningsAcknowledged === 1 ? '' : 's'} recorded`} />
+              <KpiNumber value={d.governance.checkOverrides} label="Competence / rotation warnings overridden" tone="fg" hint="each with a reason; IR blocks are never overridable" />
+              <KpiNumber value={d.governance.statementsRevised} label="Statements revised" tone="fg" hint="superseded by a new public code" />
+              <KpiNumber value={d.governance.statementsWithdrawn} label="Statements withdrawn" tone={d.governance.statementsWithdrawn ? 'blocking' : 'fg'} hint="records re-marked, public banner" />
+              <KpiNumber value={d.governance.casesOpen} label="Open complaints and appeals" tone={d.governance.casesOverdue ? 'blocking' : 'fg'} hint={`${d.governance.casesOverdue} overdue · ${d.governance.casesReceived} received`} />
+              <KpiNumber value={d.governance.qualificationsExpiring90} label="Qualifications expiring within 90 days" tone={d.governance.qualificationsExpired ? 'blocking' : 'fg'} hint={`${d.governance.qualificationsExpired} already expired`} />
+            </div>
+            <div className="mt-4 grid gap-5 lg:grid-cols-2">
+              <KpiBars
+                label="Complaints and appeals"
+                rows={[
+                  { label: 'Received', value: d.governance.casesReceived, tone: 'info' },
+                  { label: 'Open', value: d.governance.casesOpen, tone: 'primary' },
+                  { label: 'Overdue', value: d.governance.casesOverdue, tone: 'blocking' },
+                  { label: 'Decided within target', value: d.governance.casesDecidedWithinTarget, tone: 'success' },
+                ]}
+              />
+              <Card>
+                <CardHeader title={<span className="inline-flex items-center gap-2"><Scale className="size-4" /> Decisions with no eligible manager</span>} description="Iterations in manager review where every manager is in the involved set (PRD §16 assumption 7)." />
+                <CardContent>
+                  {d.governance.pendingDecisionsWithoutEligibleManager.length === 0 ? (
+                    <EmptyState title="Every pending decision has an eligible manager" />
+                  ) : (
+                    <ul className="divide-border divide-y">
+                      {d.governance.pendingDecisionsWithoutEligibleManager.map((p) => (
+                        <li key={p.serviceId} className="py-2 text-sm">
+                          <Link to="/engagements/$serviceId/opinion" params={{ serviceId: p.serviceId }} className="text-primary-strong font-semibold hover:underline">
+                            {p.serviceReference}
+                          </Link>{' '}
+                          <span className="text-fg-muted">iteration {p.iterationNo}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </CardContent>
+              </Card>
             </div>
           </section>
 

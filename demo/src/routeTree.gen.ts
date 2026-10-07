@@ -30,7 +30,9 @@ import { Route as AppProjectsIndexRouteImport } from './routes/_app/projects/ind
 import { Route as AppProjectsProjectIdRouteImport } from './routes/_app/projects/$projectId'
 import { Route as AppRecordsEmissionFactorsRouteImport } from './routes/_app/records/emission-factors'
 import { Route as AppStaffIndexRouteImport } from './routes/_app/staff/index'
+import { Route as AppStaffCasesRouteImport } from './routes/_app/staff/cases'
 import { Route as AppStaffClientsRouteImport } from './routes/_app/staff/clients'
+import { Route as AppStaffCompetenceRouteImport } from './routes/_app/staff/competence'
 import { Route as AppStaffFinanceRouteImport } from './routes/_app/staff/finance'
 import { Route as AppStaffServicesRouteImport } from './routes/_app/staff/services'
 import { Route as AppStaffTemplatesRouteImport } from './routes/_app/staff/templates'
@@ -154,9 +156,19 @@ const AppStaffIndexRoute = AppStaffIndexRouteImport.update({
   path: '/staff/',
   getParentRoute: () => AppRoute,
 } as any)
+const AppStaffCasesRoute = AppStaffCasesRouteImport.update({
+  id: '/staff/cases',
+  path: '/staff/cases',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppStaffClientsRoute = AppStaffClientsRouteImport.update({
   id: '/staff/clients',
   path: '/staff/clients',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppStaffCompetenceRoute = AppStaffCompetenceRouteImport.update({
+  id: '/staff/competence',
+  path: '/staff/competence',
   getParentRoute: () => AppRoute,
 } as any)
 const AppStaffFinanceRoute = AppStaffFinanceRouteImport.update({
@@ -275,7 +287,9 @@ export interface FileRoutesByFullPath {
   '/preview/$key': typeof AppPreviewKeyRoute
   '/projects/$projectId': typeof AppProjectsProjectIdRoute
   '/records/emission-factors': typeof AppRecordsEmissionFactorsRoute
+  '/staff/cases': typeof AppStaffCasesRoute
   '/staff/clients': typeof AppStaffClientsRoute
+  '/staff/competence': typeof AppStaffCompetenceRoute
   '/staff/finance': typeof AppStaffFinanceRoute
   '/staff/services': typeof AppStaffServicesRoute
   '/staff/templates': typeof AppStaffTemplatesRoute
@@ -313,7 +327,9 @@ export interface FileRoutesByTo {
   '/preview/$key': typeof AppPreviewKeyRoute
   '/projects/$projectId': typeof AppProjectsProjectIdRoute
   '/records/emission-factors': typeof AppRecordsEmissionFactorsRoute
+  '/staff/cases': typeof AppStaffCasesRoute
   '/staff/clients': typeof AppStaffClientsRoute
+  '/staff/competence': typeof AppStaffCompetenceRoute
   '/staff/finance': typeof AppStaffFinanceRoute
   '/staff/services': typeof AppStaffServicesRoute
   '/staff/templates': typeof AppStaffTemplatesRoute
@@ -355,7 +371,9 @@ export interface FileRoutesById {
   '/_app/preview/$key': typeof AppPreviewKeyRoute
   '/_app/projects/$projectId': typeof AppProjectsProjectIdRoute
   '/_app/records/emission-factors': typeof AppRecordsEmissionFactorsRoute
+  '/_app/staff/cases': typeof AppStaffCasesRoute
   '/_app/staff/clients': typeof AppStaffClientsRoute
+  '/_app/staff/competence': typeof AppStaffCompetenceRoute
   '/_app/staff/finance': typeof AppStaffFinanceRoute
   '/_app/staff/services': typeof AppStaffServicesRoute
   '/_app/staff/templates': typeof AppStaffTemplatesRoute
@@ -397,7 +415,9 @@ export interface FileRouteTypes {
     | '/preview/$key'
     | '/projects/$projectId'
     | '/records/emission-factors'
+    | '/staff/cases'
     | '/staff/clients'
+    | '/staff/competence'
     | '/staff/finance'
     | '/staff/services'
     | '/staff/templates'
@@ -435,7 +455,9 @@ export interface FileRouteTypes {
     | '/preview/$key'
     | '/projects/$projectId'
     | '/records/emission-factors'
+    | '/staff/cases'
     | '/staff/clients'
+    | '/staff/competence'
     | '/staff/finance'
     | '/staff/services'
     | '/staff/templates'
@@ -476,7 +498,9 @@ export interface FileRouteTypes {
     | '/_app/preview/$key'
     | '/_app/projects/$projectId'
     | '/_app/records/emission-factors'
+    | '/_app/staff/cases'
     | '/_app/staff/clients'
+    | '/_app/staff/competence'
     | '/_app/staff/finance'
     | '/_app/staff/services'
     | '/_app/staff/templates'
@@ -655,11 +679,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppStaffIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/staff/cases': {
+      id: '/_app/staff/cases'
+      path: '/staff/cases'
+      fullPath: '/staff/cases'
+      preLoaderRoute: typeof AppStaffCasesRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/staff/clients': {
       id: '/_app/staff/clients'
       path: '/staff/clients'
       fullPath: '/staff/clients'
       preLoaderRoute: typeof AppStaffClientsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/staff/competence': {
+      id: '/_app/staff/competence'
+      path: '/staff/competence'
+      fullPath: '/staff/competence'
+      preLoaderRoute: typeof AppStaffCompetenceRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/staff/finance': {
@@ -849,7 +887,9 @@ interface AppRouteChildren {
   AppPreviewKeyRoute: typeof AppPreviewKeyRoute
   AppProjectsProjectIdRoute: typeof AppProjectsProjectIdRoute
   AppRecordsEmissionFactorsRoute: typeof AppRecordsEmissionFactorsRoute
+  AppStaffCasesRoute: typeof AppStaffCasesRoute
   AppStaffClientsRoute: typeof AppStaffClientsRoute
+  AppStaffCompetenceRoute: typeof AppStaffCompetenceRoute
   AppStaffFinanceRoute: typeof AppStaffFinanceRoute
   AppStaffServicesRoute: typeof AppStaffServicesRoute
   AppStaffTemplatesRoute: typeof AppStaffTemplatesRoute
@@ -874,7 +914,9 @@ const AppRouteChildren: AppRouteChildren = {
   AppPreviewKeyRoute: AppPreviewKeyRoute,
   AppProjectsProjectIdRoute: AppProjectsProjectIdRoute,
   AppRecordsEmissionFactorsRoute: AppRecordsEmissionFactorsRoute,
+  AppStaffCasesRoute: AppStaffCasesRoute,
   AppStaffClientsRoute: AppStaffClientsRoute,
+  AppStaffCompetenceRoute: AppStaffCompetenceRoute,
   AppStaffFinanceRoute: AppStaffFinanceRoute,
   AppStaffServicesRoute: AppStaffServicesRoute,
   AppStaffTemplatesRoute: AppStaffTemplatesRoute,

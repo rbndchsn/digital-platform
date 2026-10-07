@@ -13,17 +13,20 @@ import { useAppMutation } from '@/lib/query'
 export function CoiDeclareCard({ serviceId, coi }: { serviceId: string; coi: NonNullable<ReturnType<typeof team.myCoiSync>> }) {
   const [declaration, setDeclaration] = useState<'clear' | 'potential_conflict'>('clear')
   const [details, setDetails] = useState('')
-  const m = useAppMutation(() => team.declareCoi(serviceId, coi.id, declaration, details), { successMessage: 'Declaration submitted. The manager will review it.' })
+  const [resubmitted, setResubmitted] = useState(false)
+  const m = useAppMutation(() => team.declareCoi(serviceId, coi.id, declaration, details), { successMessage: coi.reconfirmation ? 'Declaration re-confirmed for the revision. The manager will approve it again.' : 'Declaration submitted. The manager will review it.', onSuccess: () => setResubmitted(true) })
+  // PRD v0.3 FR-89: a revision sets every declaration back to `declared`; the member re-confirms it before the chain runs again.
+  const showForm = coi.status !== 'declared' || (coi.reconfirmation && !resubmitted)
   return (
-    <Card className="mx-auto max-w-2xl">
-      <CardHeader title={<span className="inline-flex items-center gap-2"><ShieldAlert className="text-blocking size-5" /> Conflict-of-interest declaration required</span>} description={`You were nominated as ${roleLabel(coi.role)} on ${coi.serviceReference} — ${coi.serviceName} for ${coi.clientName}. Declare any conflicts before the service opens for you.`} />
+    <Card className="mx-auto max-w-2xl" data-testid="coi-card">
+      <CardHeader title={<span className="inline-flex items-center gap-2"><ShieldAlert className="text-blocking size-5" /> {coi.reconfirmation ? 'Re-confirm your conflict-of-interest declaration' : 'Conflict-of-interest declaration required'}</span>} description={coi.reconfirmation ? `A revision of the issued opinion is opening on ${coi.serviceReference} — ${coi.serviceName} for ${coi.clientName}. Every team member re-confirms their declaration and the manager approves it again before the chain runs (PRD FR-89).` : `You were nominated as ${roleLabel(coi.role)} on ${coi.serviceReference} — ${coi.serviceName} for ${coi.clientName}. Declare any conflicts before the service opens for you.`} />
       <CardContent className="space-y-4">
-        {coi.status === 'declared' ? (
-          <Alert tone="info" title="Declaration submitted">Waiting for the manager to approve it. You will be notified.</Alert>
+        {coi.status === 'declared' && !showForm ? (
+          <Alert tone="info" title={coi.reconfirmation ? 'Declaration re-confirmed' : 'Declaration submitted'}>Waiting for the manager to approve it. You will be notified.</Alert>
         ) : coi.status === 'rejected' ? (
           <Alert tone="danger" title="Declaration rejected">The manager rejected your declaration. {coi.details ? `Note: ${coi.details}` : ''} Submit a new one.</Alert>
         ) : null}
-        {coi.status !== 'declared' ? (
+        {showForm ? (
           <>
             <div className="grid gap-2 sm:grid-cols-2">
               {(
@@ -42,7 +45,7 @@ export function CoiDeclareCard({ serviceId, coi }: { serviceId: string; coi: Non
               <Textarea value={details} onChange={(e) => setDetails(e.target.value)} placeholder={declaration === 'clear' ? 'e.g. No relationship with Atlas Foods Group.' : 'e.g. I audited a supplier of this client in 2024.'} />
             </Field>
             <Button onClick={() => m.mutate()} loading={m.isPending} disabled={declaration === 'potential_conflict' && !details.trim()}>
-              Submit declaration
+              {coi.reconfirmation ? 'Re-confirm declaration' : 'Submit declaration'}
             </Button>
           </>
         ) : null}

@@ -22,7 +22,7 @@ test('ch.5 — the client re-uploads a rejected document and the auditor accepts
   await page.goto('/engagements/svc_nw_inv_2025/log')
   await expect(page.getByText(/accepted by Priya Natarajan/).first()).toBeVisible()
   await page.goto('/engagements/svc_nw_inv_2025/timeline')
-  await expect(page.getByRole('img', { name: 'Timeline of phases and steps' })).toBeVisible()
+  await expect(page.getByRole('group', { name: 'Timeline of phases and steps' })).toBeVisible()
 })
 
 test('ch.3 — a nominated auditor is gated by the COI declaration', async ({ page }) => {

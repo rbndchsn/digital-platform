@@ -65,7 +65,7 @@ export function Skeleton({ className, ...props }: HTMLAttributes<HTMLDivElement>
   return <div className={cn('bg-surface-muted animate-pulse rounded-md', className)} {...props} />
 }
 
-export function Alert({ tone = 'info', title, children, className, icon }: { tone?: 'info' | 'success' | 'warning' | 'danger' | 'blocking'; title?: ReactNode; children?: ReactNode; className?: string; icon?: ReactNode }) {
+export function Alert({ tone = 'info', title, children, className, icon, ...rest }: { tone?: 'info' | 'success' | 'warning' | 'danger' | 'blocking'; title?: ReactNode; children?: ReactNode; className?: string; icon?: ReactNode } & Omit<HTMLAttributes<HTMLDivElement>, 'title'>) {
   const styles = {
     info: 'bg-info-soft text-info border-info/30',
     success: 'bg-success-soft text-success border-success/30',
@@ -74,7 +74,7 @@ export function Alert({ tone = 'info', title, children, className, icon }: { ton
     blocking: 'bg-blocking-soft text-blocking border-blocking/30',
   }[tone]
   return (
-    <div role="status" className={cn('flex gap-3 rounded-md border px-3.5 py-3 text-sm', styles, className)}>
+    <div role="status" className={cn('flex gap-3 rounded-md border px-3.5 py-3 text-sm', styles, className)} {...rest}>
       {icon ? <span className="mt-0.5 shrink-0 [&_svg]:size-4">{icon}</span> : null}
       <div className="min-w-0">
         {title ? <p className="font-semibold">{title}</p> : null}
