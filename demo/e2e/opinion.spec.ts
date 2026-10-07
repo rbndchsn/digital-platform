@@ -31,7 +31,7 @@ test('ch.8 — iteration 2 is reviewed, approved and issued; the public statemen
   await expect(page.getByText('Iteration 2: approved')).toBeVisible()
   await page.getByRole('button', { name: 'Issue opinion' }).first().click()
   await page.getByRole('button', { name: 'Issue opinion' }).last().click()
-  await expect(page.getByText('Public verification code')).toBeVisible({ timeout: 20_000 })
+  await expect(page.getByRole('dialog').getByRole('heading', { name: 'Opinion issued' })).toBeVisible({ timeout: 25_000 })
   const code = (await page.locator('code.font-mono.font-bold').first().innerText()).trim()
   expect(code).toMatch(/^VX-[A-Z2-9]{4}-[A-Z2-9]{4}$/)
 

@@ -1,11 +1,11 @@
 /** Plays the whole investor storyline (DEMO_SCRIPT.md) in one browser session, in order. */
 import { expect, test } from '@playwright/test'
-import { enterAs } from './helpers'
+import { enterAs, runRevision, statementCode, tickAll } from './helpers'
 
 test.describe.configure({ mode: 'serial' })
 
-test('the full twelve-chapter storyline runs without a dead click', async ({ page }) => {
-  test.setTimeout(300_000)
+test('the full sixteen-chapter storyline runs without a dead click', async ({ page }) => {
+  test.setTimeout(600_000)
 
   // 1 — home
   await enterAs(page, /Ingrid Vos/)
@@ -95,7 +95,7 @@ test('the full twelve-chapter storyline runs without a dead click', async ({ pag
   await page.getByRole('button', { name: 'Approve' }).click()
   await page.getByRole('button', { name: 'Issue opinion' }).first().click()
   await page.getByRole('button', { name: 'Issue opinion' }).last().click()
-  await expect(page.getByText('Public verification code')).toBeVisible({ timeout: 20_000 })
+  await expect(page.getByRole('dialog').getByRole('heading', { name: 'Opinion issued' })).toBeVisible({ timeout: 25_000 })
   const code = (await page.locator('code.font-mono.font-bold').first().innerText()).trim()
   await page.goto(`/verify/${code}`)
   await expect(page.getByText('Genuine VERIFASSUR opinion')).toBeVisible()
@@ -146,4 +146,63 @@ test('the full twelve-chapter storyline runs without a dead click', async ({ pag
   await page.goto('/engagements/svc_sol_ver_2025/log')
   await page.getByRole('combobox', { name: 'Filter by event type' }).selectOption('override')
   await expect(page.getByText(/^Override: .* by Helena Brandt/).first()).toBeVisible()
+
+  // 13 — materiality warning and decision separation on the PCF 2025 opinion
+  await enterAs(page, /Tomas Lindqvist/)
+  await page.goto('/engagements/svc_nw_pcf_2025/opinion')
+  await expect(page.getByTestId('materiality-warning').first()).toBeVisible()
+  await page.getByRole('button', { name: 'Independent review', exact: true }).click()
+  await page.getByTestId('materiality-ack').fill('The understatement is corrected in the verified figure; unqualified remains appropriate on the verified value.')
+  await tickAll(page)
+  await page.getByRole('button', { name: 'Approve' }).click()
+  await expect(page.getByText('Iteration 1: manager review')).toBeVisible()
+  await enterAs(page, /Helena Brandt/)
+  await page.goto('/engagements/svc_nw_pcf_2025/opinion')
+  await expect(page.getByTestId('manager-decision')).toBeDisabled()
+  await expect(page.getByTestId('eligibility-notice')).toContainText('Marc Lefèvre')
+  await enterAs(page, /Marc Lefèvre/)
+  await page.goto('/engagements/svc_nw_pcf_2025/opinion')
+  await page.getByTestId('manager-decision').click()
+  await page.getByTestId('materiality-ack').fill('Acknowledged: the verified figure corrects the understatement.')
+  await tickAll(page)
+  await page.getByRole('button', { name: 'Approve' }).click()
+  await page.getByRole('button', { name: 'Issue opinion' }).first().click()
+  await page.getByRole('button', { name: 'Issue opinion' }).last().click()
+  await expect(page.getByRole('dialog').getByRole('heading', { name: 'Opinion issued' })).toBeVisible({ timeout: 25_000 })
+
+  // 14 — the withdrawn PCF 2024 page, then a live revision of the decarb 2025 opinion issued in chapter 8
+  await enterAs(page, /Ingrid Vos/)
+  const withdrawnCode = await statementCode(page, 'svc_nw_pcf_2024')
+  await page.goto(`/verify/${withdrawnCode}`)
+  await expect(page.getByText('This statement has been withdrawn')).toBeVisible()
+  await runRevision(page, 'svc_nw_decarb_2025', 3)
+
+  // 15 — complaints and appeals
+  await enterAs(page, /Ingrid Vos/)
+  await page.goto('/organisation?tab=cases')
+  await page.getByTestId('case-case_nw_appeal_activity_data').click()
+  await expect(page.getByTestId('case-detail')).toContainText('Marc Lefèvre')
+  await enterAs(page, /Marc Lefèvre/)
+  await page.goto('/staff/cases')
+  await page.getByTestId('case-row-case_nw_appeal_activity_data').click()
+  await page.getByRole('button', { name: 'Decide', exact: true }).click()
+  await page.getByLabel(/Outcome summary/).fill('The invoices were in the pack filed by supplier; the rejection is lifted.')
+  await page.getByLabel(/Reason \(audit log\)/).fill('Rejection reason was factually wrong; re-check ordered.')
+  await page.getByRole('button', { name: 'Record decision' }).click()
+  await expect(page.getByText(/Decided: upheld/)).toBeVisible()
+
+  // 16 — competence and rotation on the Atlas team
+  await enterAs(page, /Helena Brandt/)
+  await page.goto('/engagements/svc_atlas_decarb_2025/phases')
+  await page.getByRole('button', { name: /Team nomination/ }).first().click()
+  await page.getByRole('button', { name: 'Nominate', exact: true }).click()
+  await page.getByRole('combobox', { name: 'Role for Jonas Weber' }).selectOption('verifier_technical_expert')
+  const nominate = page.getByRole('dialog').getByRole('button', { name: 'Nominate', exact: true })
+  await expect(nominate).toBeDisabled()
+  await page.getByTestId('override-reason').fill('Jonas supports the volume reconciliation only; soil-carbon expertise is contracted externally.')
+  await nominate.click()
+  await expect(page.getByText(/Team nominated/)).toBeVisible()
+  await page.goto('/staff/competence')
+  await page.getByTestId('profile-usr_helena').click()
+  await expect(page.getByText('This is your own profile')).toBeVisible()
 })

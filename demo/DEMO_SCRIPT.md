@@ -1,6 +1,6 @@
 # VERIFASSUR_X — investor demo script
 
-Twelve chapters, about 25 minutes (chapters 1–10 are the core product, 11–12 show governance: the platform administrator and manager overrides). Everything you click does what the real platform would do; nothing leaves the browser. Progress is kept in this tab only: **reload is safe, closing the tab resets**. The floating **Demo** button (or `Ctrl+.`) switches persona, jumps to a chapter, slows the network, makes the next action fail, or resets.
+Sixteen chapters, about 35 minutes (chapters 1–10 are the core product, 11–12 the platform administrator and manager overrides, 13–16 the accreditation-grade controls of PRD v0.3: materiality and decision separation, revision and withdrawal, complaints and appeals, competence and rotation). Everything you click does what the real platform would do; nothing leaves the browser. Progress is kept in this tab only: **reload is safe, closing the tab resets**. The floating **Demo** button (or `Ctrl+.`) switches persona, jumps to a chapter, slows the network, makes the next action fail, or resets.
 
 Before you start: open the live URL, press `Ctrl+.`, click **Reset demo**, then close the panel. Use a 1440-px-wide window.
 
@@ -18,6 +18,10 @@ Before you start: open the live URL, press `Ctrl+.`, click **Reset demo**, then 
 | 10 | The future, in preview | Ingrid, then Helena | `/integrations` |
 | 11 | Administration | Sam Okafor (platform administrator) | `/admin` |
 | 12 | Manager override | Helena, then Ingrid | `/engagements/svc_nw_inv_2025/phases` |
+| 13 | Materiality and decision separation | Tomas, Helena, then Marc Lefèvre (manager) | `/engagements/svc_nw_pcf_2025/opinion` |
+| 14 | Revision and withdrawal | Ingrid, Helena, Marc, the team | `/engagements/svc_nw_pcf_2024/opinion` |
+| 15 | Complaints and appeals | Ingrid, Helena, Marc | `/organisation?tab=cases` |
+| 16 | Competence and rotation | Helena | `/engagements/svc_atlas_decarb_2025/phases` |
 
 ---
 
@@ -128,8 +132,45 @@ Say: *Platform administration is separated from assurance decisions. Sam sees th
 Say: *Rules can be too rigid for an edge case. The manager can override, but only with a reason, only in the log, and never the impartiality or issuance gates.*
 
 - Click **Override status** → **Force complete**. The button stays disabled until the reason has ten characters. Type why ("Evidence reviewed off-platform during the site visit…") and confirm. The step shows **Completed by override** with Helena's name and reason; the next step started.
-- **Service Log** → filter **Manager overrides**: the row is highlighted and carries the reason. Optional: **Planned dates** on a step, **Reassign** on the team panel of `/engagements/svc_atlas_decarb_2025/phases` (Priya → Jonas, who must then declare conflicts), and note that **Force complete** is disabled on **Team nomination**.
+- **Service Log** → filter **Manager overrides**: the row is highlighted and carries the reason. Optional: **Planned dates** on a step, **Reassign** on the team panel of `/engagements/svc_atlas_decarb_2025/phases` (Priya → Jonas: the competence check warns because Jonas holds no qualification, and the reassignment reason doubles as the override reason; Jonas must then declare conflicts). Note the **Non-overridable** lock on **Team nomination**: *Force complete* and *Skip* are greyed with "Cannot be completed or skipped by override". The lock is a template attribute (`non_overridable`), not a rule in the code: the same lock protects impartiality, the agreement, independent review and issuance, and a refused attempt is itself logged.
 - Enter as **Ingrid Vos**: her home no longer asks for the re-upload; the next action moved on.
+
+## 13. Materiality and decision separation — "the platform shows, people decide" (4 min)
+
+`Ctrl+.` → chapter 13 enters as **Tomas Lindqvist** on the Opinion tab of the **Gouda product footprint 2025**.
+
+Say: *Two accreditation controls at once. First, materiality: the threshold is set in Planning and every difference the team finds is aggregated against it. Second, decision separation: whoever did verification work cannot take the final decision.*
+
+- Iteration 1 carries the **aggregation panel**: a 0.5 kgCO2e/kg understatement of the Gouda factor, gross and net, against materiality of 5 % (0.445 kgCO2e/kg). The gauge is red and an **inconsistency warning** says the draft opinion is unqualified while the aggregate exceeds materiality. *This is a warning, never a block.*
+- **Independent review**: the materiality checklist item is greyed until the **acknowledgement comment** is written. Write it ("the verified figure corrects the understatement…"), tick everything, approve.
+- Enter as **Helena Brandt** on the same page: **Manager decision** is disabled and the notice says why: *she entered the verified value on this factor*, so she is in the **involved set**; the eligible decision-maker is **Marc Lefèvre**. Nothing is hidden; the refusal is logged.
+- Enter as **Marc Lefèvre** → **Manager decision**: the same warning and acknowledgement, approve, **Issue opinion**. The statement card shows **Limited assurance**, the materiality line and *inconsistency warning acknowledged by the reviewer and the decision-maker*.
+- Optional: the **Misstatement register** link above the iterations (confirm, dismiss with a reason, mark corrected, raise from a finding) and the **Service Log** filter **Decisions and refusals**: Marc's decision is recorded as taken *outside the involved set*; a refusal event (`iteration.decision_refused`) only appears when someone attempts the decision through the api, because the screen disables the control first.
+
+## 14. Revision and withdrawal — "a statement is never deleted" (4 min)
+
+`Ctrl+.` → chapter 14 enters as **Helena Brandt** on the Opinion tab of the **2024 product footprints**.
+
+- The statement card reads **Statement withdrawn**, the public reason category *Error in the statement*, the decision by Marc. Open the **Public page**: the red banner, no figures, no hashes; the code still resolves. Under **Records › Product emission factors** both 2024 factors show **Assurance withdrawn**, declared-only values, and the former verified value in the **Assurance history** drawer.
+- `/engagements/svc_nw_decarb_2024/opinion`: the **Statement history** shows the 2024 decarb_units opinion **Superseded** by a revision (88,000 units on 880,000 t) with the replacement code; its public page shows the amber banner with the link.
+- A live one: on the decarb_units 2025 opinion issued in chapter 8, **Open post-issuance event** (trigger, description, evidence picker). Enter as **Marc Lefèvre** → **Decide** → **Revise the opinion** with a reason. The service turns **In revision**, the Opinion tab carries **Under review**, and every team member gets the **Re-confirm your conflict-of-interest declaration** card. Marcus, Priya, Tomas and Ana re-confirm, Helena approves them on the Team nomination step, Marcus prepares iteration 3 (labelled *revision of* the code), Tomas reviews, Marc decides and issues: the old statement reads **Superseded**, the record points to the new code, and the history keeps both.
+
+## 15. Complaints and appeals — "handled outside the involved set" (3 min)
+
+`Ctrl+.` → chapter 15 enters as **Ingrid Vos** on **Organisation › Complaints and appeals**.
+
+- Her **appeal** against the rejection of the activity data pack is **Under investigation**, handler **Marc Lefèvre**, with the stage dates and targets. She sees the handler's message, not the internal note. **Raise a complaint** files a new case with its acknowledgement and decision targets from the template.
+- Enter as **Helena Brandt** → **Complaints and appeals** (verifier portal): the queue with kind, stage, targets and the overdue pill on the Solstice complaint. Open the appeal → **Assign handler**: **Priya Natarajan**, who rejected the document, is *not offered*; the dialog names the involved set.
+- Enter as **Marc Lefèvre** → open the appeal → **Decide**: outcome *upheld*, the summary the client will read, the reason for the audit log, and the action *return the rejected version for a fresh check*. **Close case**. Back as Ingrid, the outcome summary is on her case. *An appeal never suspends the decision appealed against; ADMIN reads the register, including notes, and changes nothing.*
+
+## 16. Competence and rotation — "nominate with evidence" (3 min)
+
+`Ctrl+.` → chapter 16 enters as **Helena Brandt** on the Atlas decarb_units Team nomination step.
+
+- The team panel shows each member's **qualifications** with validity, the **rotation** line (prior engagements for this client), the **stored check** of the nomination with the **soil-carbon coverage warning overridden** and its reason, and the **team coverage** summary.
+- **Nominate** → pick **Technical expert** for **Jonas Weber**: the check runs live; Jonas holds no qualification, so the warnings appear in amber with an **Override reason** field and the Nominate button stays disabled until it is written. Pick **Independent reviewer** for Helena: a red **block**, no reason lifts it. Clear it, nominate Jonas with the reason; the Service Log carries `team.check_overridden`.
+- **Competence** page: every verifier with qualifications, scopes, areas, programmes, validity; **Priya's technical-expert certificate expires in 45 days** (filter *Expiring within 90 days*). **Run expiry reminders** sends the 90 / 30 / 7-day notifications. Open **Helena's own profile**: *a user never edits their own profile*; try **Add qualification** and the refusal is shown. Open Jonas's profile instead and add his verifier qualification with a simulated certificate upload. **Legacy engagements** at the bottom feed the rotation counts.
+- **Triage queue**: the Atlas sourdough request shows the **VVB rotation history** (warn only; accepting with a warning asks the manager to confirm they considered it). **Templates**: the manager edits the locks, materiality defaults, competence requirements, rotation rules and complaint targets with a reason; every save is a new version.
 
 ---
 

@@ -56,6 +56,24 @@ const all = [
   { name: '29-admin-users', persona: 'Sam Okafor', path: '/admin/users' },
   { name: '30-admin-audit', persona: 'Sam Okafor', path: '/admin/audit' },
   { name: '31-manager-override', persona: 'Helena Brandt', path: '/engagements/svc_nw_inv_2025/phases' },
+  // PRD v0.3 (steps 23–25)
+  { name: '32-opinion-aggregation', persona: 'Tomas Lindqvist', path: '/engagements/svc_nw_pcf_2025/opinion' },
+  { name: '33-misstatement-register', persona: 'Marcus Oyelaran', path: '/engagements/svc_nw_pcf_2025/misstatements' },
+  { name: '34-public-withdrawn', persona: 'Ingrid Vos', path: async () => `/verify/${await statementCode('svc_nw_pcf_2024')}` },
+  { name: '35-cases-register', persona: 'Marc Lefèvre', path: '/staff/cases', act: async () => page.getByTestId('case-row-case_nw_appeal_activity_data').click() },
+  { name: '36-competence', persona: 'Helena Brandt', path: '/staff/competence' },
+  {
+    name: '37-nomination-check',
+    persona: 'Helena Brandt',
+    path: '/engagements/svc_atlas_decarb_2025/phases',
+    act: async () => {
+      await page.getByRole('button', { name: /Team nomination/ }).first().click()
+      await page.getByRole('button', { name: 'Nominate', exact: true }).click()
+      await page.getByRole('combobox', { name: 'Role for Jonas Weber' }).selectOption('verifier_technical_expert')
+      await page.waitForTimeout(1200)
+    },
+  },
+  { name: '38-timeline', persona: 'Ingrid Vos', path: '/engagements/svc_nw_decarb_2024/timeline' },
 ]
 const only = process.env.SHOTS?.split(',')
 const shots = only ? all.filter((s) => only.some((o) => s.name.startsWith(o))) : all
@@ -72,6 +90,10 @@ for (const s of shots) {
   await page.goto(`${base}${path}`)
   // Mock latency is up to ~400 ms per call and pages chain two or three calls.
   await page.waitForTimeout(1800)
+  if (s.act) {
+    await s.act()
+    await page.waitForTimeout(600)
+  }
   await page.screenshot({ path: resolve(out, `${prefix}${s.name}.png`), fullPage: false })
   console.log('saved', `${prefix}${s.name}`)
 }
